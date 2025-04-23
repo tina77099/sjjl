@@ -1,0 +1,1156 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标签管理 - 事件记录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- 侧边栏 -->
+    <div class="flex h-screen overflow-hidden">
+        <div class="w-64 bg-white shadow-md hidden md:block">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-indigo-600">事件记录</h1>
+                <p class="text-gray-500 text-sm">记录生活，追踪成长</p>
+            </div>
+            <nav class="mt-6">
+                <ul>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="index.html" class="flex items-center">
+                            <i class="fas fa-home mr-3"></i>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="calendar.html" class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-3"></i>
+                            <span>日历视图</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="events.html" class="flex items-center">
+                            <i class="fas fa-list mr-3"></i>
+                            <span>事件列表</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="statistics.html" class="flex items-center">
+                            <i class="fas fa-chart-pie mr-3"></i>
+                            <span>统计分析</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 bg-indigo-50 text-indigo-600 font-medium">
+                        <a href="tags.html" class="flex items-center">
+                            <i class="fas fa-tag mr-3"></i>
+                            <span>标签管理</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="settings.html" class="flex items-center">
+                            <i class="fas fa-cog mr-3"></i>
+                            <span>设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-auto">
+            <!-- 顶部导航栏 -->
+            <header class="bg-white shadow-sm">
+                <div class="flex items-center justify-between p-4">
+                    <button class="md:hidden text-gray-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <input type="text" placeholder="搜索标签..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-64" id="searchInput">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                    </div>
+                    <div class="flex items-center">
+                        <button class="text-gray-600 mr-4">
+                            <i class="fas fa-bell text-xl"></i>
+                        </button>
+                        <div class="flex items-center">
+                            <a href="settings.html#profile-section" class="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 font-medium hover:bg-indigo-300 transition-colors cursor-pointer" title="个人设置">
+                                <i class="fas fa-user-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- 标签管理内容 -->
+            <main class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-800">标签管理</h2>
+                        <p class="text-gray-600 mt-1">
+                            创建和管理可用于计划和事件记录的标签，帮助您更好地组织和检索内容。
+                        </p>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <div class="relative">
+                            <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="filterTags">
+                                <option value="all">全部标签</option>
+                                <option value="work">工作</option>
+                                <option value="study">学习</option>
+                                <option value="health">健康</option>
+                                <option value="life">生活</option>
+                                <option value="other">其他</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                        </div>
+                        <div class="relative">
+                            <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="sortTags">
+                                <option value="name-asc">名称 (A→Z)</option>
+                                <option value="name-desc">名称 (Z→A)</option>
+                                <option value="count-desc">使用次数 (多→少)</option>
+                                <option value="count-asc">使用次数 (少→多)</option>
+                                <option value="date-desc">创建日期 (新→旧)</option>
+                                <option value="date-asc">创建日期 (旧→新)</option>
+                            </select>
+                            <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 标签列表 -->
+                <div class="bg-white rounded-lg shadow overflow-hidden">
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-50">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标签名称</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">颜色</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">使用次数</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建日期</th>
+                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                <!-- 标签项 -->
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">会议</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">工作</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        计划、事件
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-5 w-5 rounded-full bg-blue-500 mr-2"></div>
+                                            <span class="text-sm text-gray-500">#3B82F6</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        24
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        2023-10-01
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">学习</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">学习</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        计划、事件
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-5 w-5 rounded-full bg-green-500 mr-2"></div>
+                                            <span class="text-sm text-gray-500">#10B981</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        18
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        2023-10-02
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">健身</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">健康</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        事件
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-5 w-5 rounded-full bg-yellow-500 mr-2"></div>
+                                            <span class="text-sm text-gray-500">#F59E0B</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        12
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        2023-10-03
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-sm">紧急</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">工作</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        计划
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-5 w-5 rounded-full bg-red-500 mr-2"></div>
+                                            <span class="text-sm text-gray-500">#EF4444</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        8
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        2023-10-04
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">家庭</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">生活</span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        计划、事件
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="h-5 w-5 rounded-full bg-purple-500 mr-2"></div>
+                                            <span class="text-sm text-gray-500">#8B5CF6</span>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        15
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        2023-10-05
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                                            <i class="fas fa-trash-alt"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="px-6 py-4 border-t">
+                        <div class="flex justify-between items-center">
+                            <div class="text-sm text-gray-500">
+                                显示 1-5 项，共 12 项
+                            </div>
+                            <div class="flex space-x-2">
+                                <button class="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" id="exportTagsBtn">
+                                    <i class="fas fa-file-export mr-1"></i>导出标签
+                                </button>
+                                <button class="bg-white border border-gray-300 text-gray-700 px-3 py-2 rounded-lg hover:bg-gray-50 transition-colors" id="importTagsBtn">
+                                    <i class="fas fa-file-import mr-1"></i>导入标签
+                                </button>
+                                <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors" id="newTagBtn">
+                                    <i class="fas fa-plus mr-2"></i>新建标签
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex justify-center mt-4">
+                            <div class="flex space-x-1">
+                                <button class="px-3 py-1 rounded border text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                                    <i class="fas fa-chevron-left"></i>
+                                </button>
+                                <button class="px-3 py-1 rounded border bg-indigo-600 text-white">1</button>
+                                <button class="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50">2</button>
+                                <button class="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50">3</button>
+                                <button class="px-3 py-1 rounded border text-gray-500 hover:bg-gray-50">
+                                    <i class="fas fa-chevron-right"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 新建/编辑标签模态框 -->
+    <div id="tagModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+            <div class="flex justify-between items-center p-4 border-b">
+                <h3 class="text-xl font-medium text-gray-800" id="modalTitle">新建标签</h3>
+                <button class="text-gray-500 hover:text-gray-700" id="closeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="tagForm">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">标签名称</label>
+                            <input type="text" id="tagNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="输入标签名称" required>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                            <select id="tagCategorySelect" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <option value="work">工作</option>
+                                <option value="study">学习</option>
+                                <option value="health">健康</option>
+                                <option value="life">生活</option>
+                                <option value="priority">优先级</option>
+                                <option value="other">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">适用范围</label>
+                            <div class="flex items-center space-x-4 mt-2">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="applyToPlan" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="applyToPlan" class="ml-2 text-sm text-gray-700">计划</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="applyToEvent" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="applyToEvent" class="ml-2 text-sm text-gray-700">事件</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">颜色</label>
+                            <div class="flex flex-wrap gap-2">
+                                <div class="h-8 w-8 rounded-full bg-red-500 cursor-pointer color-option" data-color="#EF4444"></div>
+                                <div class="h-8 w-8 rounded-full bg-orange-500 cursor-pointer color-option" data-color="#F97316"></div>
+                                <div class="h-8 w-8 rounded-full bg-yellow-500 cursor-pointer color-option" data-color="#F59E0B"></div>
+                                <div class="h-8 w-8 rounded-full bg-green-500 cursor-pointer color-option" data-color="#10B981"></div>
+                                <div class="h-8 w-8 rounded-full bg-blue-500 cursor-pointer color-option" data-color="#3B82F6"></div>
+                                <div class="h-8 w-8 rounded-full bg-indigo-500 cursor-pointer color-option" data-color="#6366F1"></div>
+                                <div class="h-8 w-8 rounded-full bg-purple-500 cursor-pointer color-option" data-color="#8B5CF6"></div>
+                                <div class="h-8 w-8 rounded-full bg-pink-500 cursor-pointer color-option" data-color="#EC4899"></div>
+                                <div class="h-8 w-8 rounded-full bg-gray-500 cursor-pointer color-option" data-color="#6B7280"></div>
+                                <div class="h-8 w-8 rounded-full bg-gray-800 cursor-pointer color-option" data-color="#1F2937"></div>
+                            </div>
+                            <input type="hidden" id="selectedColor" value="#3B82F6">
+                            <div class="mt-2 flex items-center">
+                                <div class="h-6 w-6 rounded-full bg-blue-500 mr-2" id="colorPreview"></div>
+                                <input type="text" class="px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm" value="#3B82F6" id="colorInput">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
+                            <textarea id="tagDescription" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" rows="2" placeholder="输入标签描述（可选）"></textarea>
+                        </div>
+                    </div>
+                    <div class="mt-6 flex justify-end space-x-3">
+                        <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50" id="cancelTag">取消</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 删除标签确认模态框 -->
+    <div id="deleteTagModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
+            <div class="p-6">
+                <h3 class="text-xl font-medium text-gray-800 mb-4">确认删除</h3>
+                <p class="text-gray-600 mb-2">您确定要删除这个标签吗？</p>
+                <p class="text-gray-600">此操作将从所有关联的<span class="font-semibold">计划和事件记录</span>中移除该标签，且无法撤销。</p>
+                <div class="mt-6 flex justify-end space-x-3">
+                    <button class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50" id="cancelDelete">取消</button>
+                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" id="confirmDelete">删除</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导入标签模态框 -->
+    <div id="importTagModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
+        <div class="bg-white rounded-lg shadow-xl max-w-md w-full p-6 transform transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-xl font-semibold text-gray-900">导入标签</h3>
+                <button type="button" class="text-gray-400 hover:text-gray-500 focus:outline-none" id="closeImportModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="space-y-4">
+                <div class="bg-blue-50 text-blue-800 p-4 rounded-lg text-sm">
+                    <p><i class="fas fa-info-circle mr-2"></i>请上传JSON格式的标签数据文件。文件格式应包含标签名称、颜色、分类和适用范围等信息。</p>
+                </div>
+                <form id="importTagForm" class="space-y-4">
+                    <div>
+                        <label for="tagFile" class="block text-sm font-medium text-gray-700 mb-1">选择文件</label>
+                        <input type="file" id="tagFile" name="tagFile" accept=".json" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500">
+                    </div>
+                    <div class="flex justify-end space-x-2">
+                        <button type="button" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors" id="cancelImportBtn">取消</button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">导入</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 搜索功能
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const tagRows = document.querySelectorAll('tbody tr');
+            
+            tagRows.forEach(row => {
+                const tagName = row.querySelector('td:first-child').textContent.toLowerCase();
+                const category = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                const applyTo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
+                
+                if (tagName.includes(searchTerm) || category.includes(searchTerm) || applyTo.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // 筛选功能
+        const filterTags = document.getElementById('filterTags');
+        filterTags.addEventListener('change', function() {
+            const filterValue = this.value.toLowerCase();
+            const tagRows = document.querySelectorAll('tbody tr');
+            
+            tagRows.forEach(row => {
+                if (filterValue === 'all') {
+                    row.style.display = '';
+                    return;
+                }
+                
+                const category = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
+                if (category.includes(filterValue)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+        
+        // 排序功能
+        const sortTags = document.getElementById('sortTags');
+        sortTags.addEventListener('change', function() {
+            const sortValue = this.value;
+            const tagRows = Array.from(document.querySelectorAll('tbody tr'));
+            const tbody = document.querySelector('tbody');
+            
+            tagRows.sort((a, b) => {
+                if (sortValue === 'name-asc' || sortValue === 'name-desc') {
+                    const nameA = a.querySelector('td:first-child').textContent.toLowerCase();
+                    const nameB = b.querySelector('td:first-child').textContent.toLowerCase();
+                    return sortValue === 'name-asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
+                } else if (sortValue === 'count-desc' || sortValue === 'count-asc') {
+                    const countA = parseInt(a.querySelector('td:nth-child(5)').textContent);
+                    const countB = parseInt(b.querySelector('td:nth-child(5)').textContent);
+                    return sortValue === 'count-desc' ? countB - countA : countA - countB;
+                } else if (sortValue === 'date-desc' || sortValue === 'date-asc') {
+                    const dateA = a.querySelector('td:nth-child(6)').textContent;
+                    const dateB = b.querySelector('td:nth-child(6)').textContent;
+                    return sortValue === 'date-desc' ? dateB.localeCompare(dateA) : dateA.localeCompare(dateB);
+                }
+                return 0;
+            });
+            
+            // 清空表格并重新添加排序后的行
+            while (tbody.firstChild) {
+                tbody.removeChild(tbody.firstChild);
+            }
+            
+            tagRows.forEach(row => {
+                tbody.appendChild(row);
+            });
+        });
+        
+        // 模态框功能
+        const newTagBtn = document.getElementById('newTagBtn');
+        const tagModal = document.getElementById('tagModal');
+        const closeModal = document.getElementById('closeModal');
+        const cancelTag = document.getElementById('cancelTag');
+        
+        newTagBtn.addEventListener('click', function() {
+            document.getElementById('modalTitle').textContent = '新建标签';
+            document.getElementById('tagForm').reset();
+            document.getElementById('selectedColor').value = '#3B82F6';
+            document.getElementById('colorPreview').style.backgroundColor = '#3B82F6';
+            document.getElementById('colorInput').value = '#3B82F6';
+            document.getElementById('applyToPlan').checked = true;
+            document.getElementById('applyToEvent').checked = true;
+            tagModal.classList.remove('hidden');
+        });
+        
+        closeModal.addEventListener('click', function() {
+            tagModal.classList.add('hidden');
+        });
+        
+        cancelTag.addEventListener('click', function() {
+            tagModal.classList.add('hidden');
+        });
+        
+        // 颜色选择功能
+        const colorOptions = document.querySelectorAll('.color-option');
+        const colorPreview = document.getElementById('colorPreview');
+        const colorInput = document.getElementById('colorInput');
+        const selectedColor = document.getElementById('selectedColor');
+        
+        colorOptions.forEach(option => {
+            option.addEventListener('click', function() {
+                const color = this.getAttribute('data-color');
+                colorPreview.style.backgroundColor = color;
+                colorInput.value = color;
+                selectedColor.value = color;
+                
+                // 移除之前选中的边框
+                colorOptions.forEach(opt => {
+                    opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                });
+                
+                // 添加选中边框
+                this.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
+            });
+        });
+        
+        // 手动输入颜色
+        colorInput.addEventListener('input', function() {
+            const color = this.value;
+            // 验证颜色格式
+            if (/^#([0-9A-F]{3}){1,2}$/i.test(color)) {
+                colorPreview.style.backgroundColor = color;
+                selectedColor.value = color;
+                
+                // 移除之前选中的边框
+                colorOptions.forEach(opt => {
+                    opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                });
+                
+                // 如果颜色匹配预设，则选中对应选项
+                colorOptions.forEach(opt => {
+                    if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
+                        opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                    }
+                });
+            }
+        });
+        
+        // 编辑标签
+        const editBtns = document.querySelectorAll('.edit-tag-btn');
+        editBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const row = this.closest('tr');
+                const tagName = row.querySelector('td:first-child span').textContent;
+                const category = row.querySelector('td:nth-child(2) span').textContent;
+                const applyTo = row.querySelector('td:nth-child(3)').textContent.trim();
+                const color = row.querySelector('td:nth-child(4) span').textContent;
+                
+                document.getElementById('modalTitle').textContent = '编辑标签';
+                document.getElementById('tagNameInput').value = tagName;
+                
+                // 设置适用范围
+                document.getElementById('applyToPlan').checked = applyTo.includes('计划');
+                document.getElementById('applyToEvent').checked = applyTo.includes('事件');
+                
+                // 设置分类
+                const categorySelect = document.getElementById('tagCategorySelect');
+                for (let i = 0; i < categorySelect.options.length; i++) {
+                    if (categorySelect.options[i].text.toLowerCase() === category.toLowerCase()) {
+                        categorySelect.selectedIndex = i;
+                        break;
+                    }
+                }
+                
+                // 设置颜色
+                document.getElementById('selectedColor').value = color;
+                document.getElementById('colorPreview').style.backgroundColor = color;
+                document.getElementById('colorInput').value = color;
+                
+                // 移除之前选中的边框
+                colorOptions.forEach(opt => {
+                    opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                });
+                
+                // 如果颜色匹配预设，则选中对应选项
+                colorOptions.forEach(opt => {
+                    if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
+                        opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                    }
+                });
+                
+                tagModal.classList.remove('hidden');
+            });
+        });
+        
+        // 删除标签
+        const deleteBtns = document.querySelectorAll('.delete-tag-btn');
+        const deleteModal = document.getElementById('deleteTagModal');
+        const cancelDelete = document.getElementById('cancelDelete');
+        const confirmDelete = document.getElementById('confirmDelete');
+        let currentDeleteRow = null;
+        
+        deleteBtns.forEach(btn => {
+            btn.addEventListener('click', function() {
+                currentDeleteRow = this.closest('tr');
+                deleteModal.classList.remove('hidden');
+            });
+        });
+        
+        cancelDelete.addEventListener('click', function() {
+            deleteModal.classList.add('hidden');
+            currentDeleteRow = null;
+        });
+        
+        confirmDelete.addEventListener('click', function() {
+            if (currentDeleteRow) {
+                currentDeleteRow.remove();
+                deleteModal.classList.add('hidden');
+                currentDeleteRow = null;
+                
+                // 更新显示的标签数量
+                updateTagCount();
+            }
+        });
+        
+        // 更新标签数量显示
+        function updateTagCount() {
+            const totalTags = document.querySelectorAll('tbody tr').length;
+            const countDisplay = document.querySelector('.text-sm.text-gray-500');
+            const visibleTags = Array.from(document.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none').length;
+            
+            countDisplay.textContent = `显示 1-${visibleTags} 项，共 ${totalTags} 项`;
+        }
+        
+        // 阻止表单提交刷新页面
+        document.getElementById('tagForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 获取表单数据
+            const tagName = document.getElementById('tagNameInput').value;
+            const categorySelect = document.getElementById('tagCategorySelect');
+            const category = categorySelect.options[categorySelect.selectedIndex].text;
+            const color = document.getElementById('selectedColor').value;
+            const applyToPlan = document.getElementById('applyToPlan').checked;
+            const applyToEvent = document.getElementById('applyToEvent').checked;
+            
+            // 构建适用范围文本
+            let applyToText = [];
+            if (applyToPlan) applyToText.push('计划');
+            if (applyToEvent) applyToText.push('事件');
+            const applyToString = applyToText.join('、');
+            
+            // 这里可以添加保存标签的逻辑
+            // 如果是编辑现有标签，则更新对应行
+            // 如果是新建标签，则添加新行
+            
+            // 示例：添加新行
+            if (document.getElementById('modalTitle').textContent === '新建标签') {
+                const tbody = document.querySelector('tbody');
+                const newRow = document.createElement('tr');
+                
+                // 获取当前日期
+                const today = new Date();
+                const dateStr = today.getFullYear() + '-' + 
+                               String(today.getMonth() + 1).padStart(2, '0') + '-' + 
+                               String(today.getDate()).padStart(2, '0');
+                
+                // 设置新行的HTML
+                newRow.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <span class="px-2 py-1 bg-${getColorClass(color)}-100 text-${getColorClass(color)}-800 rounded-full text-sm">${tagName}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 py-1 bg-${getCategoryColorClass(category)}-100 text-${getCategoryColorClass(category)}-800 text-xs rounded-full">${category}</span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${applyToString}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center">
+                            <div class="h-5 w-5 rounded-full" style="background-color: ${color}"></div>
+                            <span class="text-sm text-gray-500 ml-2">${color}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        0
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        ${dateStr}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                            <i class="fas fa-trash-alt"></i>
+                        </button>
+                    </td>
+                `;
+                
+                // 添加新行到表格
+                tbody.appendChild(newRow);
+                
+                // 为新行的按钮添加事件监听器
+                const newEditBtn = newRow.querySelector('.edit-tag-btn');
+                const newDeleteBtn = newRow.querySelector('.delete-tag-btn');
+                
+                newEditBtn.addEventListener('click', function() {
+                    const row = this.closest('tr');
+                    const tagName = row.querySelector('td:first-child span').textContent;
+                    const category = row.querySelector('td:nth-child(2) span').textContent;
+                    const applyTo = row.querySelector('td:nth-child(3)').textContent.trim();
+                    const color = row.querySelector('td:nth-child(4) span').textContent;
+                    
+                    document.getElementById('modalTitle').textContent = '编辑标签';
+                    document.getElementById('tagNameInput').value = tagName;
+                    
+                    // 设置适用范围
+                    document.getElementById('applyToPlan').checked = applyTo.includes('计划');
+                    document.getElementById('applyToEvent').checked = applyTo.includes('事件');
+                    
+                    // 设置分类
+                    const categorySelect = document.getElementById('tagCategorySelect');
+                    for (let i = 0; i < categorySelect.options.length; i++) {
+                        if (categorySelect.options[i].text.toLowerCase() === category.toLowerCase()) {
+                            categorySelect.selectedIndex = i;
+                            break;
+                        }
+                    }
+                    
+                    // 设置颜色
+                    document.getElementById('selectedColor').value = color;
+                    document.getElementById('colorPreview').style.backgroundColor = color;
+                    document.getElementById('colorInput').value = color;
+                    
+                    // 移除之前选中的边框
+                    colorOptions.forEach(opt => {
+                        opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                    });
+                    
+                    // 如果颜色匹配预设，则选中对应选项
+                    colorOptions.forEach(opt => {
+                        if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
+                            opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                        }
+                    });
+                    
+                    tagModal.classList.remove('hidden');
+                });
+                
+                newDeleteBtn.addEventListener('click', function() {
+                    currentDeleteRow = this.closest('tr');
+                    deleteModal.classList.remove('hidden');
+                });
+                
+                // 更新标签数量
+                updateTagCount();
+            } else {
+                // 编辑模式 - 更新现有行
+                const row = currentDeleteRow; // 使用全局变量来获取当前编辑的行
+                
+                if (row) {
+                    row.querySelector('td:first-child span').textContent = tagName;
+                    row.querySelector('td:first-child span').className = `px-2 py-1 bg-${getColorClass(color)}-100 text-${getColorClass(color)}-800 rounded-full text-sm`;
+                    
+                    row.querySelector('td:nth-child(2) span').textContent = category;
+                    row.querySelector('td:nth-child(2) span').className = `px-2 py-1 bg-${getCategoryColorClass(category)}-100 text-${getCategoryColorClass(category)}-800 text-xs rounded-full`;
+                    
+                    row.querySelector('td:nth-child(3)').textContent = applyToString;
+                    
+                    row.querySelector('td:nth-child(4) div div').style.backgroundColor = color;
+                    row.querySelector('td:nth-child(4) span').textContent = color;
+                }
+            }
+            
+            // 将标签数据保存到本地存储
+            saveTagToLocalStorage({
+                name: tagName,
+                category: category,
+                color: color,
+                applyTo: {
+                    plan: applyToPlan,
+                    event: applyToEvent
+                },
+                description: document.getElementById('tagDescription').value
+            });
+            
+            // 关闭模态框
+            tagModal.classList.add('hidden');
+        });
+        
+        // 保存标签到本地存储
+        function saveTagToLocalStorage(tagData) {
+            let tags = JSON.parse(localStorage.getItem('eventRecorderTags') || '[]');
+            
+            // 检查是否是更新现有标签
+            const existingTagIndex = tags.findIndex(tag => tag.name === tagData.name);
+            
+            if (existingTagIndex !== -1) {
+                // 更新现有标签
+                tags[existingTagIndex] = tagData;
+            } else {
+                // 添加新标签
+                tags.push(tagData);
+            }
+            
+            // 保存回本地存储
+            localStorage.setItem('eventRecorderTags', JSON.stringify(tags));
+        }
+        
+        // 从本地存储加载标签
+        function loadTagsFromLocalStorage() {
+            const tags = JSON.parse(localStorage.getItem('eventRecorderTags') || '[]');
+            
+            if (tags.length > 0) {
+                const tbody = document.querySelector('tbody');
+                
+                // 清空现有的表格内容
+                tbody.innerHTML = '';
+                
+                // 为每个标签创建行
+                tags.forEach(tag => {
+                    const row = document.createElement('tr');
+                    
+                    // 构建适用范围文本
+                    let applyToText = [];
+                    if (tag.applyTo.plan) applyToText.push('计划');
+                    if (tag.applyTo.event) applyToText.push('事件');
+                    const applyToString = applyToText.join('、');
+                    
+                    row.innerHTML = `
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <span class="px-2 py-1 bg-${getColorClass(tag.color)}-100 text-${getColorClass(tag.color)}-800 rounded-full text-sm">${tag.name}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 bg-${getCategoryColorClass(tag.category)}-100 text-${getCategoryColorClass(tag.category)}-800 text-xs rounded-full">${tag.category}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            ${applyToString}
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <div class="flex items-center">
+                                <div class="h-5 w-5 rounded-full" style="background-color: ${tag.color}"></div>
+                                <span class="text-sm text-gray-500 ml-2">${tag.color}</span>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            0
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            2023-10-05
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button class="text-red-600 hover:text-red-900 delete-tag-btn">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                });
+                
+                // 为新添加的按钮添加事件监听器
+                document.querySelectorAll('.edit-tag-btn').forEach(btn => {
+                    btn.addEventListener('click', handleEditButtonClick);
+                });
+                
+                document.querySelectorAll('.delete-tag-btn').forEach(btn => {
+                    btn.addEventListener('click', handleDeleteButtonClick);
+                });
+                
+                // 更新标签数量
+                updateTagCount();
+            }
+        }
+        
+        // 编辑按钮点击处理函数
+        function handleEditButtonClick() {
+            const row = this.closest('tr');
+            const tagName = row.querySelector('td:first-child span').textContent;
+            const category = row.querySelector('td:nth-child(2) span').textContent;
+            const applyTo = row.querySelector('td:nth-child(3)').textContent.trim();
+            const color = row.querySelector('td:nth-child(4) span').textContent;
+            
+            document.getElementById('modalTitle').textContent = '编辑标签';
+            document.getElementById('tagNameInput').value = tagName;
+            
+            // 设置适用范围
+            document.getElementById('applyToPlan').checked = applyTo.includes('计划');
+            document.getElementById('applyToEvent').checked = applyTo.includes('事件');
+            
+            // 设置分类
+            const categorySelect = document.getElementById('tagCategorySelect');
+            for (let i = 0; i < categorySelect.options.length; i++) {
+                if (categorySelect.options[i].text.toLowerCase() === category.toLowerCase()) {
+                    categorySelect.selectedIndex = i;
+                    break;
+                }
+            }
+            
+            // 设置颜色
+            document.getElementById('selectedColor').value = color;
+            document.getElementById('colorPreview').style.backgroundColor = color;
+            document.getElementById('colorInput').value = color;
+            
+            // 移除之前选中的边框
+            colorOptions.forEach(opt => {
+                opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
+            });
+            
+            // 如果颜色匹配预设，则选中对应选项
+            colorOptions.forEach(opt => {
+                if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
+                    opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
+                }
+            });
+            
+            currentDeleteRow = row; // 保存当前编辑的行
+            tagModal.classList.remove('hidden');
+        }
+        
+        // 删除按钮点击处理函数
+        function handleDeleteButtonClick() {
+            currentDeleteRow = this.closest('tr');
+            deleteModal.classList.remove('hidden');
+        }
+        
+        // 辅助函数：根据颜色值获取对应的Tailwind颜色类名
+        function getColorClass(color) {
+            const colorMap = {
+                '#EF4444': 'red',
+                '#F97316': 'orange',
+                '#F59E0B': 'yellow',
+                '#10B981': 'green',
+                '#3B82F6': 'blue',
+                '#6366F1': 'indigo',
+                '#8B5CF6': 'purple',
+                '#EC4899': 'pink',
+                '#6B7280': 'gray',
+                '#1F2937': 'gray'
+            };
+            
+            return colorMap[color] || 'blue';
+        }
+        
+        // 辅助函数：根据分类获取对应的Tailwind颜色类名
+        function getCategoryColorClass(category) {
+            const categoryMap = {
+                '工作': 'blue',
+                '学习': 'green',
+                '健康': 'yellow',
+                '生活': 'purple',
+                '优先级': 'red',
+                '其他': 'gray'
+            };
+            
+            return categoryMap[category] || 'gray';
+        }
+        
+        // 初始化：为预设颜色中的第一个添加选中边框
+        colorOptions[4].classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
+        
+        // 初始化：从本地存储加载标签
+        // loadTagsFromLocalStorage();
+        
+        // 初始化：更新标签数量
+        updateTagCount();
+        
+        // 移动端侧边栏切换
+        const menuBtn = document.querySelector('button.md\\:hidden');
+        const sidebar = document.querySelector('.w-64');
+        
+        menuBtn.addEventListener('click', function() {
+            sidebar.classList.toggle('hidden');
+        });
+
+        // 处理导入导出标签功能
+        document.addEventListener('DOMContentLoaded', function() {
+            const importTagsBtn = document.getElementById('importTagsBtn');
+            const exportTagsBtn = document.getElementById('exportTagsBtn');
+            const importTagModal = document.getElementById('importTagModal');
+            const closeImportModal = document.getElementById('closeImportModal');
+            const cancelImportBtn = document.getElementById('cancelImportBtn');
+            const importTagForm = document.getElementById('importTagForm');
+
+            // 打开导入标签模态框
+            importTagsBtn.addEventListener('click', function() {
+                importTagModal.classList.remove('hidden');
+            });
+
+            // 关闭导入标签模态框
+            function closeImportTagModal() {
+                importTagModal.classList.add('hidden');
+                importTagForm.reset();
+            }
+
+            closeImportModal.addEventListener('click', closeImportTagModal);
+            cancelImportBtn.addEventListener('click', closeImportTagModal);
+
+            // 处理导入标签表单提交
+            importTagForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                const fileInput = document.getElementById('tagFile');
+                const file = fileInput.files[0];
+                
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        try {
+                            const tags = JSON.parse(e.target.result);
+                            
+                            // 在实际项目中，这里会有处理导入标签数据的逻辑
+                            console.log('导入的标签数据:', tags);
+                            
+                            // 显示成功消息
+                            showNotification('标签导入成功！', 'success');
+                            closeImportTagModal();
+                            
+                            // 刷新标签列表（实际项目中会重新获取数据）
+                            // fetchTags();
+                            
+                        } catch (error) {
+                            showNotification('导入失败：文件格式不正确', 'error');
+                            console.error('解析JSON失败:', error);
+                        }
+                    };
+                    reader.readAsText(file);
+                } else {
+                    showNotification('请选择要导入的文件', 'warning');
+                }
+            });
+
+            // 处理导出标签
+            exportTagsBtn.addEventListener('click', function() {
+                // 在实际项目中，这里会从API获取所有标签数据
+                // 这里使用示例数据进行演示
+                const sampleTags = [
+                    { id: 1, name: "学习", category: "个人成长", scope: "学习成长", color: "#4F46E5", count: 15, created_at: "2023-05-10" },
+                    { id: 2, name: "工作", category: "事业", scope: "工作职场", color: "#059669", count: 23, created_at: "2023-04-15" },
+                    { id: 3, name: "家庭", category: "亲情", scope: "家庭生活", color: "#D97706", count: 8, created_at: "2023-06-22" }
+                ];
+                
+                // 创建下载文件
+                const dataStr = JSON.stringify(sampleTags, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                // 创建下载链接并触发下载
+                const exportFileDefaultName = 'tags_export_' + new Date().toISOString().slice(0,10) + '.json';
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+                
+                showNotification('标签导出成功！', 'success');
+            });
+
+            // 显示通知消息的函数
+            function showNotification(message, type = 'info') {
+                const notification = document.createElement('div');
+                notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 flex items-center';
+                
+                // 根据类型设置不同的样式
+                switch(type) {
+                    case 'success':
+                        notification.classList.add('bg-green-500', 'text-white');
+                        notification.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + message;
+                        break;
+                    case 'error':
+                        notification.classList.add('bg-red-500', 'text-white');
+                        notification.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>' + message;
+                        break;
+                    case 'warning':
+                        notification.classList.add('bg-yellow-500', 'text-white');
+                        notification.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>' + message;
+                        break;
+                    default:
+                        notification.classList.add('bg-blue-500', 'text-white');
+                        notification.innerHTML = '<i class="fas fa-info-circle mr-2"></i>' + message;
+                }
+                
+                document.body.appendChild(notification);
+                
+                // 3秒后自动移除通知
+                setTimeout(() => {
+                    notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
+                    setTimeout(() => {
+                        notification.remove();
+                    }, 300);
+                }, 3000);
+            }
+        });
+    </script>
+</body>
+</html>
