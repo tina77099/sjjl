@@ -826,8 +826,39 @@
             document.getElementById('new-plan-form').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // 这里可以添加表单提交到服务器的代码
-                // 现在我们简单地显示成功消息，然后关闭弹窗
+                // 获取表单数据
+                const planTitle = document.getElementById('plan-title').value;
+                const planDesc = document.getElementById('plan-desc').value;
+                const planDueDate = document.getElementById('plan-due-date').value;
+                const planType = document.querySelector('input[name="plan-type"]:checked').value;
+                const planPriority = document.querySelector('input[name="priority"]:checked').value;
+                
+                // 创建计划对象
+                const newPlan = {
+                    id: 'plan_' + Date.now(),
+                    title: planTitle,
+                    description: planDesc,
+                    eventType: 'plan',
+                    startTime: new Date(planDueDate).toISOString(), // 使用截止日期作为开始时间
+                    isAllDay: true, // 默认为全天事件
+                    category: planType,
+                    priority: planPriority,
+                    status: 'pending', // 新计划默认为待处理状态
+                    tags: [planType], // 使用类型作为标签
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // 从localStorage获取现有事件
+                const events = JSON.parse(localStorage.getItem('events') || '[]');
+                
+                // 添加新计划
+                events.push(newPlan);
+                
+                // 保存回localStorage
+                localStorage.setItem('events', JSON.stringify(events));
+                
+                // 显示成功消息，然后关闭弹窗
                 alert('计划已保存！');
                 planModal.classList.add('hidden');
                 document.body.style.overflow = '';
@@ -840,8 +871,43 @@
             document.getElementById('new-record-form').addEventListener('submit', function(e) {
                 e.preventDefault();
                 
-                // 这里可以添加表单提交到服务器的代码
-                // 现在我们简单地显示成功消息，然后关闭弹窗
+                // 获取表单数据
+                const recordTitle = document.getElementById('record-title').value;
+                const recordDesc = document.getElementById('record-desc').value;
+                const recordDate = document.getElementById('record-date').value;
+                const recordType = document.querySelector('input[name="record-type"]:checked').value;
+                
+                // 获取标签
+                const recordTags = tags.slice(); // 复制标签数组
+                // 添加类型作为标签
+                if (!recordTags.includes(recordType)) {
+                    recordTags.push(recordType);
+                }
+                
+                // 创建记录对象
+                const newRecord = {
+                    id: 'record_' + Date.now(),
+                    title: recordTitle,
+                    description: recordDesc,
+                    eventType: 'record',
+                    startTime: new Date(recordDate).toISOString(), // 使用完成日期作为开始时间
+                    isAllDay: true, // 默认为全天事件
+                    category: recordType,
+                    tags: recordTags,
+                    createdAt: new Date().toISOString(),
+                    updatedAt: new Date().toISOString()
+                };
+                
+                // 从localStorage获取现有事件
+                const events = JSON.parse(localStorage.getItem('events') || '[]');
+                
+                // 添加新记录
+                events.push(newRecord);
+                
+                // 保存回localStorage
+                localStorage.setItem('events', JSON.stringify(events));
+                
+                // 显示成功消息，然后关闭弹窗
                 alert('记录已保存！');
                 recordModal.classList.add('hidden');
                 document.body.style.overflow = '';

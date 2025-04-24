@@ -70,17 +70,19 @@
                             <input type="text" placeholder="搜索标签..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-64" id="searchInput">
                             <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                         </div>
-                        <button class="ml-4 bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors" id="newTagBtn">
-                            <i class="fas fa-plus mr-2"></i>新建标签
-                        </button>
+                        <div class="ml-4 flex space-x-2">
+                            <button id="btn-new-plan" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                                <i class="fas fa-calendar-plus mr-2"></i>新建计划
+                            </button>
+                            <button id="btn-new-record" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center">
+                                <i class="fas fa-bookmark mr-2"></i>记录事项
+                            </button>
+                        </div>
                     </div>
                     <div class="flex items-center">
-                        <button class="text-gray-600 mr-4">
-                            <i class="fas fa-bell text-xl"></i>
-                        </button>
-                        <div class="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 font-medium">
-                            用户
-                        </div>
+                        <a href="settings.html#profile-section" class="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 font-medium hover:bg-indigo-300 transition-colors cursor-pointer" title="个人设置">
+                            <i class="fas fa-user-circle"></i>
+                        </a>
                     </div>
                 </div>
             </header>
