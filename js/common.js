@@ -1,10 +1,7 @@
 // 通用按钮功能
 document.addEventListener('DOMContentLoaded', function() {
-    console.log('通用功能脚本已加载');
-    
     // 监听组件加载完成事件
     document.addEventListener('component-loaded', function(e) {
-        console.log(`组件 ${e.detail.componentName} 加载完成，初始化相关功能`);
         initializeFunctions();
     });
     
@@ -19,25 +16,19 @@ document.addEventListener('DOMContentLoaded', function() {
         // 新建计划按钮
         const btnNewPlan = document.getElementById('btn-new-plan');
         if (btnNewPlan) {
-            console.log('找到新建计划按钮，绑定点击事件');
             // 移除可能存在的旧事件监听器
             btnNewPlan.removeEventListener('click', openPlanModal);
             // 添加新的事件监听器
             btnNewPlan.addEventListener('click', openPlanModal);
-        } else {
-            console.warn('未找到新建计划按钮');
         }
         
         // 记录事项按钮
         const btnNewRecord = document.getElementById('btn-new-record');
         if (btnNewRecord) {
-            console.log('找到记录事项按钮，绑定点击事件');
             // 移除可能存在的旧事件监听器
             btnNewRecord.removeEventListener('click', openRecordModal);
             // 添加新的事件监听器
             btnNewRecord.addEventListener('click', openRecordModal);
-        } else {
-            console.warn('未找到记录事项按钮');
         }
         
         // 函数用于打开计划模态框
@@ -46,7 +37,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 planModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             } else {
-                console.error('计划模态框不存在');
                 showNotification('错误：计划模态框不存在', 'error');
             }
         }
@@ -57,7 +47,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 recordModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             } else {
-                console.error('记录模态框不存在');
                 showNotification('错误：记录模态框不存在', 'error');
             }
         }
@@ -222,11 +211,15 @@ document.addEventListener('DOMContentLoaded', function() {
                     updatedAt: new Date().toISOString()
                 };
                 
-                // 保存到 localStorage
+                // 保存事件
                 saveEvent(newPlan);
                 
-                // 重置表单和关闭模态框
+                // 重置表单并关闭模态框
                 resetPlanForm(this);
+                document.getElementById('modal-new-plan').classList.add('hidden');
+                document.body.style.overflow = '';
+                
+                showNotification('计划已成功保存！');
             });
         }
         
@@ -247,20 +240,18 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
                 
                 const recordType = recordTypeEl.value;
-                
-                // 获取标签
                 const tagsHidden = document.getElementById('tags-hidden');
                 let recordTags = [];
                 
                 if (tagsHidden && tagsHidden.value) {
                     try {
                         recordTags = JSON.parse(tagsHidden.value);
-                    } catch (error) {
-                        console.error('解析标签时出错:', error);
+                    } catch (e) {
                         recordTags = [];
                     }
                 }
                 
+                // 添加类型作为标签
                 if (!recordTags.includes(recordType)) {
                     recordTags.push(recordType);
                 }
@@ -279,112 +270,120 @@ document.addEventListener('DOMContentLoaded', function() {
                     updatedAt: new Date().toISOString()
                 };
                 
-                // 保存到 localStorage
+                // 保存事件
                 saveEvent(newRecord);
                 
-                // 重置表单和关闭模态框
+                // 重置表单并关闭模态框
                 resetRecordForm(this);
+                document.getElementById('modal-new-record').classList.add('hidden');
+                document.body.style.overflow = '';
+                
+                showNotification('记录已成功保存！');
             });
         }
     }
-});
-
-// 辅助函数
-function saveEvent(event) {
-    const events = JSON.parse(localStorage.getItem('events') || '[]');
-    events.push(event);
-    localStorage.setItem('events', JSON.stringify(events));
     
-    // 显示成功消息
-    showNotification('保存成功！');
-}
-
-function resetPlanForm(form) {
-    form.reset();
-    const dueDateInput = document.getElementById('plan-due-date');
-    if (dueDateInput) {
-        dueDateInput.value = new Date().toISOString().substring(0, 10);
+    // 保存事件到 localStorage
+    function saveEvent(event) {
+        const events = JSON.parse(localStorage.getItem('events') || '[]');
+        events.push(event);
+        localStorage.setItem('events', JSON.stringify(events));
+        
+        // 事件添加后触发自定义事件，以便其他组件可以响应
+        document.dispatchEvent(new CustomEvent('event-added', { detail: { event } }));
     }
     
-    const typeWorkInput = document.getElementById('type-work');
-    if (typeWorkInput) {
-        typeWorkInput.checked = true;
+    // 重置计划表单
+    function resetPlanForm(form) {
+        form.reset();
+        
+        // 设置默认日期
+        const today = new Date();
+        const formattedDate = today.toISOString().substring(0, 10);
+        document.getElementById('plan-due-date').value = formattedDate;
+        
+        // 重置类型和优先级
+        document.getElementById('type-work').checked = true;
+        document.getElementById('priority-medium').checked = true;
     }
     
-    const priorityMediumInput = document.getElementById('priority-medium');
-    if (priorityMediumInput) {
-        priorityMediumInput.checked = true;
+    // 重置记录表单
+    function resetRecordForm(form) {
+        form.reset();
+        
+        // 设置默认日期
+        const today = new Date();
+        const formattedDate = today.toISOString().substring(0, 10);
+        document.getElementById('record-date').value = formattedDate;
+        
+        // 重置类型
+        document.getElementById('rec-type-study').checked = true;
+        
+        // 清空标签
+        const tagsContainer = document.getElementById('tags-container');
+        const tagsHidden = document.getElementById('tags-hidden');
+        
+        if (tagsContainer) {
+            tagsContainer.innerHTML = '';
+        }
+        
+        if (tagsHidden) {
+            tagsHidden.value = '[]';
+        }
     }
     
-    const planModal = document.getElementById('modal-new-plan');
-    if (planModal) {
-        planModal.classList.add('hidden');
-    }
-    
-    document.body.style.overflow = '';
-}
-
-function resetRecordForm(form) {
-    form.reset();
-    
-    const recordDateInput = document.getElementById('record-date');
-    if (recordDateInput) {
-        recordDateInput.value = new Date().toISOString().substring(0, 10);
-    }
-    
-    const typeWorkInput = document.getElementById('type-work');
-    if (typeWorkInput) {
-        typeWorkInput.checked = true;
-    }
-    
-    const tagsContainer = document.getElementById('tags-container');
-    if (tagsContainer) {
-        tagsContainer.innerHTML = '';
-    }
-    
-    const tagsHidden = document.getElementById('tags-hidden');
-    if (tagsHidden) {
-        tagsHidden.value = '[]';
-    }
-    
-    const recordModal = document.getElementById('modal-new-record');
-    if (recordModal) {
-        recordModal.classList.add('hidden');
-    }
-    
-    document.body.style.overflow = '';
-}
-
-function showNotification(message, type = 'success') {
-    // 创建通知元素
-    const notification = document.createElement('div');
-    
-    // 根据类型设置样式
-    let bgColor, textColor;
-    if (type === 'error') {
-        bgColor = 'bg-red-500';
-        textColor = 'text-white';
-    } else if (type === 'warning') {
-        bgColor = 'bg-yellow-500';
-        textColor = 'text-gray-900';
-    } else {
-        bgColor = 'bg-green-500';
-        textColor = 'text-white';
-    }
-    
-    notification.className = `fixed top-4 right-4 ${bgColor} ${textColor} px-6 py-3 rounded-lg shadow-lg transform transition-all duration-300 z-50`;
-    notification.textContent = message;
-    
-    // 添加到页面
-    document.body.appendChild(notification);
-    
-    // 3秒后移除
-    setTimeout(() => {
-        notification.style.opacity = '0';
+    // 显示通知
+    function showNotification(message, type = 'success') {
+        // 检查是否已存在通知元素
+        let notification = document.getElementById('notification');
+        
+        // 如果不存在，创建一个
+        if (!notification) {
+            notification = document.createElement('div');
+            notification.id = 'notification';
+            notification.style.position = 'fixed';
+            notification.style.bottom = '20px';
+            notification.style.right = '20px';
+            notification.style.zIndex = '9999';
+            notification.style.minWidth = '250px';
+            notification.style.padding = '16px';
+            notification.style.borderRadius = '6px';
+            notification.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.15)';
+            notification.style.transition = 'all 0.3s ease';
+            document.body.appendChild(notification);
+        }
+        
+        // 设置通知类型样式
+        if (type === 'success') {
+            notification.style.backgroundColor = '#10B981';
+            notification.style.color = 'white';
+        } else if (type === 'error') {
+            notification.style.backgroundColor = '#EF4444';
+            notification.style.color = 'white';
+        } else if (type === 'warning') {
+            notification.style.backgroundColor = '#F59E0B';
+            notification.style.color = 'white';
+        } else if (type === 'info') {
+            notification.style.backgroundColor = '#3B82F6';
+            notification.style.color = 'white';
+        }
+        
+        // 设置通知内容
+        notification.textContent = message;
+        notification.style.transform = 'translateY(0)';
+        notification.style.opacity = '1';
+        
+        // 3秒后自动消失
         setTimeout(() => {
-            if (notification.parentNode) {
-                document.body.removeChild(notification);
-            }
-        }, 300);
-    }, 3000);
-} 
+            notification.style.transform = 'translateY(20px)';
+            notification.style.opacity = '0';
+            
+            // 完全消失后从DOM移除
+            setTimeout(() => {
+                if (notification && notification.parentNode) {
+                    notification.parentNode.removeChild(notification);
+                }
+            }, 300);
+        }, 3000);
+    }
+}); 

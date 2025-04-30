@@ -92,76 +92,82 @@
 
             <!-- 仪表盘内容 -->
             <main class="p-6">
-                <!-- 本周概览 - 重新定位并压缩高度 -->
-                <div class="mb-4">
-                    <div class="flex justify-between items-center mb-2">
+                <!-- 本周概览 - 正常样式不压缩 -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
                         <h2 class="text-xl font-bold text-gray-800 flex items-center">
                             <i class="fas fa-chart-bar text-indigo-600 mr-2"></i>
                             本周概览
-                            <span class="ml-2 text-xs bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">数据统计</span>
+                            <span class="ml-2 text-sm bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">数据统计</span>
                         </h2>
                         <button class="text-indigo-600 hover:text-indigo-800 flex items-center text-sm font-medium">
                             <i class="fas fa-sync-alt mr-1"></i> 刷新数据
                         </button>
                     </div>
                     
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                         <!-- 本周待办 -->
-                        <div class="bg-white rounded-lg shadow p-1.5">
+                        <div class="bg-white rounded-lg shadow p-4">
                             <div class="flex items-center">
-                                <div class="rounded-full bg-blue-100 p-1.5 mr-2">
-                                    <i class="fas fa-list-ul text-blue-600 text-sm"></i>
+                                <div class="rounded-full bg-blue-100 p-2 mr-3">
+                                    <i class="fas fa-list-ul text-blue-600"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-gray-500 text-xs">本周待办</h3>
-                                    <div class="text-base font-bold">15 项</div>
+                                    <h3 class="text-gray-500 text-sm">本周待办</h3>
+                                    <div class="text-lg font-bold">15 项</div>
                                 </div>
-                                <div class="ml-auto">
-                                    <div class="w-full bg-gray-200 rounded-full h-1.5 w-24">
-                                        <div class="bg-blue-600 h-1.5 rounded-full" style="width: 60%"></div>
-                                    </div>
-                                    <div class="text-xs text-gray-500 mt-0.5 text-right">已完成 9/15</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <div>已完成</div>
+                                    <div>9/15 (60%)</div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- 本周完成 -->
-                        <div class="bg-white rounded-lg shadow p-1.5">
+                        <div class="bg-white rounded-lg shadow p-4">
                             <div class="flex items-center">
-                                <div class="rounded-full bg-green-100 p-1.5 mr-2">
-                                    <i class="fas fa-check-circle text-green-600 text-sm"></i>
+                                <div class="rounded-full bg-green-100 p-2 mr-3">
+                                    <i class="fas fa-check-circle text-green-600"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-gray-500 text-xs">本周完成</h3>
-                                    <div class="text-base font-bold">12 项</div>
+                                    <h3 class="text-gray-500 text-sm">本周完成</h3>
+                                    <div class="text-lg font-bold">12 项</div>
                                 </div>
-                                <div class="ml-auto">
-                                    <div class="w-full bg-gray-200 rounded-full h-1.5 w-24">
-                                        <div class="bg-green-600 h-1.5 rounded-full" style="width: 75%"></div>
-                                    </div>
-                                    <div class="text-xs text-gray-500 mt-0.5 text-right">完成率 75%</div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <div>完成率</div>
+                                    <div>75%</div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- 效率趋势 -->
-                        <div class="bg-white rounded-lg shadow p-1.5">
+                        <div class="bg-white rounded-lg shadow p-4">
                             <div class="flex items-center">
-                                <div class="rounded-full bg-purple-100 p-1.5 mr-2">
-                                    <i class="fas fa-chart-line text-purple-600 text-sm"></i>
+                                <div class="rounded-full bg-purple-100 p-2 mr-3">
+                                    <i class="fas fa-chart-line text-purple-600"></i>
                                 </div>
                                 <div>
-                                    <h3 class="text-gray-500 text-xs">效率趋势</h3>
-                                    <div class="text-base font-bold">↑ 15%</div>
+                                    <h3 class="text-gray-500 text-sm">效率趋势</h3>
+                                    <div class="text-lg font-bold">↑ 15%</div>
                                 </div>
-                                <div class="ml-auto">
-                                    <div class="w-full bg-gray-200 rounded-full h-1.5 w-24">
-                                        <div class="bg-purple-600 h-1.5 rounded-full" style="width: 60%"></div>
-                                    </div>
-                                    <div class="flex justify-between text-xs text-gray-500 mt-0.5">
-                                        <div>上周</div>
-                                        <div>本周</div>
-                                    </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-600 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <div>上周</div>
+                                    <div>本周</div>
                                 </div>
                             </div>
                         </div>
@@ -692,7 +698,6 @@
     <!-- 引入组件和公共JS文件 -->
     <script src="js/components.js"></script>
     <script src="js/common.js"></script>
-    <script src="js/test_component.js"></script>
     <script>
         // 移动端侧边栏切换
         document.addEventListener('DOMContentLoaded', function() {
