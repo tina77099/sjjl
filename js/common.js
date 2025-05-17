@@ -110,67 +110,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         });
         
-        // 标签功能
-        initializeTagsSystem();
-        
         // 表单提交处理
         initializeFormHandlers();
-    }
-    
-    // 初始化标签系统
-    function initializeTagsSystem() {
-        const tagsInput = document.getElementById('record-tags');
-        const tagsContainer = document.getElementById('tags-container');
-        const tagsHidden = document.getElementById('tags-hidden');
-        let tags = [];
-        
-        if (tagsInput && tagsContainer && tagsHidden) {
-            // 添加标签
-            tagsInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    const tagText = this.value.trim();
-                    
-                    if (tagText && !tags.includes(tagText)) {
-                        tags.push(tagText);
-                        updateTags();
-                    }
-                    
-                    this.value = '';
-                }
-            });
-        }
-        
-        // 更新标签显示和隐藏字段
-        function updateTags() {
-            if (!tagsContainer || !tagsHidden) return;
-            
-            tagsContainer.innerHTML = '';
-            tagsHidden.value = JSON.stringify(tags);
-            
-            tags.forEach((tag, index) => {
-                const tagSpan = document.createElement('span');
-                tagSpan.className = 'bg-purple-100 text-purple-800 text-sm rounded-full px-3 py-1 m-1 flex items-center';
-                
-                tagSpan.innerHTML = `
-                    ${tag}
-                    <button type="button" class="ml-2 text-purple-600 hover:text-purple-800" data-index="${index}">
-                        <i class="fas fa-times"></i>
-                    </button>
-                `;
-                
-                tagsContainer.appendChild(tagSpan);
-            });
-            
-            // 添加删除标签的事件
-            document.querySelectorAll('#tags-container button').forEach(btn => {
-                btn.addEventListener('click', function() {
-                    const index = parseInt(this.dataset.index);
-                    tags.splice(index, 1);
-                    updateTags();
-                });
-            });
-        }
     }
     
     // 初始化表单处理程序
@@ -225,53 +166,52 @@ document.addEventListener('DOMContentLoaded', function() {
         
         const newRecordForm = document.getElementById('new-record-form');
         if (newRecordForm) {
+            // 添加一个表单提交状态标志，防止重复提交
+            let isSubmitting = false;
+            
             newRecordForm.addEventListener('submit', function(e) {
                 e.preventDefault();
                 
+                // 如果表单正在提交中，直接返回
+                if (isSubmitting) {
+                    console.log('表单正在提交中，忽略重复请求');
+                    return;
+                }
+                
+                // 设置提交状态为true
+                isSubmitting = true;
+                
                 // 获取表单数据
-                const recordTitle = document.getElementById('record-title').value;
-                const recordDesc = document.getElementById('record-desc').value;
+                const recordTitle = document.getElementById('record-title').value.trim();
+                const recordDesc = document.getElementById('record-desc').value.trim();
                 const recordDate = document.getElementById('record-date').value;
                 const recordTypeEl = document.querySelector('input[name="record-type"]:checked');
                 
                 if (!recordTypeEl) {
                     showNotification('请选择记录类型', 'error');
+                    isSubmitting = false; // 重置提交状态
                     return;
                 }
                 
                 const recordType = recordTypeEl.value;
-                const tagsHidden = document.getElementById('tags-hidden');
-                let recordTags = [];
                 
-                if (tagsHidden && tagsHidden.value) {
-                    try {
-                        recordTags = JSON.parse(tagsHidden.value);
-                    } catch (e) {
-                        recordTags = [];
-                    }
-                }
-                
-                // 添加类型作为标签
-                if (!recordTags.includes(recordType)) {
-                    recordTags.push(recordType);
-                }
-                
-                // 创建记录对象
+                // 创建记录对象 - 只使用分类作为标签
                 const newRecord = {
-                    id: 'record_' + Date.now(),
-                    title: recordTitle,
+                    id: 'record_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    title: recordTitle || '(无标题记录)',  // 为空标题提供一个更明确的默认值
                     description: recordDesc,
                     eventType: 'record',
                     startTime: new Date(recordDate).toISOString(),
                     isAllDay: true,
                     category: recordType,
-                    tags: recordTags,
+                    tags: [recordType], // 只使用分类作为标签
                     createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
                 
                 // 保存事件
                 saveEvent(newRecord);
+                console.log('保存记录:', newRecord.title, '分类:', newRecord.category);
                 
                 // 重置表单并关闭模态框
                 resetRecordForm(this);
@@ -279,15 +219,71 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.style.overflow = '';
                 
                 showNotification('记录已成功保存！');
+                
+                // 延迟重置提交状态，防止快速重复点击
+                setTimeout(() => {
+                    isSubmitting = false;
+                }, 500);
             });
         }
     }
     
     // 保存事件到 localStorage
     function saveEvent(event) {
+        console.log(`准备保存事件: ${event.title || '(无标题)'}, 类型: ${event.eventType}, ID: ${event.id}`);
+        
+        // 确保事件有所有必要的属性
+        if (event.eventType === 'record') {
+            // 确保分类有效
+            const validCategories = ['study', 'experience', 'leisure', 'family', 'work', 'social'];
+            if (!validCategories.includes(event.category)) {
+                event.category = 'study'; // 默认设置为学习成长
+                console.log(`修复记录: ${event.title || '(无标题)'} - 设置默认分类为 study`);
+            }
+            
+            // 确保标签是数组并且只包含分类值
+            event.tags = [event.category];
+            console.log(`保存记录: ${event.title || '(无标题)'} - 设置标签为 [${event.category}]`);
+            
+            // 确保标题不为空
+            if (!event.title || event.title.trim() === '') {
+                const categories = {
+                    'study': '学习记录',
+                    'experience': '体验记录',
+                    'leisure': '休闲记录',
+                    'family': '家庭记录',
+                    'work': '工作记录',
+                    'social': '社交记录'
+                };
+                // 根据分类给出更具体的默认标题
+                event.title = categories[event.category] || '未分类记录';
+                console.log(`修复记录: 设置默认标题为 "${event.title}"`);
+            }
+            
+            // 确保时间戳存在
+            if (!event.createdAt) {
+                event.createdAt = new Date().toISOString();
+            }
+            if (!event.updatedAt) {
+                event.updatedAt = new Date().toISOString();
+            }
+        }
+        
+        // 从localStorage获取现有事件
         const events = JSON.parse(localStorage.getItem('events') || '[]');
-        events.push(event);
+        
+        // 检查ID是否已存在，避免重复添加
+        const existingIndex = events.findIndex(e => e.id === event.id);
+        if (existingIndex >= 0) {
+            console.warn(`发现重复ID: ${event.id}, 将更新而不是添加新记录`);
+            events[existingIndex] = event; // 替换现有记录
+        } else {
+            events.push(event); // 添加新记录
+        }
+        
+        // 保存更新后的事件数组
         localStorage.setItem('events', JSON.stringify(events));
+        console.log(`事件已保存，当前共有 ${events.length} 条事件`);
         
         // 事件添加后触发自定义事件，以便其他组件可以响应
         document.dispatchEvent(new CustomEvent('event-added', { detail: { event } }));
@@ -318,18 +314,6 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 重置类型
         document.getElementById('rec-type-study').checked = true;
-        
-        // 清空标签
-        const tagsContainer = document.getElementById('tags-container');
-        const tagsHidden = document.getElementById('tags-hidden');
-        
-        if (tagsContainer) {
-            tagsContainer.innerHTML = '';
-        }
-        
-        if (tagsHidden) {
-            tagsHidden.value = '[]';
-        }
     }
     
     // 显示通知

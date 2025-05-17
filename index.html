@@ -92,6 +92,13 @@
 
             <!-- 仪表盘内容 -->
             <main class="p-6">
+                <!-- 调试按钮 -->
+                <div class="mb-4 text-right">
+                    <button id="debug-btn" class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-xs hover:bg-gray-300">
+                        调试
+                    </button>
+                </div>
+                
                 <!-- 本周概览 - 正常样式不压缩 -->
                 <div class="mb-6">
                     <div class="flex justify-between items-center mb-3">
@@ -465,6 +472,20 @@
                     </div>
                 </div>
             </main>
+            
+            <!-- 调试区域 -->
+            <div id="debug-section" class="fixed bottom-4 right-4 bg-gray-800 text-white p-4 rounded-lg shadow-lg z-50">
+                <h3 class="text-lg font-bold mb-2">调试工具</h3>
+                <div class="space-y-2">
+                    <button id="refresh-dashboard" class="bg-blue-600 hover:bg-blue-700 text-white py-1 px-3 rounded text-sm">刷新仪表盘</button>
+                    <button id="clear-data" class="bg-red-600 hover:bg-red-700 text-white py-1 px-3 rounded text-sm">清除数据</button>
+                    <button id="fix-plans" class="bg-green-600 hover:bg-green-700 text-white py-1 px-3 rounded text-sm">修复计划数据</button>
+                    <button id="fix-records" class="bg-yellow-600 hover:bg-yellow-700 text-white py-1 px-3 rounded text-sm">修复记录数据</button>
+                    <button id="clear-records" class="bg-orange-600 hover:bg-orange-700 text-white py-1 px-3 rounded text-sm">清除所有记录</button>
+                    <button id="hard-reset" class="bg-purple-600 hover:bg-purple-700 text-white py-1 px-3 rounded text-sm">硬重置仪表盘</button>
+                    <button id="total-reset" class="bg-pink-600 hover:bg-pink-700 text-white py-1 px-3 rounded text-sm">完全重置系统</button>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -659,26 +680,12 @@
                             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
                     </div>
 
-                    <!-- 事项描述 -->
+                    <!-- 事项详情 -->
                     <div class="mb-4">
                         <label for="record-desc" class="block text-gray-700 font-medium mb-2">事项详情</label>
                         <textarea id="record-desc" name="description" rows="3" 
                             class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
                             placeholder="输入事项的详细描述或感想"></textarea>
-                    </div>
-
-                    <!-- 标签 -->
-                    <div class="mb-6">
-                        <label for="record-tags" class="block text-gray-700 font-medium mb-2">添加标签</label>
-                        <div class="flex flex-wrap items-center border rounded-lg p-2">
-                            <input type="text" id="record-tags" 
-                                class="flex-1 px-3 py-1 focus:outline-none" 
-                                placeholder="输入标签并按回车添加">
-                        </div>
-                        <div class="flex flex-wrap mt-2" id="tags-container">
-                            <!-- 标签将在这里动态显示 -->
-                        </div>
-                        <input type="hidden" id="tags-hidden" name="tags" value="">
                     </div>
                     
                     <!-- 按钮 -->
@@ -698,10 +705,31 @@
     <!-- 引入组件和公共JS文件 -->
     <script src="js/components.js"></script>
     <script src="js/common.js"></script>
+    <script src="js/dashboard.js"></script>
     <script>
         // 移动端侧边栏切换
         document.addEventListener('DOMContentLoaded', function() {
             console.log('页面主脚本已加载');
+            
+            // 调试按钮
+            const debugBtn = document.getElementById('debug-btn');
+            if (debugBtn) {
+                debugBtn.addEventListener('click', function() {
+                    console.log('Debug button clicked');
+                    if (typeof debugLocalStorage === 'function') {
+                        debugLocalStorage();
+                    } else {
+                        console.error('debugLocalStorage function not found');
+                    }
+                    
+                    if (typeof initializeDashboard === 'function') {
+                        console.log('Manually refreshing dashboard');
+                        initializeDashboard();
+                    } else {
+                        console.error('initializeDashboard function not found');
+                    }
+                });
+            }
             
             const menuBtn = document.querySelector('button.md\\:hidden');
             const sidebar = document.querySelector('.w-64');
@@ -761,182 +789,39 @@
                 }
             });
             
-            // 设置日期默认值为今天
+            // 设置今天的日期
             const today = new Date();
             const formattedDate = today.toISOString().substring(0, 10);
             document.getElementById('plan-due-date').value = formattedDate;
             document.getElementById('record-date').value = formattedDate;
             
-            // 计划表单 - 点击整个类型区域选择单选按钮
-            const planTypeOptions = document.querySelectorAll('.plan-type-option');
-            planTypeOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const radio = this.querySelector('input[type="radio"]');
-                    radio.checked = true;
-                });
-            });
-            
-            // 记录表单 - 点击整个类型区域选择单选按钮
-            const recordTypeOptions = document.querySelectorAll('.record-type-option');
-            recordTypeOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    const radio = this.querySelector('input[type="radio"]');
-                    radio.checked = true;
-                });
-            });
-            
-            // 记录表单 - 标签功能
-            const tagsInput = document.getElementById('record-tags');
-            const tagsContainer = document.getElementById('tags-container');
-            const tagsHidden = document.getElementById('tags-hidden');
-            let tags = [];
-            
-            // 添加标签
-            tagsInput.addEventListener('keydown', function(e) {
-                if (e.key === 'Enter' || e.key === ',') {
-                    e.preventDefault();
-                    const tagText = this.value.trim();
-                    
-                    if (tagText && !tags.includes(tagText)) {
-                        tags.push(tagText);
-                        updateTags();
-                    }
-                    
-                    this.value = '';
-                }
-            });
-            
-            // 更新标签显示和隐藏字段
-            function updateTags() {
-                tagsContainer.innerHTML = '';
-                tagsHidden.value = JSON.stringify(tags);
+            // 单选按钮组交互
+            document.querySelectorAll('.radio-group').forEach(group => {
+                const options = group.querySelectorAll('.radio-option');
                 
-                tags.forEach((tag, index) => {
-                    const tagSpan = document.createElement('span');
-                    tagSpan.className = 'bg-purple-100 text-purple-800 text-sm rounded-full px-3 py-1 m-1 flex items-center';
-                    
-                    tagSpan.innerHTML = `
-                        ${tag}
-                        <button type="button" class="ml-2 text-purple-600 hover:text-purple-800" data-index="${index}">
-                            <i class="fas fa-times"></i>
-                        </button>
-                    `;
-                    
-                    tagsContainer.appendChild(tagSpan);
-                });
-                
-                // 添加删除标签的事件
-                document.querySelectorAll('#tags-container button').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const index = parseInt(this.dataset.index);
-                        tags.splice(index, 1);
-                        updateTags();
+                options.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const radio = this.querySelector('input[type="radio"]');
+                        radio.checked = true;
                     });
                 });
+            });
+            
+            // 使用common.js中的表单处理 - 删除重复的表单提交处理代码
+            // 确保表单处理程序初始化
+            if (typeof initializeFormHandlers === 'function') {
+                initializeFormHandlers();
+                console.log('已初始化表单处理程序');
+            } else {
+                console.error('未找到initializeFormHandlers函数');
             }
-            
-            // 表单提交处理
-            document.getElementById('new-plan-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // 获取表单数据
-                const planTitle = document.getElementById('plan-title').value;
-                const planDesc = document.getElementById('plan-desc').value;
-                const planDueDate = document.getElementById('plan-due-date').value;
-                const planType = document.querySelector('input[name="plan-type"]:checked').value;
-                const planPriority = document.querySelector('input[name="priority"]:checked').value;
-                
-                // 创建计划对象
-                const newPlan = {
-                    id: 'plan_' + Date.now(),
-                    title: planTitle,
-                    description: planDesc,
-                    eventType: 'plan',
-                    startTime: new Date(planDueDate).toISOString(), // 使用截止日期作为开始时间
-                    isAllDay: true, // 默认为全天事件
-                    category: planType,
-                    priority: planPriority,
-                    status: 'pending', // 新计划默认为待处理状态
-                    tags: [planType], // 使用类型作为标签
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                
-                // 从localStorage获取现有事件
-                const events = JSON.parse(localStorage.getItem('events') || '[]');
-                
-                // 添加新计划
-                events.push(newPlan);
-                
-                // 保存回localStorage
-                localStorage.setItem('events', JSON.stringify(events));
-                
-                // 显示成功消息，然后关闭弹窗
-                alert('计划已保存！');
-                planModal.classList.add('hidden');
-                document.body.style.overflow = '';
-                this.reset();
-                document.getElementById('plan-due-date').value = formattedDate;
-                document.getElementById('type-work').checked = true;
-                document.getElementById('priority-medium').checked = true;
-            });
-            
-            document.getElementById('new-record-form').addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                // 获取表单数据
-                const recordTitle = document.getElementById('record-title').value;
-                const recordDesc = document.getElementById('record-desc').value;
-                const recordDate = document.getElementById('record-date').value;
-                const recordType = document.querySelector('input[name="record-type"]:checked').value;
-                
-                // 获取标签
-                const recordTags = tags.slice(); // 复制标签数组
-                // 添加类型作为标签
-                if (!recordTags.includes(recordType)) {
-                    recordTags.push(recordType);
-                }
-                
-                // 创建记录对象
-                const newRecord = {
-                    id: 'record_' + Date.now(),
-                    title: recordTitle,
-                    description: recordDesc,
-                    eventType: 'record',
-                    startTime: new Date(recordDate).toISOString(), // 使用完成日期作为开始时间
-                    isAllDay: true, // 默认为全天事件
-                    category: recordType,
-                    tags: recordTags,
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                };
-                
-                // 从localStorage获取现有事件
-                const events = JSON.parse(localStorage.getItem('events') || '[]');
-                
-                // 添加新记录
-                events.push(newRecord);
-                
-                // 保存回localStorage
-                localStorage.setItem('events', JSON.stringify(events));
-                
-                // 显示成功消息，然后关闭弹窗
-                alert('记录已保存！');
-                recordModal.classList.add('hidden');
-                document.body.style.overflow = '';
-                this.reset();
-                document.getElementById('record-date').value = formattedDate;
-                document.getElementById('rec-type-study').checked = true;
-                tags = [];
-                updateTags();
-            });
 
             // 绑定添加记录和添加计划按钮
             document.getElementById('btn-add-record').addEventListener('click', function() {
                 recordModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
             });
-            
+
             document.getElementById('btn-add-plan').addEventListener('click', function() {
                 planModal.classList.remove('hidden');
                 document.body.style.overflow = 'hidden';
@@ -993,6 +878,72 @@
                         taskItem.classList.remove('bg-blue-50');
                     }, 300);
                 });
+            });
+
+            // 调试按钮事件处理
+            document.getElementById('debug-btn').addEventListener('click', function() {
+                console.log('Debug button clicked');
+                if (typeof debugLocalStorage === 'function') {
+                    debugLocalStorage();
+                } else {
+                    console.error('debugLocalStorage function not found');
+                }
+                
+                if (typeof initializeDashboard === 'function') {
+                    initializeDashboard();
+                    console.log('Dashboard manually refreshed');
+                } else {
+                    console.error('initializeDashboard function not found');
+                }
+            });
+
+            // 清除数据按钮事件处理
+            document.getElementById('clear-data').addEventListener('click', function() {
+                console.log('清除数据');
+                clearLocalStorage();
+                initializeDashboard();
+            });
+
+            // 修复数据按钮事件处理
+            document.getElementById('fix-plans').addEventListener('click', function() {
+                console.log('修复计划数据');
+                fixPlanData();
+                initializeDashboard();
+            });
+
+            document.getElementById('fix-records').addEventListener('click', function() {
+                console.log('修复记录数据');
+                fixRecordData();
+                initializeDashboard();
+            });
+
+            document.getElementById('clear-records').addEventListener('click', function() {
+                console.log('清除所有记录');
+                clearAllRecords();
+                initializeDashboard();
+            });
+
+            // 硬重置按钮事件处理
+            document.getElementById('hard-reset').addEventListener('click', function() {
+                console.log('执行硬重置');
+                hardResetDashboard();
+            });
+
+            // 刷新仪表盘按钮事件处理
+            document.getElementById('refresh-dashboard').addEventListener('click', function() {
+                console.log('刷新仪表盘');
+                initializeDashboard();
+            });
+
+            document.getElementById('total-reset').addEventListener('click', function() {
+                console.log('执行完全重置');
+                if (confirm('确定要完全重置系统吗？这将清除所有数据并重置仪表盘。')) {
+                    // 清除所有本地存储
+                    clearLocalStorage();
+                    // 硬重置仪表盘
+                    hardResetDashboard();
+                    alert('系统已完全重置！');
+                }
             });
         });
     </script>
