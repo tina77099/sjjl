@@ -195,9 +195,13 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const recordType = recordTypeEl.value;
                 
+                // 检查是否是编辑模式
+                const isEditMode = this.dataset.mode === 'edit';
+                const eventId = isEditMode ? this.dataset.eventId : null;
+                
                 // 创建记录对象 - 只使用分类作为标签
                 const newRecord = {
-                    id: 'record_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                    id: isEditMode ? eventId : 'record_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                     title: recordTitle || '(无标题记录)',  // 为空标题提供一个更明确的默认值
                     description: recordDesc,
                     eventType: 'record',
@@ -205,20 +209,37 @@ document.addEventListener('DOMContentLoaded', function() {
                     isAllDay: true,
                     category: recordType,
                     tags: [recordType], // 只使用分类作为标签
-                    createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
                 
+                // 如果是编辑模式，保留原有的创建时间
+                if (isEditMode) {
+                    // 获取原有的事件数据
+                    const events = JSON.parse(localStorage.getItem('events')) || [];
+                    const originalEvent = events.find(event => event.id === eventId);
+                    
+                    if (originalEvent && originalEvent.createdAt) {
+                        newRecord.createdAt = originalEvent.createdAt;
+                    } else {
+                        newRecord.createdAt = new Date().toISOString();
+                    }
+                } else {
+                    // 新建模式，设置创建时间
+                    newRecord.createdAt = new Date().toISOString();
+                }
+                
                 // 保存事件
                 saveEvent(newRecord);
-                console.log('保存记录:', newRecord.title, '分类:', newRecord.category);
+                console.log(`${isEditMode ? '更新' : '保存'}记录:`, newRecord.title, '分类:', newRecord.category);
                 
                 // 重置表单并关闭模态框
                 resetRecordForm(this);
                 document.getElementById('modal-new-record').classList.add('hidden');
                 document.body.style.overflow = '';
                 
-                showNotification('记录已成功保存！');
+                // 显示通知
+                const message = isEditMode ? '记录已成功更新！' : '记录已成功保存！';
+                showNotification(message);
                 
                 // 延迟重置提交状态，防止快速重复点击
                 setTimeout(() => {
@@ -274,8 +295,10 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 检查ID是否已存在，避免重复添加
         const existingIndex = events.findIndex(e => e.id === event.id);
+        const isUpdate = existingIndex >= 0;
+        
         if (existingIndex >= 0) {
-            console.warn(`发现重复ID: ${event.id}, 将更新而不是添加新记录`);
+            console.log(`发现重复ID: ${event.id}, 将更新而不是添加新记录`);
             events[existingIndex] = event; // 替换现有记录
         } else {
             events.push(event); // 添加新记录
@@ -287,6 +310,15 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 事件添加后触发自定义事件，以便其他组件可以响应
         document.dispatchEvent(new CustomEvent('event-added', { detail: { event } }));
+        
+        // 如果存在initializeDashboard函数，刷新仪表盘
+        if (typeof initializeDashboard === 'function') {
+            setTimeout(() => {
+                initializeDashboard();
+            }, 100);
+        }
+        
+        return true;
     }
     
     // 重置计划表单
@@ -305,7 +337,24 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 重置记录表单
     function resetRecordForm(form) {
+        // 清除表单值
         form.reset();
+        
+        // 重置表单模式和事件ID
+        form.dataset.mode = 'add';
+        delete form.dataset.eventId;
+        
+        // 隐藏删除按钮
+        const deleteBtn = document.getElementById('delete-record-btn');
+        if (deleteBtn) {
+            deleteBtn.classList.add('hidden');
+        }
+        
+        // 设置提交按钮文本始终为"保存记录"
+        const submitBtn = document.getElementById('submit-record-btn');
+        if (submitBtn) {
+            submitBtn.textContent = '保存记录';
+        }
         
         // 设置默认日期
         const today = new Date();

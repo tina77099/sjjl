@@ -811,13 +811,36 @@ document.addEventListener('DOMContentLoaded', function() {
                     <div class="w-4 h-4 mt-1 bg-purple-100 rounded-full flex items-center justify-center">
                         <i class="fas fa-check text-purple-600 text-xs"></i>
                     </div>
-                    <div class="ml-3">
+                    <div class="ml-3 flex-1">
                         <p class="text-gray-800 text-sm">${recordTitle}</p>
                         <p class="text-xs text-gray-500">${formattedDate} 完成</p>
+                    </div>
+                    <div class="flex items-center space-x-1">
+                        <button class="text-red-500 hover:text-red-700 delete-record-btn" data-record-id="${record.id}">
+                            <i class="fas fa-trash-alt text-xs"></i>
+                        </button>
                     </div>
                 `;
                 
                 recordsContainer.appendChild(recordItem);
+                
+                // 添加删除按钮点击事件
+                const deleteBtn = recordItem.querySelector('.delete-record-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // 阻止事件冒泡
+                        const recordId = this.dataset.recordId;
+                        if (confirm('确定要删除这条记录吗？')) {
+                            deleteRecord(recordId);
+                        }
+                    });
+                }
+                
+                // 整个记录项的点击事件仍然触发编辑
+                recordItem.addEventListener('click', function() {
+                    const recordId = this.dataset.recordId;
+                    editRecord(recordId);
+                });
             });
         });
     }
@@ -1016,5 +1039,85 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.body.removeChild(notification);
             }, 300);
         }, 3000);
+    }
+
+    // 编辑记录函数
+    function editRecord(recordId) {
+        console.log('编辑记录:', recordId);
+        
+        // 获取事件数据
+        const events = JSON.parse(localStorage.getItem('events')) || [];
+        const record = events.find(event => event.id === recordId);
+        
+        if (!record) {
+            showNotification('找不到要编辑的记录', 'error');
+            return;
+        }
+        
+        // 设置表单为编辑模式
+        const form = document.getElementById('new-record-form');
+        form.dataset.mode = 'edit';
+        form.dataset.eventId = recordId;
+        
+        // 填充表单数据
+        document.getElementById('record-title').value = record.title;
+        document.getElementById('record-desc').value = record.description || '';
+        
+        // 设置日期 - 从ISO日期字符串中提取日期部分
+        const dateInput = document.getElementById('record-date');
+        if (dateInput && record.startTime) {
+            const date = new Date(record.startTime);
+            const formattedDate = date.toISOString().split('T')[0];
+            dateInput.value = formattedDate;
+        }
+        
+        // 设置类型
+        if (record.category) {
+            const typeRadio = document.querySelector(`input[name="record-type"][value="${record.category}"]`);
+            if (typeRadio) {
+                typeRadio.checked = true;
+            }
+        }
+        
+        // 打开模态框
+        const modal = document.getElementById('modal-new-record');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // 删除记录函数
+    function deleteRecord(recordId) {
+        console.log('删除记录:', recordId);
+        
+        try {
+            // 从localStorage获取现有事件
+            const events = JSON.parse(localStorage.getItem('events')) || [];
+            
+            // 找到要删除的记录索引
+            const recordIndex = events.findIndex(event => event.id === recordId);
+            
+            if (recordIndex === -1) {
+                showNotification('找不到要删除的记录', 'error');
+                return false;
+            }
+            
+            // 删除记录
+            events.splice(recordIndex, 1);
+            
+            // 保存回localStorage
+            localStorage.setItem('events', JSON.stringify(events));
+            
+            // 显示通知
+            showNotification('记录已成功删除！');
+            
+            // 刷新仪表盘
+            initializeDashboard();
+            
+            return true;
+        } catch (error) {
+            console.error('删除记录时出错:', error);
+            showNotification('删除记录时出错: ' + error.message, 'error');
+            return false;
+        }
     }
 }); 
