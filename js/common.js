@@ -81,10 +81,12 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
         
-        // 设置日期默认值为今天
+        // 设置日期和时间默认值为当前时间
         const today = new Date();
         const formattedDate = today.toISOString().substring(0, 10);
+        const formattedTime = today.toTimeString().substring(0, 5); // 获取当前时间（HH:mm格式）
         
+        // 设置日期输入框的默认值
         const dateInputs = {
             'plan-due-date': formattedDate,
             'record-date': formattedDate
@@ -96,6 +98,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 input.value = value;
             }
         });
+        
+        // 设置时间输入框的默认值
+        const timeInput = document.getElementById('record-time');
+        if (timeInput) {
+            timeInput.value = formattedTime;
+        }
         
         // 计划和记录表单的类型选择
         ['plan-type-option', 'record-type-option'].forEach(className => {
@@ -136,21 +144,46 @@ document.addEventListener('DOMContentLoaded', function() {
                 const planType = planTypeEl.value;
                 const planPriority = planPriorityEl.value;
                 
+                // 检查是否是编辑模式
+                const isEditMode = this.dataset.mode === 'edit';
+                const eventId = isEditMode ? this.dataset.eventId : null;
+                
                 // 创建计划对象
                 const newPlan = {
-                    id: 'plan_' + Date.now(),
+                    id: isEditMode ? eventId : 'plan_' + Date.now(),
                     title: planTitle,
                     description: planDesc,
                     eventType: 'plan',
                     startTime: new Date(planDueDate).toISOString(),
+                    dueDate: new Date(planDueDate).toISOString(),
                     isAllDay: true,
                     category: planType,
                     priority: planPriority,
-                    status: 'pending',
+                    status: isEditMode ? (document.getElementById('plan-status') ? document.getElementById('plan-status').value : 'pending') : 'pending',
                     tags: [planType],
-                    createdAt: new Date().toISOString(),
                     updatedAt: new Date().toISOString()
                 };
+                
+                // 如果是编辑模式，保留原有的创建时间和状态
+                if (isEditMode) {
+                    // 获取原有的事件数据
+                    const events = JSON.parse(localStorage.getItem('events')) || [];
+                    const originalEvent = events.find(event => event.id === eventId);
+                    
+                    if (originalEvent) {
+                        if (originalEvent.createdAt) {
+                            newPlan.createdAt = originalEvent.createdAt;
+                        }
+                        if (originalEvent.status) {
+                            newPlan.status = originalEvent.status;
+                        }
+                    } else {
+                        newPlan.createdAt = new Date().toISOString();
+                    }
+                } else {
+                    // 新建模式，设置创建时间
+                    newPlan.createdAt = new Date().toISOString();
+                }
                 
                 // 保存事件
                 saveEvent(newPlan);
@@ -160,7 +193,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.getElementById('modal-new-plan').classList.add('hidden');
                 document.body.style.overflow = '';
                 
-                showNotification('计划已成功保存！');
+                // 显示通知
+                const message = isEditMode ? '计划已成功更新！' : '计划已成功保存！';
+                showNotification(message);
             });
         }
         
@@ -185,6 +220,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const recordTitle = document.getElementById('record-title').value.trim();
                 const recordDesc = document.getElementById('record-desc').value.trim();
                 const recordDate = document.getElementById('record-date').value;
+                const recordTime = document.getElementById('record-time').value || '00:00';
                 const recordTypeEl = document.querySelector('input[name="record-type"]:checked');
                 
                 if (!recordTypeEl) {
@@ -199,14 +235,17 @@ document.addEventListener('DOMContentLoaded', function() {
                 const isEditMode = this.dataset.mode === 'edit';
                 const eventId = isEditMode ? this.dataset.eventId : null;
                 
+                // 组合日期和时间
+                const dateTimeStr = `${recordDate}T${recordTime}`;
+                
                 // 创建记录对象 - 只使用分类作为标签
                 const newRecord = {
                     id: isEditMode ? eventId : 'record_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
                     title: recordTitle || '(无标题记录)',  // 为空标题提供一个更明确的默认值
                     description: recordDesc,
                     eventType: 'record',
-                    startTime: new Date(recordDate).toISOString(),
-                    isAllDay: true,
+                    startTime: new Date(dateTimeStr).toISOString(),
+                    isAllDay: false, // 由于现在包含具体时间，设置为false
                     category: recordType,
                     tags: [recordType], // 只使用分类作为标签
                     updatedAt: new Date().toISOString()
@@ -311,11 +350,15 @@ document.addEventListener('DOMContentLoaded', function() {
         // 事件添加后触发自定义事件，以便其他组件可以响应
         document.dispatchEvent(new CustomEvent('event-added', { detail: { event } }));
         
-        // 如果存在initializeDashboard函数，刷新仪表盘
+        // 如果存在initializeDashboard函数，立即刷新仪表盘
         if (typeof initializeDashboard === 'function') {
+            console.log('正在刷新仪表盘以显示最新更改...');
+            // 使用更短的延迟确保UI更快响应
             setTimeout(() => {
                 initializeDashboard();
-            }, 100);
+            }, 50);
+        } else {
+            console.warn('找不到initializeDashboard函数，无法自动刷新仪表盘');
         }
         
         return true;
@@ -323,6 +366,7 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 重置计划表单
     function resetPlanForm(form) {
+        // 重置所有输入字段
         form.reset();
         
         // 设置默认日期
@@ -333,36 +377,46 @@ document.addEventListener('DOMContentLoaded', function() {
         // 重置类型和优先级
         document.getElementById('type-work').checked = true;
         document.getElementById('priority-medium').checked = true;
+        
+        // 重置表单模式
+        form.dataset.mode = 'create';
+        form.dataset.eventId = '';
+        
+        // 隐藏删除按钮（如果存在）
+        const deleteButton = document.getElementById('delete-plan-btn');
+        if (deleteButton) {
+            deleteButton.classList.add('hidden');
+        }
     }
     
     // 重置记录表单
     function resetRecordForm(form) {
-        // 清除表单值
+        console.log('重置记录表单');
+        
+        // 重置所有输入字段
         form.reset();
         
-        // 重置表单模式和事件ID
-        form.dataset.mode = 'add';
-        delete form.dataset.eventId;
-        
-        // 隐藏删除按钮
-        const deleteBtn = document.getElementById('delete-record-btn');
-        if (deleteBtn) {
-            deleteBtn.classList.add('hidden');
-        }
-        
-        // 设置提交按钮文本始终为"保存记录"
-        const submitBtn = document.getElementById('submit-record-btn');
-        if (submitBtn) {
-            submitBtn.textContent = '保存记录';
-        }
-        
-        // 设置默认日期
+        // 重置日期为今天
         const today = new Date();
         const formattedDate = today.toISOString().substring(0, 10);
         document.getElementById('record-date').value = formattedDate;
         
-        // 重置类型
-        document.getElementById('rec-type-study').checked = true;
+        // 重置时间为当前时间
+        const hours = String(today.getHours()).padStart(2, '0');
+        const minutes = String(today.getMinutes()).padStart(2, '0');
+        document.getElementById('record-time').value = `${hours}:${minutes}`;
+        
+        // 重置表单模式
+        form.dataset.mode = 'create';
+        form.dataset.eventId = '';
+        
+        // 隐藏删除按钮
+        const deleteButton = document.getElementById('delete-record-btn');
+        if (deleteButton) {
+            deleteButton.classList.add('hidden');
+            // 清除之前可能绑定的事件处理函数
+            deleteButton.onclick = null;
+        }
     }
     
     // 显示通知

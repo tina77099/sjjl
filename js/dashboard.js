@@ -125,19 +125,50 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 // 创建一个新的空状态
                 const emptyState = document.createElement('div');
-                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg';
+                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors';
                 emptyState.innerHTML = '<p class="text-gray-400 text-sm">点击添加记录</p>';
+                
+                // 添加点击事件
+                emptyState.addEventListener('click', function() {
+                    // 打开记录模态框
+                    const recordModal = document.getElementById('modal-new-record');
+                    if (recordModal) {
+                        // 设置对应的分类
+                        const typeRadio = document.querySelector(`input[name="record-type"][value="${category}"]`);
+                        if (typeRadio) {
+                            typeRadio.checked = true;
+                        }
+                        
+                        // 显示模态框
+                        recordModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+                
                 titleContainer.insertAdjacentElement('afterend', emptyState);
             });
             
             // 清除本周计划列表
             const planListContainer = document.querySelector('.p-4.space-y-3');
             if (planListContainer) {
-                planListContainer.innerHTML = `
-                    <div class="flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg">
-                        <p class="text-gray-400 text-sm">暂无计划，点击添加计划按钮创建新计划</p>
-                    </div>
-                `;
+                planListContainer.innerHTML = '';
+                
+                // 创建一个新的空状态
+                const emptyState = document.createElement('div');
+                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors';
+                emptyState.innerHTML = '<p class="text-gray-400 text-sm">暂无计划，点击添加计划</p>';
+                
+                // 添加点击事件
+                emptyState.addEventListener('click', function() {
+                    // 打开计划模态框
+                    const planModal = document.getElementById('modal-new-plan');
+                    if (planModal) {
+                        planModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+                
+                planListContainer.appendChild(emptyState);
             }
             
             // 清除本周概览数据
@@ -458,6 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
             fixPlanData();
             fixRecordData();
             
+            // 清除现有分类记录容器内容，确保不会残留旧数据
+            clearCategoryContainers();
+            
             // 从localStorage获取事件数据
             const eventsData = localStorage.getItem('events');
             const events = eventsData ? JSON.parse(eventsData) : [];
@@ -504,6 +538,61 @@ document.addEventListener('DOMContentLoaded', function() {
             return false;
         }
     };
+    
+    // 清除所有分类记录容器的内容
+    function clearCategoryContainers() {
+        const allCategories = ['study', 'experience', 'leisure', 'family', 'work', 'social'];
+        const categoryNames = {
+            'study': '学习成长',
+            'experience': '体验突破',
+            'leisure': '休闲放松',
+            'family': '家庭生活',
+            'work': '工作职业',
+            'social': '人际社群'
+        };
+        
+        allCategories.forEach(category => {
+            const categoryTitle = categoryNames[category];
+            
+            // 查找分类容器
+            let categoryContainer = null;
+            const categoryTitleElements = document.querySelectorAll('h3.text-lg.font-semibold');
+            
+            for (const titleElement of categoryTitleElements) {
+                if (titleElement.textContent.trim().includes(categoryTitle)) {
+                    categoryContainer = titleElement.closest('.bg-white.rounded-lg.shadow');
+                    break;
+                }
+            }
+            
+            if (!categoryContainer) {
+                console.warn(`未找到分类 ${categoryTitle} 的容器，无法清除内容`);
+                return;
+            }
+            
+            // 获取标题容器
+            const titleContainer = categoryContainer.querySelector('.flex.items-center.justify-between.mb-2');
+            if (!titleContainer) {
+                console.warn(`未找到分类 ${categoryTitle} 的标题容器，无法清除内容`);
+                return;
+            }
+            
+            // 移除标题中的记录数量标记
+            const countBadge = titleContainer.querySelector('.ml-2.text-xs.bg-purple-100');
+            if (countBadge) {
+                countBadge.remove();
+            }
+            
+            // 移除除了标题容器以外的所有子元素
+            Array.from(categoryContainer.children).forEach(child => {
+                if (child !== titleContainer) {
+                    child.remove();
+                }
+            });
+            
+            console.log(`已清除分类 ${categoryTitle} 容器的内容`);
+        });
+    }
     
     // 立即初始化仪表盘
     initializeDashboard();
@@ -748,6 +837,14 @@ document.addEventListener('DOMContentLoaded', function() {
             for (const titleElement of categoryTitleElements) {
                 if (titleElement.textContent.trim() === categoryTitle) {
                     categoryContainer = titleElement.closest('.bg-white.rounded-lg.shadow');
+                    
+                    // 添加记录数标记
+                    const recordCount = recordsByCategory[category].length;
+                    const countBadge = document.createElement('span');
+                    countBadge.className = 'ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full';
+                    countBadge.textContent = `${recordCount} 条`;
+                    titleElement.appendChild(countBadge);
+                    
                     break;
                 }
             }
@@ -776,9 +873,27 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!records || records.length === 0) {
                 console.log(`分类 ${categoryTitle} 没有记录，显示空状态`);
                 const emptyState = document.createElement('div');
-                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg';
+                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors';
                 emptyState.innerHTML = '<p class="text-gray-400 text-sm">点击添加记录</p>';
                 titleContainer.insertAdjacentElement('afterend', emptyState);
+                
+                // 为空状态添加点击事件
+                emptyState.addEventListener('click', function() {
+                    // 打开记录模态框
+                    const recordModal = document.getElementById('modal-new-record');
+                    if (recordModal) {
+                        // 设置对应的分类
+                        const typeRadio = document.querySelector(`input[name="record-type"][value="${category}"]`);
+                        if (typeRadio) {
+                            typeRadio.checked = true;
+                        }
+                        
+                        // 显示模态框
+                        recordModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+                
                 return; // 处理完成，返回
             }
             
@@ -787,61 +902,65 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 创建记录容器
             const recordsContainer = document.createElement('div');
-            recordsContainer.className = 'space-y-2';
+            recordsContainer.className = 'space-y-2 max-h-64 overflow-y-auto pr-2 apple-scrollbar rounded-md transition-all';
+            recordsContainer.style.backdropFilter = 'blur(5px)';
+            recordsContainer.style.WebkitBackdropFilter = 'blur(5px)';
             recordsContainer.dataset.category = category; // 添加数据属性标记分类
+            recordsContainer.dataset.page = '1'; // 当前页码
+            recordsContainer.dataset.hasMore = (records.length > 10).toString(); // 是否有更多记录
             titleContainer.insertAdjacentElement('afterend', recordsContainer);
             
-            // 最多显示4条记录
-            const displayRecords = records.slice(0, 4);
+            // 初始显示10条记录
+            const displayRecords = records.slice(0, 10);
             console.log(`分类 ${categoryTitle} 将显示 ${displayRecords.length} 条记录：`, 
                 displayRecords.map(r => `${r.title || '(无标题)'} (ID: ${r.id})`).join(', '));
             
             // 添加记录项
             displayRecords.forEach(record => {
-                const recordTitle = record.title || '(无标题)';
-                const recordDate = new Date(record.startTime);
-                const formattedDate = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}-${String(recordDate.getDate()).padStart(2, '0')}`;
+                addRecordItem(record, recordsContainer);
+            });
+            
+            // 如果有更多记录，添加滚动监听
+            if (records.length > 10) {
+                // 移除旧的滚动事件监听器，避免重复
+                recordsContainer.removeEventListener('scroll', recordScrollHandler);
                 
-                console.log(`创建记录项: ${recordTitle}, 日期: ${formattedDate}, 分类: ${record.category}, ID: ${record.id}`);
-                
-                const recordItem = document.createElement('div');
-                recordItem.className = 'flex items-start p-1 hover:bg-gray-50 rounded-lg';
-                recordItem.dataset.recordId = record.id; // 添加数据属性标记记录ID
-                recordItem.innerHTML = `
-                    <div class="w-4 h-4 mt-1 bg-purple-100 rounded-full flex items-center justify-center">
-                        <i class="fas fa-check text-purple-600 text-xs"></i>
-                    </div>
-                    <div class="ml-3 flex-1">
-                        <p class="text-gray-800 text-sm">${recordTitle}</p>
-                        <p class="text-xs text-gray-500">${formattedDate} 完成</p>
-                    </div>
-                    <div class="flex items-center space-x-1">
-                        <button class="text-red-500 hover:text-red-700 delete-record-btn" data-record-id="${record.id}">
-                            <i class="fas fa-trash-alt text-xs"></i>
-                        </button>
-                    </div>
-                `;
-                
-                recordsContainer.appendChild(recordItem);
-                
-                // 添加删除按钮点击事件
-                const deleteBtn = recordItem.querySelector('.delete-record-btn');
-                if (deleteBtn) {
-                    deleteBtn.addEventListener('click', function(e) {
-                        e.stopPropagation(); // 阻止事件冒泡
-                        const recordId = this.dataset.recordId;
-                        if (confirm('确定要删除这条记录吗？')) {
-                            deleteRecord(recordId);
+                // 定义滚动事件处理函数
+                function recordScrollHandler() {
+                    // 当滚动到底部时加载更多
+                    if (this.scrollHeight - this.scrollTop <= this.clientHeight + 50) {
+                        const currentPage = parseInt(this.dataset.page || '1');
+                        const hasMore = this.dataset.hasMore === 'true';
+                        
+                        if (hasMore) {
+                            const nextPage = currentPage + 1;
+                            const start = currentPage * 10;
+                            const end = start + 10;
+                            const nextRecords = records.slice(start, end);
+                            
+                            if (nextRecords.length > 0) {
+                                console.log(`加载更多 ${categoryTitle} 记录，第 ${nextPage} 页`);
+                                
+                                // 添加新记录
+                                nextRecords.forEach(record => {
+                                    addRecordItem(record, recordsContainer);
+                                });
+                                
+                                // 更新页码
+                                this.dataset.page = nextPage.toString();
+                                
+                                // 检查是否还有更多记录
+                                this.dataset.hasMore = (records.length > end).toString();
+                            } else {
+                                this.dataset.hasMore = 'false';
+                            }
                         }
-                    });
+                    }
                 }
                 
-                // 整个记录项的点击事件仍然触发编辑
-                recordItem.addEventListener('click', function() {
-                    const recordId = this.dataset.recordId;
-                    editRecord(recordId);
-                });
-            });
+                // 添加滚动事件监听
+                recordsContainer.addEventListener('scroll', recordScrollHandler);
+            }
         });
     }
     
@@ -879,11 +998,21 @@ document.addEventListener('DOMContentLoaded', function() {
             // 如果没有计划，显示空状态
             if (weeklyPlans.length === 0) {
                 console.log('没有本周计划，显示空状态');
-                planListContainer.innerHTML = `
-                    <div class="flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg">
-                        <p class="text-gray-400 text-sm">暂无计划，点击添加计划按钮创建新计划</p>
-                    </div>
-                `;
+                const emptyState = document.createElement('div');
+                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors';
+                emptyState.innerHTML = '<p class="text-gray-400 text-sm">暂无计划，点击添加计划</p>';
+                planListContainer.appendChild(emptyState);
+                
+                // 为空状态添加点击事件
+                emptyState.addEventListener('click', function() {
+                    // 打开计划模态框
+                    const planModal = document.getElementById('modal-new-plan');
+                    if (planModal) {
+                        planModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                });
+                
                 return;
             }
             
@@ -899,7 +1028,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 console.log(`添加计划: ${plan.title}`);
                 
                 const planItem = document.createElement('div');
-                planItem.className = 'flex items-center p-3 bg-gray-50 rounded-lg';
+                planItem.className = 'flex items-center p-3 bg-gray-50 rounded-lg group cursor-pointer';
+                planItem.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+                planItem.dataset.planId = plan.id; // 添加数据属性标记计划ID
                 
                 const isCompleted = plan.status === 'completed';
                 const statusClass = isCompleted ? 
@@ -920,20 +1051,60 @@ document.addEventListener('DOMContentLoaded', function() {
                     'social': 'indigo'
                 };
                 
+                // 分类名称中文映射
+                const categoryNames = {
+                    'work': '工作职业',
+                    'study': '学习成长',
+                    'experience': '体验突破',
+                    'leisure': '休闲放松',
+                    'family': '家庭生活',
+                    'social': '人际社群'
+                };
+                
+                // 优先级样式和名称
+                const priorityColors = {
+                    'high': 'red',
+                    'medium': 'yellow',
+                    'low': 'green'
+                };
+                
+                const priorityNames = {
+                    'high': '高',
+                    'medium': '中',
+                    'low': '低'
+                };
+                
                 const categoryColor = categoryColors[plan.category] || 'gray';
+                const categoryName = categoryNames[plan.category] || plan.category;
+                
+                const priorityColor = priorityColors[plan.priority] || 'gray';
+                const priorityName = priorityNames[plan.priority] || '中';
                 
                 planItem.innerHTML = `
                     <input type="checkbox" class="h-5 w-5 text-blue-600 rounded task-checkbox" ${isCompleted ? 'checked' : ''} data-status="${isCompleted ? 'completed' : 'pending'}" data-plan-id="${plan.id}">
                     <div class="ml-3 flex-1">
                         <p class="text-gray-800 font-medium">${plan.title}</p>
-                        <div class="flex items-center">
+                        <div class="flex items-center flex-wrap">
                             <p class="text-sm text-gray-500 mr-2">截止日期：${formattedDueDate}</p>
-                            <span class="px-2 py-0.5 bg-${categoryColor}-50 text-${categoryColor}-700 text-xs rounded-full flex items-center">
-                                <span class="w-2 h-2 bg-${categoryColor}-500 rounded-full mr-1"></span>${plan.category}
+                            <span class="px-2 py-0.5 bg-${categoryColor}-50 text-${categoryColor}-700 text-xs rounded-full flex items-center mr-2">
+                                <span class="w-2 h-2 bg-${categoryColor}-500 rounded-full mr-1"></span>${categoryName}
+                            </span>
+                            <span class="px-2 py-0.5 bg-${priorityColor}-50 text-${priorityColor}-700 text-xs rounded-full flex items-center">
+                                <span class="w-2 h-2 bg-${priorityColor}-500 rounded-full mr-1"></span>优先级：${priorityName}
                             </span>
                         </div>
                     </div>
-                    <span class="${statusClass}">${statusText}</span>
+                    <div class="flex items-center">
+                        <span class="${statusClass} mr-2">${statusText}</span>
+                        <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button class="text-gray-400 hover:text-gray-600 edit-plan-btn" data-plan-id="${plan.id}">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                            <button class="text-gray-400 hover:text-gray-600 delete-plan-btn" data-plan-id="${plan.id}">
+                                <i class="fas fa-trash-alt text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
                 `;
                 
                 // 添加任务复选框事件
@@ -944,17 +1115,45 @@ document.addEventListener('DOMContentLoaded', function() {
                     if (this.checked) {
                         // 任务被标记为完成
                         statusLabel.textContent = '已完成';
-                        statusLabel.className = 'px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full task-status';
+                        statusLabel.className = 'px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full task-status mr-2';
                         this.dataset.status = 'completed';
                     } else {
                         // 任务被标记为未完成
                         statusLabel.textContent = '待处理';
-                        statusLabel.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status';
+                        statusLabel.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status mr-2';
                         this.dataset.status = 'pending';
                     }
                     
                     // 更新localStorage中的计划状态
                     updatePlanStatus(this.dataset.planId, this.checked ? 'completed' : 'pending');
+                });
+                
+                // 添加编辑按钮事件
+                const editBtn = planItem.querySelector('.edit-plan-btn');
+                if (editBtn) {
+                    editBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // 阻止事件冒泡
+                        const planId = this.dataset.planId;
+                        editPlan(planId);
+                    });
+                }
+                
+                // 添加删除按钮事件
+                const deleteBtn = planItem.querySelector('.delete-plan-btn');
+                if (deleteBtn) {
+                    deleteBtn.addEventListener('click', function(e) {
+                        e.stopPropagation(); // 阻止事件冒泡
+                        const planId = this.dataset.planId;
+                        if (confirm('确定要删除这个计划吗？')) {
+                            deletePlan(planId);
+                        }
+                    });
+                }
+                
+                // 整个计划项的点击事件触发编辑
+                planItem.addEventListener('click', function() {
+                    const planId = this.dataset.planId;
+                    editPlan(planId);
                 });
                 
                 planListContainer.appendChild(planItem);
@@ -1063,12 +1262,25 @@ document.addEventListener('DOMContentLoaded', function() {
         document.getElementById('record-title').value = record.title;
         document.getElementById('record-desc').value = record.description || '';
         
-        // 设置日期 - 从ISO日期字符串中提取日期部分
-        const dateInput = document.getElementById('record-date');
-        if (dateInput && record.startTime) {
+        // 设置日期和时间
+        if (record.startTime) {
             const date = new Date(record.startTime);
-            const formattedDate = date.toISOString().split('T')[0];
-            dateInput.value = formattedDate;
+            
+            // 设置日期
+            const dateInput = document.getElementById('record-date');
+            if (dateInput) {
+                const formattedDate = date.toISOString().split('T')[0];
+                dateInput.value = formattedDate;
+            }
+            
+            // 设置时间
+            const timeInput = document.getElementById('record-time');
+            if (timeInput) {
+                const hours = String(date.getHours()).padStart(2, '0');
+                const minutes = String(date.getMinutes()).padStart(2, '0');
+                const formattedTime = `${hours}:${minutes}`;
+                timeInput.value = formattedTime;
+            }
         }
         
         // 设置类型
@@ -1077,6 +1289,21 @@ document.addEventListener('DOMContentLoaded', function() {
             if (typeRadio) {
                 typeRadio.checked = true;
             }
+        }
+        
+        // 显示删除按钮
+        const deleteButton = document.getElementById('delete-record-btn');
+        if (deleteButton) {
+            deleteButton.classList.remove('hidden');
+            // 确保删除按钮有事件监听器
+            deleteButton.onclick = function() {
+                if (confirm('确定要删除这条记录吗？')) {
+                    deleteRecord(recordId);
+                    // 关闭模态框
+                    document.getElementById('modal-new-record').classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            };
         }
         
         // 打开模态框
@@ -1117,6 +1344,156 @@ document.addEventListener('DOMContentLoaded', function() {
         } catch (error) {
             console.error('删除记录时出错:', error);
             showNotification('删除记录时出错: ' + error.message, 'error');
+            return false;
+        }
+    }
+
+    // 添加记录项函数
+    function addRecordItem(record, container) {
+        const recordTitle = record.title || '(无标题)';
+        const recordDate = new Date(record.startTime);
+        const formattedDate = `${recordDate.getFullYear()}-${String(recordDate.getMonth() + 1).padStart(2, '0')}-${String(recordDate.getDate()).padStart(2, '0')}`;
+        const formattedTime = `${String(recordDate.getHours()).padStart(2, '0')}:${String(recordDate.getMinutes()).padStart(2, '0')}`;
+        
+        console.log(`创建记录项: ${recordTitle}, 日期: ${formattedDate}, 时间: ${formattedTime}, 分类: ${record.category}, ID: ${record.id}`);
+        
+        const recordItem = document.createElement('div');
+        recordItem.className = 'flex items-start p-2 hover:bg-gray-50 rounded-lg transition-all duration-200 group cursor-pointer';
+        recordItem.style.boxShadow = '0 1px 2px rgba(0, 0, 0, 0.05)';
+        recordItem.dataset.recordId = record.id; // 添加数据属性标记记录ID
+        recordItem.innerHTML = `
+            <div class="w-4 h-4 mt-1 bg-purple-100 rounded-full flex items-center justify-center">
+                <i class="fas fa-check text-purple-600 text-xs"></i>
+            </div>
+            <div class="ml-3 flex-1">
+                <p class="text-gray-800 text-sm font-medium">${recordTitle}</p>
+                <p class="text-xs text-gray-500">${formattedDate} ${formattedTime}</p>
+            </div>
+            <div class="flex items-center space-x-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button class="text-gray-400 hover:text-gray-600 edit-record-btn" data-record-id="${record.id}">
+                    <i class="fas fa-edit text-xs"></i>
+                </button>
+                <button class="text-gray-400 hover:text-gray-600 delete-record-btn" data-record-id="${record.id}">
+                    <i class="fas fa-trash-alt text-xs"></i>
+                </button>
+            </div>
+        `;
+        
+        container.appendChild(recordItem);
+        
+        // 添加编辑按钮点击事件
+        const editBtn = recordItem.querySelector('.edit-record-btn');
+        if (editBtn) {
+            editBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡
+                const recordId = this.dataset.recordId;
+                editRecord(recordId);
+            });
+        }
+        
+        // 添加删除按钮点击事件
+        const deleteBtn = recordItem.querySelector('.delete-record-btn');
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function(e) {
+                e.stopPropagation(); // 阻止事件冒泡
+                const recordId = this.dataset.recordId;
+                if (confirm('确定要删除这条记录吗？')) {
+                    deleteRecord(recordId);
+                }
+            });
+        }
+        
+        // 整个记录项的点击事件仍然触发编辑
+        recordItem.addEventListener('click', function() {
+            const recordId = this.dataset.recordId;
+            editRecord(recordId);
+        });
+    }
+
+    // 编辑计划函数
+    function editPlan(planId) {
+        console.log('编辑计划:', planId);
+        
+        // 获取事件数据
+        const events = JSON.parse(localStorage.getItem('events')) || [];
+        const plan = events.find(event => event.id === planId);
+        
+        if (!plan) {
+            showNotification('找不到要编辑的计划', 'error');
+            return;
+        }
+        
+        // 设置表单为编辑模式
+        const form = document.getElementById('new-plan-form');
+        form.dataset.mode = 'edit';
+        form.dataset.eventId = planId;
+        
+        // 填充表单数据
+        document.getElementById('plan-title').value = plan.title;
+        document.getElementById('plan-desc').value = plan.description || '';
+        
+        // 设置日期 - 从ISO日期字符串中提取日期部分
+        const dateInput = document.getElementById('plan-due-date');
+        if (dateInput && plan.dueDate) {
+            const date = new Date(plan.dueDate);
+            const formattedDate = date.toISOString().split('T')[0];
+            dateInput.value = formattedDate;
+        }
+        
+        // 设置类型
+        if (plan.category) {
+            const typeRadio = document.querySelector(`input[name="plan-type"][value="${plan.category}"]`);
+            if (typeRadio) {
+                typeRadio.checked = true;
+            }
+        }
+        
+        // 设置优先级
+        if (plan.priority) {
+            const priorityRadio = document.querySelector(`input[name="priority"][value="${plan.priority}"]`);
+            if (priorityRadio) {
+                priorityRadio.checked = true;
+            }
+        }
+        
+        // 打开模态框
+        const modal = document.getElementById('modal-new-plan');
+        modal.classList.remove('hidden');
+        document.body.style.overflow = 'hidden';
+    }
+    
+    // 删除计划函数
+    function deletePlan(planId) {
+        console.log('删除计划:', planId);
+        
+        try {
+            // 从localStorage获取现有事件
+            const events = JSON.parse(localStorage.getItem('events')) || [];
+            
+            // 找到要删除的计划索引
+            const planIndex = events.findIndex(event => event.id === planId);
+            
+            if (planIndex === -1) {
+                showNotification('找不到要删除的计划', 'error');
+                return false;
+            }
+            
+            // 删除计划
+            events.splice(planIndex, 1);
+            
+            // 保存回localStorage
+            localStorage.setItem('events', JSON.stringify(events));
+            
+            // 显示通知
+            showNotification('计划已成功删除！');
+            
+            // 刷新仪表盘
+            initializeDashboard();
+            
+            return true;
+        } catch (error) {
+            console.error('删除计划时出错:', error);
+            showNotification('删除计划时出错: ' + error.message, 'error');
             return false;
         }
     }

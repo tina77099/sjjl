@@ -6,6 +6,103 @@
     <title>事件记录 - 你的数字生活助手</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 苹果风格滚动条 */
+        .apple-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .apple-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .apple-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+        .apple-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        .apple-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+        /* 滚动容器在不滚动时隐藏滚动条 */
+        .apple-scrollbar:not(:hover)::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 自定义单选框样式 - 勾选样式 */
+        input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            outline: none;
+            position: relative;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: white;
+        }
+        
+        input[type="radio"]:checked {
+            border-color: #4f46e5;
+            background-color: #4f46e5;
+        }
+        
+        input[type="radio"]:checked:before {
+            content: '';
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            width: 6px;
+            height: 10px;
+            border-right: 2px solid white;
+            border-bottom: 2px solid white;
+            transform: translate(-50%, -50%) rotate(45deg);
+            transition: transform 0.2s ease;
+        }
+        
+        /* 为不同分类设置不同颜色 */
+        input[name="record-type"][value="study"]:checked,
+        input[name="plan-type"][value="study"]:checked {
+            border-color: #3b82f6; /* 蓝色 */
+            background-color: #3b82f6;
+        }
+        
+        input[name="record-type"][value="experience"]:checked,
+        input[name="plan-type"][value="experience"]:checked {
+            border-color: #8b5cf6; /* 紫色 */
+            background-color: #8b5cf6;
+        }
+        
+        input[name="record-type"][value="leisure"]:checked,
+        input[name="plan-type"][value="leisure"]:checked {
+            border-color: #10b981; /* 绿色 */
+            background-color: #10b981;
+        }
+        
+        input[name="record-type"][value="family"]:checked,
+        input[name="plan-type"][value="family"]:checked {
+            border-color: #f59e0b; /* 黄色 */
+            background-color: #f59e0b;
+        }
+        
+        input[name="record-type"][value="work"]:checked,
+        input[name="plan-type"][value="work"]:checked {
+            border-color: #ef4444; /* 红色 */
+            background-color: #ef4444;
+        }
+        
+        input[name="record-type"][value="social"]:checked,
+        input[name="plan-type"][value="social"]:checked {
+            border-color: #6366f1; /* 靛蓝色 */
+            background-color: #6366f1;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- 侧边栏 -->
@@ -189,7 +286,7 @@
                             本周分类记录
                             <span class="ml-2 text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded-full">已完成事项</span>
                         </h2>
-                        <button id="btn-add-record" class="text-purple-600 hover:text-purple-800 flex items-center text-sm font-medium">
+                        <button id="btn-add-record" class="text-purple-600 hover:text-purple-800 flex items-center text-sm font-medium cursor-pointer">
                             <i class="fas fa-plus-circle mr-1"></i> 添加记录
                         </button>
                     </div>
@@ -202,7 +299,7 @@
                                     <div class="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>
                                     <h3 class="text-lg font-semibold text-gray-800">学习成长</h3>
                                 </div>
-                                <button class="text-purple-500 hover:text-purple-700 category-add-btn" data-type="study">
+                                <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="study">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -253,7 +350,7 @@
                                     <div class="w-2 h-2 bg-purple-500 rounded-full mr-2"></div>
                                     <h3 class="text-lg font-semibold text-gray-800">体验突破</h3>
                                 </div>
-                                <button class="text-purple-500 hover:text-purple-700 category-add-btn" data-type="experience">
+                                <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="experience">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -295,7 +392,7 @@
                                     <div class="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
                                     <h3 class="text-lg font-semibold text-gray-800">休闲放松</h3>
                                 </div>
-                                <button class="text-purple-500 hover:text-purple-700 category-add-btn" data-type="leisure">
+                                <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="leisure">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -337,7 +434,7 @@
                                     <div class="w-2 h-2 bg-yellow-500 rounded-full mr-2"></div>
                                     <h3 class="text-lg font-semibold text-gray-800">家庭生活</h3>
                                 </div>
-                                <button class="text-purple-500 hover:text-purple-700 category-add-btn" data-type="family">
+                                <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="family">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -353,7 +450,7 @@
                                     <div class="w-2 h-2 bg-red-500 rounded-full mr-2"></div>
                                     <h3 class="text-lg font-semibold text-gray-800">工作职业</h3>
                                 </div>
-                                <button class="text-purple-500 hover:text-purple-700 category-add-btn" data-type="work">
+                                <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="work">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -369,7 +466,7 @@
                                     <div class="w-2 h-2 bg-indigo-500 rounded-full mr-2"></div>
                                     <h3 class="text-lg font-semibold text-gray-800">人际社群</h3>
                                 </div>
-                                <button class="text-purple-500 hover:text-purple-700 category-add-btn" data-type="social">
+                                <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="social">
                                     <i class="fas fa-plus"></i>
                                 </button>
                             </div>
@@ -388,7 +485,7 @@
                             本周计划
                             <span class="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">待完成任务</span>
                         </h2>
-                        <button id="btn-add-plan" class="text-blue-600 hover:text-blue-800 flex items-center text-sm font-medium">
+                        <button id="btn-add-plan" class="text-blue-600 hover:text-blue-800 flex items-center text-sm font-medium cursor-pointer">
                             <i class="fas fa-plus-circle mr-1"></i> 添加计划
                         </button>
                     </div>
@@ -673,11 +770,15 @@
                         </div>
                     </div>
 
-                    <!-- 完成日期 -->
+                    <!-- 完成日期和时间 -->
                     <div class="mb-4">
-                        <label for="record-date" class="block text-gray-700 font-medium mb-2">完成日期</label>
-                        <input type="date" id="record-date" name="completion-date" 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                        <label class="block text-gray-700 font-medium mb-2">完成日期和时间</label>
+                        <div class="flex space-x-2">
+                            <input type="date" id="record-date" name="completion-date" 
+                                class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                            <input type="time" id="record-time" name="completion-time" 
+                                class="w-32 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                        </div>
                     </div>
 
                     <!-- 事项详情 -->
@@ -690,7 +791,7 @@
                     
                     <!-- 按钮 -->
                     <div class="flex justify-end space-x-3">
-                        <button type="button" id="delete-record-btn" class="px-6 py-2 border border-red-300 rounded-lg text-red-700 hover:bg-red-50 hidden">
+                        <button type="button" id="delete-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hidden">
                             删除
                         </button>
                         <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
