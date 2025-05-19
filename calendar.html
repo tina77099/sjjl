@@ -191,20 +191,32 @@
                 
                 <!-- 事件筛选器 -->
                 <div class="mb-6 bg-white rounded-lg shadow p-4">
-                    <h3 class="text-md font-medium text-gray-700 mb-3">事件筛选</h3>
-                    <div class="flex space-x-4">
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600" id="filter-all" checked>
-                            <span class="ml-2 text-gray-700">全部</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" class="form-checkbox h-4 w-4 text-purple-600" id="filter-records" checked>
-                            <span class="ml-2 text-gray-700">记录的事件</span>
-                        </label>
-                        <label class="inline-flex items-center">
-                            <input type="checkbox" class="form-checkbox h-4 w-4 text-green-600" id="filter-completed-plans" checked>
-                            <span class="ml-2 text-gray-700">完成的计划</span>
-                        </label>
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <h3 class="text-md font-medium text-gray-700 mb-3">事件筛选</h3>
+                            <div class="flex space-x-4">
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600" id="filter-all" checked>
+                                    <span class="ml-2 text-gray-700">全部</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-purple-600" id="filter-records" checked>
+                                    <span class="ml-2 text-gray-700">记录的事件</span>
+                                </label>
+                                <label class="inline-flex items-center">
+                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-green-600" id="filter-completed-plans" checked>
+                                    <span class="ml-2 text-gray-700">完成的计划</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div class="flex space-x-2">
+                            <button id="export-data" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
+                                <i class="fas fa-file-export mr-1"></i>导出数据
+                            </button>
+                            <button id="generate-test-data" class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
+                                <i class="fas fa-magic mr-1"></i>生成测试数据
+                            </button>
+                        </div>
                     </div>
                 </div>
                 
@@ -221,191 +233,8 @@
                         <div class="bg-white p-2 text-center text-gray-500 font-medium">周六</div>
                     </div>
                     
-                    <!-- 日历格子 -->
-                    <div class="grid grid-cols-7 gap-px bg-gray-200">
-                        <!-- 上个月的日期 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">24</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">25</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">26</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">27</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">28</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">29</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">30</div>
-                        </div>
-                        
-                        <!-- 本月第一周 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">1</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate">09:00 团队会议</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">2</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-green-100 text-green-800 text-xs p-1 rounded truncate">14:00 项目讨论</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">3</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">4</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-purple-100 text-purple-800 text-xs p-1 rounded truncate">10:00 客户会议</div>
-                                <div class="bg-yellow-100 text-yellow-800 text-xs p-1 rounded truncate">15:30 健身</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">5</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">6</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">7</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-red-100 text-red-800 text-xs p-1 rounded truncate">全天 家庭日</div>
-                            </div>
-                        </div>
-                        
-                        <!-- 本月第二周 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">8</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">9</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate">13:00 产品评审</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">10</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">11</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">12</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-indigo-100 text-indigo-800 text-xs p-1 rounded truncate">09:30 周会</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">13</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px] bg-indigo-50">
-                            <div class="text-indigo-800 font-medium">14</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-indigo-100 text-indigo-800 text-xs p-1 rounded truncate">全天 当前日期</div>
-                            </div>
-                        </div>
-                        
-                        <!-- 本月第三周 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">15</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-green-100 text-green-800 text-xs p-1 rounded truncate">14:00 项目启动</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">16</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">17</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-yellow-100 text-yellow-800 text-xs p-1 rounded truncate">16:00 健身</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">18</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">19</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-blue-100 text-blue-800 text-xs p-1 rounded truncate">10:00 团队建设</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">20</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">21</div>
-                        </div>
-                        
-                        <!-- 本月第四周 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">22</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">23</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-purple-100 text-purple-800 text-xs p-1 rounded truncate">15:00 客户回访</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">24</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">25</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-red-100 text-red-800 text-xs p-1 rounded truncate">截止日期：季度报告</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">26</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">27</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-green-100 text-green-800 text-xs p-1 rounded truncate">09:00 培训课程</div>
-                            </div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">28</div>
-                        </div>
-                        
-                        <!-- 本月第五周 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">29</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">30</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-800 font-medium">31</div>
-                            <div class="mt-1 space-y-1">
-                                <div class="bg-orange-100 text-orange-800 text-xs p-1 rounded truncate">全天 月末总结</div>
-                            </div>
-                        </div>
-                        
-                        <!-- 下个月的日期 -->
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">1</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">2</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">3</div>
-                        </div>
-                        <div class="bg-white p-2 min-h-[120px]">
-                            <div class="text-gray-400 text-sm">4</div>
-                        </div>
-                    </div>
+                    <!-- 日历格子 - 将由JavaScript动态生成 -->
+                    <div class="grid grid-cols-7 gap-px bg-gray-200" id="calendar-grid"></div>
                 </div>
             </main>
         </div>
@@ -746,34 +575,16 @@
                 endDate.setDate(endDate.getDate() + daysToAdd);
                 
                 // 清除现有的日历格子
-                const calendarGrid = document.querySelector('.grid.grid-cols-7.gap-px.bg-gray-200');
-                
-                // 重新创建表头 (周日至周六)
-                const headerRow = document.createElement('div');
-                headerRow.className = 'grid grid-cols-7 gap-px bg-gray-200';
-                
-                const weekdays = ['周日', '周一', '周二', '周三', '周四', '周五', '周六'];
-                weekdays.forEach(day => {
-                    const dayHeader = document.createElement('div');
-                    dayHeader.className = 'bg-white p-2 text-center text-gray-500 font-medium';
-                    dayHeader.textContent = day;
-                    headerRow.appendChild(dayHeader);
-                });
-                
-                // 替换旧的表头
-                const oldHeader = document.querySelector('.grid.grid-cols-7.gap-px.bg-gray-200:first-child');
-                oldHeader.parentNode.replaceChild(headerRow, oldHeader);
-                
-                // 创建新的日历格子容器
-                const newGrid = document.createElement('div');
-                newGrid.className = 'grid grid-cols-7 gap-px bg-gray-200';
+                const calendarGrid = document.getElementById('calendar-grid');
+                calendarGrid.innerHTML = '';
                 
                 // 从 localStorage 获取所有事件数据
                 const allEvents = getEvents();
+                console.log("所有事件数据:", allEvents); // 调试用
                 
                 // 填充日历格子
-                let currentDate = new Date(startDate);
-                while (currentDate <= endDate) {
+                let currentDateIterator = new Date(startDate);
+                while (currentDateIterator <= endDate) {
                     const cell = document.createElement('div');
                     cell.className = 'bg-white p-2 min-h-[120px]';
                     
@@ -781,10 +592,10 @@
                     const dateDiv = document.createElement('div');
                     
                     // 检查是否为当前月份的日期
-                    const isCurrentMonth = currentDate.getMonth() === date.getMonth();
+                    const isCurrentMonth = currentDateIterator.getMonth() === date.getMonth();
                     
                     // 检查是否为今天
-                    const isToday = isSameDay(currentDate, new Date());
+                    const isToday = isSameDay(currentDateIterator, new Date());
                     
                     if (isCurrentMonth) {
                         dateDiv.className = isToday ? 'text-indigo-800 font-medium' : 'text-gray-800 font-medium';
@@ -796,11 +607,12 @@
                         dateDiv.className = 'text-gray-400 text-sm';
                     }
                     
-                    dateDiv.textContent = currentDate.getDate();
+                    dateDiv.textContent = currentDateIterator.getDate();
                     cell.appendChild(dateDiv);
                     
                     // 查找该日期的事件
-                    const dateEvents = getEventsForDate(allEvents, currentDate);
+                    const dateEvents = getEventsForDate(allEvents, currentDateIterator);
+                    console.log(`${currentDateIterator.toDateString()} 的事件:`, dateEvents); // 调试用
                     
                     // 如果有事件，则创建事件容器
                     if (dateEvents.length > 0) {
@@ -878,22 +690,23 @@
                         // 如果事件超过显示限制，则显示"更多"
                         if (dateEvents.length > maxDisplayEvents) {
                             const moreDiv = document.createElement('div');
-                            moreDiv.className = 'text-xs text-gray-500 text-center';
+                            moreDiv.className = 'text-xs text-gray-500 text-center cursor-pointer hover:text-indigo-600';
                             moreDiv.textContent = `还有 ${dateEvents.length - maxDisplayEvents} 个事项`;
+                            moreDiv.onclick = function() {
+                                // 点击"更多"时显示该日的所有事件
+                                alert(`暂未实现查看更多事件功能，该日共有 ${dateEvents.length} 个事项`);
+                            };
                             eventsContainer.appendChild(moreDiv);
                         }
                         
                         cell.appendChild(eventsContainer);
                     }
                     
-                    newGrid.appendChild(cell);
+                    calendarGrid.appendChild(cell);
                     
                     // 移至下一天
-                    currentDate.setDate(currentDate.getDate() + 1);
+                    currentDateIterator.setDate(currentDateIterator.getDate() + 1);
                 }
-                
-                // 替换旧的日历格子
-                calendarGrid.parentNode.replaceChild(newGrid, calendarGrid);
             }
             
             // 检查是否是同一天
@@ -913,7 +726,17 @@
             
             // 从 localStorage 获取所有事件
             function getEvents() {
-                return JSON.parse(localStorage.getItem('events') || '[]');
+                let events = JSON.parse(localStorage.getItem('events') || '[]');
+                
+                // 添加默认日期信息，如果没有指定时间
+                events = events.map(event => {
+                    if (!event.createdAt) {
+                        event.createdAt = new Date().toISOString();
+                    }
+                    return event;
+                });
+                
+                return events;
             }
             
             // 获取计划类型事件
@@ -1314,6 +1137,222 @@
                     }
                 }
             });
+
+            // 导出数据功能
+            const exportDataBtn = document.getElementById('export-data');
+            exportDataBtn.addEventListener('click', function() {
+                const events = getEvents();
+                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(events, null, 2));
+                const downloadAnchorNode = document.createElement('a');
+                downloadAnchorNode.setAttribute("href", dataStr);
+                downloadAnchorNode.setAttribute("download", "events_backup_" + new Date().toISOString().slice(0, 10) + ".json");
+                document.body.appendChild(downloadAnchorNode);
+                downloadAnchorNode.click();
+                downloadAnchorNode.remove();
+            });
+            
+            // 生成测试数据功能
+            const generateTestDataBtn = document.getElementById('generate-test-data');
+            generateTestDataBtn.addEventListener('click', function() {
+                if (confirm('这将覆盖现有数据，确定要生成测试数据吗？')) {
+                    // 生成测试数据
+                    const testData = generateTestEvents();
+                    localStorage.setItem('events', JSON.stringify(testData));
+                    alert('测试数据已生成！');
+                    location.reload(); // 刷新页面以显示新数据
+                }
+            });
+            
+            // 生成测试事件数据
+            function generateTestEvents() {
+                const today = new Date();
+                const thisYear = today.getFullYear();
+                const thisMonth = today.getMonth();
+                
+                // 测试数据包含计划和记录两种类型
+                const testEvents = [
+                    // 计划 - 未完成
+                    {
+                        id: 'plan1',
+                        title: '团队会议',
+                        eventType: 'plan',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 1, 9, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 1, 10, 30).toISOString(),
+                        location: '会议室A',
+                        description: '讨论本周工作进度和下周计划',
+                        createdAt: new Date(thisYear, thisMonth - 1, 25).toISOString(),
+                        status: 'pending'
+                    },
+                    {
+                        id: 'plan2',
+                        title: '项目讨论',
+                        eventType: 'plan',
+                        category: 'project',
+                        startTime: new Date(thisYear, thisMonth, 2, 14, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 2, 15, 30).toISOString(),
+                        location: '会议室B',
+                        description: '讨论新项目的实施方案',
+                        createdAt: new Date(thisYear, thisMonth - 1, 28).toISOString(),
+                        status: 'pending'
+                    },
+                    
+                    // 记录
+                    {
+                        id: 'record1',
+                        title: '客户会议',
+                        eventType: 'record',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 4, 10, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 4, 11, 30).toISOString(),
+                        location: '线上',
+                        description: '与客户讨论需求变更',
+                        createdAt: new Date(thisYear, thisMonth, 4, 11, 35).toISOString()
+                    },
+                    
+                    // 计划 - 已完成
+                    {
+                        id: 'plan3',
+                        title: '健身',
+                        eventType: 'plan',
+                        category: 'health',
+                        startTime: new Date(thisYear, thisMonth, 4, 15, 30).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 4, 16, 30).toISOString(),
+                        location: '健身房',
+                        description: '每周固定健身时间',
+                        createdAt: new Date(thisYear, thisMonth, 1).toISOString(),
+                        status: 'completed',
+                        updatedAt: new Date(thisYear, thisMonth, 4, 16, 45).toISOString()
+                    },
+                    
+                    // 更多记录和计划
+                    {
+                        id: 'record2',
+                        title: '家庭日',
+                        eventType: 'record',
+                        category: 'family',
+                        isAllDay: true,
+                        startTime: new Date(thisYear, thisMonth, 7).toISOString(),
+                        location: '家',
+                        description: '与家人共度时光',
+                        createdAt: new Date(thisYear, thisMonth, 7, 22, 0).toISOString()
+                    },
+                    {
+                        id: 'record3',
+                        title: '产品评审',
+                        eventType: 'record',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 9, 13, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 9, 14, 30).toISOString(),
+                        location: '会议室C',
+                        description: '评审产品原型',
+                        createdAt: new Date(thisYear, thisMonth, 9, 14, 35).toISOString()
+                    },
+                    {
+                        id: 'plan4',
+                        title: '周会',
+                        eventType: 'plan',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 12, 9, 30).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 12, 10, 30).toISOString(),
+                        location: '会议室A',
+                        description: '部门周会',
+                        createdAt: new Date(thisYear, thisMonth, 5).toISOString(),
+                        status: 'completed',
+                        updatedAt: new Date(thisYear, thisMonth, 12, 10, 40).toISOString()
+                    },
+                    {
+                        id: 'record4',
+                        title: '当前日期',
+                        eventType: 'record',
+                        category: 'other',
+                        isAllDay: true,
+                        startTime: new Date(thisYear, thisMonth, 14).toISOString(),
+                        description: '今天是当前日期',
+                        createdAt: new Date(thisYear, thisMonth, 14, 8, 0).toISOString()
+                    },
+                    {
+                        id: 'plan5',
+                        title: '项目启动',
+                        eventType: 'plan',
+                        category: 'project',
+                        startTime: new Date(thisYear, thisMonth, 15, 14, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 15, 16, 0).toISOString(),
+                        location: '大会议室',
+                        description: '新项目启动会',
+                        createdAt: new Date(thisYear, thisMonth, 10).toISOString(),
+                        status: 'completed',
+                        updatedAt: new Date(thisYear, thisMonth, 15, 16, 15).toISOString()
+                    },
+                    {
+                        id: 'record5',
+                        title: '健身',
+                        eventType: 'record',
+                        category: 'health',
+                        startTime: new Date(thisYear, thisMonth, 17, 16, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 17, 17, 0).toISOString(),
+                        location: '健身房',
+                        description: '力量训练',
+                        createdAt: new Date(thisYear, thisMonth, 17, 17, 15).toISOString()
+                    },
+                    {
+                        id: 'record6',
+                        title: '团队建设',
+                        eventType: 'record',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 19, 10, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 19, 17, 0).toISOString(),
+                        location: '户外',
+                        description: '团队建设活动',
+                        createdAt: new Date(thisYear, thisMonth, 19, 17, 30).toISOString()
+                    },
+                    {
+                        id: 'record7',
+                        title: '客户回访',
+                        eventType: 'record',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 23, 15, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 23, 16, 0).toISOString(),
+                        location: '线上',
+                        description: '回访老客户',
+                        createdAt: new Date(thisYear, thisMonth, 23, 16, 15).toISOString()
+                    },
+                    {
+                        id: 'record8',
+                        title: '季度报告',
+                        eventType: 'record',
+                        category: 'work',
+                        startTime: new Date(thisYear, thisMonth, 25).toISOString(),
+                        description: '提交季度报告',
+                        createdAt: new Date(thisYear, thisMonth, 25, 18, 0).toISOString()
+                    },
+                    {
+                        id: 'plan6',
+                        title: '培训课程',
+                        eventType: 'plan',
+                        category: 'study',
+                        startTime: new Date(thisYear, thisMonth, 27, 9, 0).toISOString(),
+                        endTime: new Date(thisYear, thisMonth, 27, 11, 0).toISOString(),
+                        location: '培训室',
+                        description: '学习新技能',
+                        createdAt: new Date(thisYear, thisMonth, 20).toISOString(),
+                        status: 'completed',
+                        updatedAt: new Date(thisYear, thisMonth, 27, 11, 15).toISOString()
+                    },
+                    {
+                        id: 'record9',
+                        title: '月末总结',
+                        eventType: 'record',
+                        category: 'work',
+                        isAllDay: true,
+                        startTime: new Date(thisYear, thisMonth, 31).toISOString(),
+                        description: '总结本月工作，计划下月任务',
+                        createdAt: new Date(thisYear, thisMonth, 31, 17, 0).toISOString()
+                    }
+                ];
+                
+                return testEvents;
+            }
         });
     </script>
     
