@@ -6,6 +6,81 @@
     <title>日历视图 - 事件记录</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0a0a0;
+        }
+        
+        /* 事件悬停效果 */
+        [data-event-id] {
+            transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        [data-event-id]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* 提示框动画 */
+        #event-tooltip {
+            opacity: 0;
+            transform: translateX(-50%) translateY(10px);
+            transition: opacity 0.2s ease-in-out, transform 0.2s ease-in-out;
+        }
+        #event-tooltip.visible {
+            opacity: 1;
+            transform: translateX(-50%) translateY(0);
+        }
+        
+        /* 完成的计划样式 */
+        [data-event-status="completed"] {
+            text-decoration: none;
+            position: relative;
+        }
+        [data-event-status="completed"]::after {
+            content: "✓";
+            position: absolute;
+            right: 4px;
+            font-size: 10px;
+            color: #059669;
+        }
+        
+        /* 表单元素样式 */
+        .form-checkbox {
+            appearance: none;
+            padding: 0;
+            print-color-adjust: exact;
+            display: inline-block;
+            vertical-align: middle;
+            background-origin: border-box;
+            user-select: none;
+            flex-shrink: 0;
+            height: 1rem;
+            width: 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid #d1d5db;
+        }
+        .form-checkbox:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            border-color: transparent;
+            background-color: currentColor;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- 侧边栏 -->
@@ -111,6 +186,25 @@
                                 <option value="day">日视图</option>
                             </select>
                         </div>
+                    </div>
+                </div>
+                
+                <!-- 事件筛选器 -->
+                <div class="mb-6 bg-white rounded-lg shadow p-4">
+                    <h3 class="text-md font-medium text-gray-700 mb-3">事件筛选</h3>
+                    <div class="flex space-x-4">
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600" id="filter-all" checked>
+                            <span class="ml-2 text-gray-700">全部</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" class="form-checkbox h-4 w-4 text-purple-600" id="filter-records" checked>
+                            <span class="ml-2 text-gray-700">记录的事件</span>
+                        </label>
+                        <label class="inline-flex items-center">
+                            <input type="checkbox" class="form-checkbox h-4 w-4 text-green-600" id="filter-completed-plans" checked>
+                            <span class="ml-2 text-gray-700">完成的计划</span>
+                        </label>
                     </div>
                 </div>
                 
@@ -310,97 +404,6 @@
                         </div>
                         <div class="bg-white p-2 min-h-[120px]">
                             <div class="text-gray-400 text-sm">4</div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 事件详情侧边栏 -->
-                <div class="mt-6 bg-white rounded-lg shadow p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">今日事件 (10月14日)</h3>
-                    
-                    <div class="space-y-4">
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-medium text-gray-800">团队周会</h4>
-                                    <p class="text-gray-500 text-sm mt-1">09:30 - 10:30</p>
-                                </div>
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">工作</span>
-                            </div>
-                            <p class="text-gray-600 mt-2 text-sm">讨论本周工作进展和下周计划，准备季度报告相关内容。</p>
-                            <div class="mt-3 flex items-center text-sm text-gray-500">
-                                <i class="fas fa-map-marker-alt mr-2"></i>
-                                <span>线上会议 - 腾讯会议</span>
-                            </div>
-                            <div class="mt-4 flex justify-between">
-                                <div class="flex space-x-2">
-                                    <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50">
-                                        <i class="fas fa-edit mr-1"></i>编辑
-                                    </button>
-                                    <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50">
-                                        <i class="fas fa-trash mr-1"></i>删除
-                                    </button>
-                                </div>
-                                <button class="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200">
-                                    <i class="fas fa-check mr-1"></i>完成
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-medium text-gray-800">项目进度评审</h4>
-                                    <p class="text-gray-500 text-sm mt-1">14:00 - 15:30</p>
-                                </div>
-                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">项目</span>
-                            </div>
-                            <p class="text-gray-600 mt-2 text-sm">与产品团队一起评审新功能开发进度，确认下一阶段计划。</p>
-                            <div class="mt-3 flex items-center text-sm text-gray-500">
-                                <i class="fas fa-map-marker-alt mr-2"></i>
-                                <span>会议室 A103</span>
-                            </div>
-                            <div class="mt-4 flex justify-between">
-                                <div class="flex space-x-2">
-                                    <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50">
-                                        <i class="fas fa-edit mr-1"></i>编辑
-                                    </button>
-                                    <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50">
-                                        <i class="fas fa-trash mr-1"></i>删除
-                                    </button>
-                                </div>
-                                <button class="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200">
-                                    <i class="fas fa-check mr-1"></i>完成
-                                </button>
-                            </div>
-                        </div>
-                        
-                        <div class="p-4 border rounded-lg">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <h4 class="font-medium text-gray-800">健身锻炼</h4>
-                                    <p class="text-gray-500 text-sm mt-1">18:30 - 19:30</p>
-                                </div>
-                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">健康</span>
-                            </div>
-                            <p class="text-gray-600 mt-2 text-sm">每周固定健身时间，今天重点锻炼上肢力量。</p>
-                            <div class="mt-3 flex items-center text-sm text-gray-500">
-                                <i class="fas fa-map-marker-alt mr-2"></i>
-                                <span>健身中心</span>
-                            </div>
-                            <div class="mt-4 flex justify-between">
-                                <div class="flex space-x-2">
-                                    <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50">
-                                        <i class="fas fa-edit mr-1"></i>编辑
-                                    </button>
-                                    <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50">
-                                        <i class="fas fa-trash mr-1"></i>删除
-                                    </button>
-                                </div>
-                                <button class="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200">
-                                    <i class="fas fa-check mr-1"></i>完成
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -812,10 +815,18 @@
                             const eventDiv = document.createElement('div');
                             
                             // 根据事件类型设置不同的样式
-                            if (event.eventType === 'plan') {
-                                eventDiv.className = 'bg-blue-100 text-blue-800 text-xs p-1 rounded truncate';
+                            if (event.eventType === 'plan' && event.status === 'completed') {
+                                // 完成的计划
+                                eventDiv.className = 'bg-green-100 text-green-800 text-xs p-1 rounded truncate flex items-center';
+                                eventDiv.innerHTML = `<i class="fas fa-check-circle mr-1"></i>`;
+                            } else if (event.eventType === 'plan') {
+                                // 未完成的计划
+                                eventDiv.className = 'bg-blue-100 text-blue-800 text-xs p-1 rounded truncate flex items-center';
+                                eventDiv.innerHTML = `<i class="fas fa-calendar-check mr-1"></i>`;
                             } else { // record
-                                eventDiv.className = 'bg-purple-100 text-purple-800 text-xs p-1 rounded truncate';
+                                // 记录的事件
+                                eventDiv.className = 'bg-purple-100 text-purple-800 text-xs p-1 rounded truncate flex items-center';
+                                eventDiv.innerHTML = `<i class="fas fa-bookmark mr-1"></i>`;
                             }
                             
                             // 拼接事件时间和标题
@@ -832,8 +843,36 @@
                                 eventText = event.title;
                             }
                             
-                            eventDiv.textContent = eventText;
-                            eventsContainer.appendChild(eventDiv);
+                            // 为完成的计划添加"已完成"标记
+                            if (event.eventType === 'plan' && event.status === 'completed') {
+                                eventText = `${eventText}`;
+                            }
+                            
+                            eventDiv.innerHTML += eventText;
+                            
+                            // 设置鼠标悬停效果
+                            eventDiv.style.cursor = 'pointer';
+                            eventDiv.setAttribute('data-event-id', event.id);
+                            eventDiv.setAttribute('data-event-type', event.eventType);
+                            eventDiv.setAttribute('data-event-status', event.status || '');
+                            
+                            // 根据过滤条件决定是否显示
+                            let shouldShow = true;
+                            const filterAll = document.getElementById('filter-all').checked;
+                            const filterRecords = document.getElementById('filter-records').checked;
+                            const filterCompletedPlans = document.getElementById('filter-completed-plans').checked;
+                            
+                            if (!filterAll) {
+                                if (event.eventType === 'record' && !filterRecords) {
+                                    shouldShow = false;
+                                } else if (event.eventType === 'plan' && event.status === 'completed' && !filterCompletedPlans) {
+                                    shouldShow = false;
+                                }
+                            }
+                            
+                            if (shouldShow) {
+                                eventsContainer.appendChild(eventDiv);
+                            }
                         });
                         
                         // 如果事件超过显示限制，则显示"更多"
@@ -855,9 +894,6 @@
                 
                 // 替换旧的日历格子
                 calendarGrid.parentNode.replaceChild(newGrid, calendarGrid);
-                
-                // 更新侧边栏的事件列表
-                updateSidebar(new Date());
             }
             
             // 检查是否是同一天
@@ -892,154 +928,6 @@
                 return events.filter(event => event.eventType === 'record');
             }
             
-            // 更新侧边栏显示特定日期的事件
-            function updateSidebar(date) {
-                const sidebarTitle = document.querySelector('.mt-6.bg-white h3');
-                const sidebarContent = document.querySelector('.mt-6.bg-white .space-y-4');
-                
-                // 格式化日期
-                const formattedDate = date.toLocaleDateString('zh-CN', {
-                    month: 'long',
-                    day: 'numeric'
-                });
-                
-                // 更新标题
-                sidebarTitle.textContent = `今日事件 (${formattedDate})`;
-                
-                // 清空内容
-                sidebarContent.innerHTML = '';
-                
-                // 获取当日事件
-                const events = getEventsForDate(getEvents(), date);
-                
-                if (events.length === 0) {
-                    // 无事件显示
-                    const noEventDiv = document.createElement('div');
-                    noEventDiv.className = 'p-4 text-center text-gray-500';
-                    noEventDiv.textContent = '今日暂无事件';
-                    sidebarContent.appendChild(noEventDiv);
-                    return;
-                }
-                
-                // 按时间排序
-                events.sort((a, b) => {
-                    const timeA = new Date(a.startTime || a.createdAt).getTime();
-                    const timeB = new Date(b.startTime || b.createdAt).getTime();
-                    return timeA - timeB;
-                });
-                
-                // 添加事件卡片
-                events.forEach(event => {
-                    const eventCard = document.createElement('div');
-                    eventCard.className = 'p-4 border rounded-lg';
-                    
-                    // 根据事件类型设置不同的边框颜色
-                    if (event.eventType === 'plan') {
-                        eventCard.style.borderLeft = '4px solid #3B82F6'; // 蓝色
-                    } else { // record
-                        eventCard.style.borderLeft = '4px solid #8B5CF6'; // 紫色
-                    }
-                    
-                    // 构建事件卡片内容
-                    let timeStr = '';
-                    if (event.isAllDay) {
-                        timeStr = '全天';
-                    } else if (event.startTime && event.endTime) {
-                        const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                        timeStr = `${start} - ${end}`;
-                    } else if (event.startTime) {
-                        timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
-                            hour: '2-digit',
-                            minute: '2-digit'
-                        });
-                    }
-                    
-                    // 使用事件的类别作为标签
-                    let categoryLabel = '';
-                    if (event.category) {
-                        const categoryColors = {
-                            'work': 'blue',
-                            'study': 'green',
-                            'health': 'yellow',
-                            'life': 'red',
-                            'project': 'green',
-                            'family': 'pink',
-                            'social': 'purple'
-                        };
-                        
-                        const color = categoryColors[event.category] || 'gray';
-                        
-                        categoryLabel = `
-                            <span class="px-2 py-1 bg-${color}-100 text-${color}-800 text-xs rounded-full">${event.category}</span>
-                        `;
-                    }
-                    
-                    eventCard.innerHTML = `
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h4 class="font-medium text-gray-800">${event.title}</h4>
-                                <p class="text-gray-500 text-sm mt-1">${timeStr}</p>
-                            </div>
-                            ${categoryLabel}
-                        </div>
-                        ${event.description ? `<p class="text-gray-600 mt-2 text-sm">${event.description}</p>` : ''}
-                        ${event.location ? `
-                        <div class="mt-3 flex items-center text-sm text-gray-500">
-                            <i class="fas fa-map-marker-alt mr-2"></i>
-                            <span>${event.location}</span>
-                        </div>` : ''}
-                        <div class="mt-4 flex justify-between">
-                            <div class="flex space-x-2">
-                                <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50" data-id="${event.id}" data-action="edit">
-                                    <i class="fas fa-edit mr-1"></i>编辑
-                                </button>
-                                <button class="px-3 py-1 text-xs border rounded hover:bg-gray-50" data-id="${event.id}" data-action="delete">
-                                    <i class="fas fa-trash mr-1"></i>删除
-                                </button>
-                            </div>
-                            ${event.eventType === 'plan' ? `
-                            <button class="px-3 py-1 text-xs bg-indigo-100 text-indigo-700 rounded hover:bg-indigo-200" data-id="${event.id}" data-action="complete">
-                                <i class="fas fa-check mr-1"></i>完成
-                            </button>` : ''}
-                        </div>
-                    `;
-                    
-                    sidebarContent.appendChild(eventCard);
-                });
-                
-                // 绑定事件按钮的点击事件
-                sidebarContent.querySelectorAll('button[data-action]').forEach(button => {
-                    button.addEventListener('click', function() {
-                        const eventId = this.getAttribute('data-id');
-                        const action = this.getAttribute('data-action');
-                        
-                        if (action === 'edit') {
-                            // 编辑事件（待实现）
-                            alert('编辑功能正在开发中');
-                        } else if (action === 'delete') {
-                            // 删除事件
-                            if (confirm('确定要删除这个事件吗？')) {
-                                deleteEvent(eventId);
-                                updateSidebar(date);
-                                renderCalendar(currentDate, currentView);
-                            }
-                        } else if (action === 'complete') {
-                            // 标记计划为完成
-                            completeEvent(eventId);
-                            updateSidebar(date);
-                            renderCalendar(currentDate, currentView);
-                        }
-                    });
-                });
-            }
-            
             // 删除事件
             function deleteEvent(eventId) {
                 const events = getEvents();
@@ -1058,6 +946,374 @@
                     localStorage.setItem('events', JSON.stringify(events));
                 }
             }
+
+            // 筛选器功能
+            const filterAll = document.getElementById('filter-all');
+            const filterRecords = document.getElementById('filter-records');
+            const filterCompletedPlans = document.getElementById('filter-completed-plans');
+            
+            // 筛选器变化时重新渲染日历
+            filterAll.addEventListener('change', function() {
+                if (this.checked) {
+                    filterRecords.checked = true;
+                    filterCompletedPlans.checked = true;
+                }
+                renderCalendar(currentDate, currentView);
+            });
+            
+            filterRecords.addEventListener('change', function() {
+                if (!this.checked && !filterCompletedPlans.checked) {
+                    filterAll.checked = false;
+                } else if (this.checked && filterCompletedPlans.checked) {
+                    filterAll.checked = true;
+                }
+                renderCalendar(currentDate, currentView);
+            });
+            
+            filterCompletedPlans.addEventListener('change', function() {
+                if (!this.checked && !filterRecords.checked) {
+                    filterAll.checked = false;
+                } else if (this.checked && filterRecords.checked) {
+                    filterAll.checked = true;
+                }
+                renderCalendar(currentDate, currentView);
+            });
+            
+            // 事件点击显示详情
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const eventElement = e.target.closest('[data-event-id]');
+                    const eventId = eventElement.getAttribute('data-event-id');
+                    
+                    // 查找事件详情
+                    const event = getEvents().find(event => event.id === eventId);
+                    if (event) {
+                        // 创建详情弹窗
+                        let detailModal = document.getElementById('event-detail-modal');
+                        if (!detailModal) {
+                            detailModal = document.createElement('div');
+                            detailModal.id = 'event-detail-modal';
+                            detailModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 hidden';
+                            document.body.appendChild(detailModal);
+                        }
+                        
+                        // 设置弹窗标题和图标
+                        let statusText = '';
+                        let iconClass = '';
+                        let bgColorClass = '';
+                        let buttonClass = '';
+                        
+                        if (event.eventType === 'record') {
+                            statusText = '记录的事件';
+                            iconClass = 'fas fa-bookmark text-purple-600';
+                            bgColorClass = 'bg-purple-50';
+                            buttonClass = 'bg-purple-600 hover:bg-purple-700';
+                        } else if (event.eventType === 'plan' && event.status === 'completed') {
+                            statusText = '已完成计划';
+                            iconClass = 'fas fa-check-circle text-green-600';
+                            bgColorClass = 'bg-green-50';
+                            buttonClass = 'bg-green-600 hover:bg-green-700';
+                        } else {
+                            statusText = '计划';
+                            iconClass = 'fas fa-calendar-check text-blue-600';
+                            bgColorClass = 'bg-blue-50';
+                            buttonClass = 'bg-blue-600 hover:bg-blue-700';
+                        }
+                        
+                        // 格式化时间
+                        let timeStr = '';
+                        if (event.isAllDay) {
+                            timeStr = '全天';
+                        } else if (event.startTime && event.endTime) {
+                            const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            timeStr = `${start} - ${end}`;
+                        } else if (event.startTime) {
+                            timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        // 创建日期
+                        let createdStr = '';
+                        if (event.createdAt) {
+                            const createdDate = new Date(event.createdAt);
+                            createdStr = createdDate.toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        // 完成时间（如果有）
+                        let completedStr = '';
+                        if (event.eventType === 'plan' && event.status === 'completed' && event.updatedAt) {
+                            const completedDate = new Date(event.updatedAt);
+                            completedStr = completedDate.toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        // 操作按钮
+                        let actionButtons = '';
+                        if (event.eventType === 'plan' && event.status !== 'completed') {
+                            actionButtons = `
+                                <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors complete-btn" data-id="${event.id}">
+                                    <i class="fas fa-check mr-2"></i>标记为完成
+                                </button>
+                            `;
+                        }
+                        
+                        detailModal.innerHTML = `
+                            <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                                <div class="p-6 ${bgColorClass} border-b flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="${iconClass} text-xl mr-3"></i>
+                                        <h3 class="text-xl font-bold text-gray-800">${event.title}</h3>
+                                    </div>
+                                    <button class="text-gray-500 hover:text-gray-700 close-modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="p-6">
+                                    <div class="mb-4">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-tag text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">类型:</span>
+                                            <span class="ml-2">${statusText}</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-clock text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">时间:</span>
+                                            <span class="ml-2">${timeStr}</span>
+                                        </div>
+                                        
+                                        ${event.location ? `
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-map-marker-alt text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">地点:</span>
+                                            <span class="ml-2">${event.location}</span>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${event.category ? `
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-folder text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">分类:</span>
+                                            <span class="ml-2">${event.category}</span>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-calendar-plus text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">创建于:</span>
+                                            <span class="ml-2">${createdStr}</span>
+                                        </div>
+                                        
+                                        ${completedStr ? `
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-calendar-check text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">完成于:</span>
+                                            <span class="ml-2">${completedStr}</span>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    ${event.description ? `
+                                    <div class="mb-6">
+                                        <h4 class="text-gray-700 font-medium mb-2">描述</h4>
+                                        <p class="text-gray-600 bg-gray-50 p-3 rounded">${event.description}</p>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    <div class="flex justify-between mt-6">
+                                        <div class="flex space-x-2">
+                                            <button class="px-3 py-2 border rounded hover:bg-gray-50 edit-btn" data-id="${event.id}">
+                                                <i class="fas fa-edit mr-1"></i>编辑
+                                            </button>
+                                            <button class="px-3 py-2 border rounded hover:bg-gray-50 delete-btn" data-id="${event.id}">
+                                                <i class="fas fa-trash mr-1"></i>删除
+                                            </button>
+                                        </div>
+                                        ${actionButtons}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        detailModal.classList.remove('hidden');
+                        
+                        // 绑定关闭按钮事件
+                        const closeBtn = detailModal.querySelector('.close-modal');
+                        closeBtn.addEventListener('click', function() {
+                            detailModal.classList.add('hidden');
+                        });
+                        
+                        // 点击空白区域关闭
+                        detailModal.addEventListener('click', function(e) {
+                            if (e.target === detailModal) {
+                                detailModal.classList.add('hidden');
+                            }
+                        });
+                        
+                        // 按ESC键关闭
+                        document.addEventListener('keydown', function(e) {
+                            if (e.key === 'Escape' && !detailModal.classList.contains('hidden')) {
+                                detailModal.classList.add('hidden');
+                            }
+                        });
+                        
+                        // 编辑按钮事件
+                        const editBtn = detailModal.querySelector('.edit-btn');
+                        editBtn.addEventListener('click', function() {
+                            alert('编辑功能正在开发中');
+                            detailModal.classList.add('hidden');
+                        });
+                        
+                        // 删除按钮事件
+                        const deleteBtn = detailModal.querySelector('.delete-btn');
+                        deleteBtn.addEventListener('click', function() {
+                            if (confirm('确定要删除这个事件吗？')) {
+                                deleteEvent(eventId);
+                                renderCalendar(currentDate, currentView);
+                                detailModal.classList.add('hidden');
+                            }
+                        });
+                        
+                        // 完成按钮事件（如果存在）
+                        const completeBtn = detailModal.querySelector('.complete-btn');
+                        if (completeBtn) {
+                            completeBtn.addEventListener('click', function() {
+                                completeEvent(eventId);
+                                renderCalendar(currentDate, currentView);
+                                detailModal.classList.add('hidden');
+                            });
+                        }
+                    }
+                }
+            });
+
+            // 事件悬停显示详情
+            document.addEventListener('mouseover', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const eventElement = e.target.closest('[data-event-id]');
+                    const eventId = eventElement.getAttribute('data-event-id');
+                    
+                    // 查找事件详情
+                    const event = getEvents().find(event => event.id === eventId);
+                    if (event) {
+                        // 创建或获取悬浮提示框
+                        let tooltip = document.getElementById('event-tooltip');
+                        if (!tooltip) {
+                            tooltip = document.createElement('div');
+                            tooltip.id = 'event-tooltip';
+                            tooltip.className = 'absolute z-50 bg-white p-3 rounded-lg shadow-lg border text-sm max-w-xs';
+                            document.body.appendChild(tooltip);
+                        }
+                        
+                        // 设置提示框内容
+                        let statusText = '';
+                        let iconClass = '';
+                        let bgColorClass = '';
+                        
+                        if (event.eventType === 'record') {
+                            statusText = '记录的事件';
+                            iconClass = 'fas fa-bookmark text-purple-600';
+                            bgColorClass = 'bg-purple-50 border-purple-200';
+                        } else if (event.eventType === 'plan' && event.status === 'completed') {
+                            statusText = '已完成计划';
+                            iconClass = 'fas fa-check-circle text-green-600';
+                            bgColorClass = 'bg-green-50 border-green-200';
+                        } else {
+                            statusText = '计划';
+                            iconClass = 'fas fa-calendar-check text-blue-600';
+                            bgColorClass = 'bg-blue-50 border-blue-200';
+                        }
+                        
+                        // 格式化时间
+                        let timeStr = '';
+                        if (event.isAllDay) {
+                            timeStr = '全天';
+                        } else if (event.startTime && event.endTime) {
+                            const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            timeStr = `${start} - ${end}`;
+                        } else if (event.startTime) {
+                            timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        tooltip.className = `absolute z-50 p-3 rounded-lg shadow-lg border text-sm max-w-xs ${bgColorClass}`;
+                        tooltip.innerHTML = `
+                            <div class="flex items-center font-medium text-gray-800 border-b pb-1 mb-2">
+                                <i class="${iconClass} mr-1"></i>
+                                ${statusText}: ${event.title}
+                            </div>
+                            <div>
+                                <span class="font-medium">时间:</span> ${timeStr}
+                            </div>
+                            ${event.location ? `
+                            <div class="mt-1">
+                                <span class="font-medium">地点:</span> ${event.location}
+                            </div>
+                            ` : ''}
+                            ${event.category ? `
+                            <div class="mt-1">
+                                <span class="font-medium">分类:</span> ${event.category}
+                            </div>
+                            ` : ''}
+                            <div class="mt-2 text-xs text-gray-500 italic">点击查看详情</div>
+                        `;
+                        
+                        // 定位提示框
+                        const rect = eventElement.getBoundingClientRect();
+                        tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+                        tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                        tooltip.style.display = 'block';
+                        
+                        // 添加可见性类以触发动画
+                        setTimeout(() => {
+                            tooltip.classList.add('visible');
+                        }, 10);
+                    }
+                }
+            });
+
+            document.addEventListener('mouseout', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const tooltip = document.getElementById('event-tooltip');
+                    if (tooltip) {
+                        tooltip.classList.remove('visible');
+                        
+                        // 在动画完成后隐藏
+                        setTimeout(() => {
+                            tooltip.style.display = 'none';
+                        }, 200);
+                    }
+                }
+            });
         });
     </script>
     
