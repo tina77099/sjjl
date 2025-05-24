@@ -1117,11 +1117,15 @@ document.addEventListener('DOMContentLoaded', function() {
                         statusLabel.textContent = '已完成';
                         statusLabel.className = 'px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full task-status mr-2';
                         this.dataset.status = 'completed';
+                        // 显示完成通知
+                        showNotification(`计划"${plan.title}"已标记为完成！`, 'success');
                     } else {
                         // 任务被标记为未完成
                         statusLabel.textContent = '待处理';
                         statusLabel.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status mr-2';
                         this.dataset.status = 'pending';
+                        // 显示取消完成通知
+                        showNotification(`计划"${plan.title}"已标记为未完成`, 'info');
                     }
                     
                     // 更新localStorage中的计划状态
@@ -1150,11 +1154,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     });
                 }
                 
-                // 整个计划项的点击事件触发编辑
-                planItem.addEventListener('click', function() {
-                    const planId = this.dataset.planId;
-                    editPlan(planId);
-                });
+                // 将计划项的点击事件改为只在标题和描述区域触发编辑
+                const planContent = planItem.querySelector('.ml-3');
+                if (planContent) {
+                    planContent.addEventListener('click', function(e) {
+                        const planId = planItem.dataset.planId;
+                        editPlan(planId);
+                    });
+                }
                 
                 planListContainer.appendChild(planItem);
             });
