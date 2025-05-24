@@ -239,9 +239,10 @@ function createEventElement(event) {
     // 确定事件状态样式
     // 如果是记录类型，默认设置为已完成状态，但标题保持正常显示
     const isCompleted = event.eventType === 'record' || event.status === 'completed';
-    // 只有计划类型且已完成的事件才使用划线和灰色标题
-    const titleClass = (event.eventType === 'plan' && isCompleted) ? 'line-through text-gray-400' : '';
-    const descClass = isCompleted ? 'text-gray-400 line-through' : 'text-gray-600';
+    // 移除已完成计划的标题划线和灰色样式
+    const titleClass = '';
+    // 记录类型的描述不使用划线
+    const descClass = event.eventType === 'record' ? 'text-gray-600' : (isCompleted ? 'text-gray-400 line-through' : 'text-gray-600');
     
     // 格式化日期和时间
     const eventDate = new Date(event.startTime);
@@ -391,9 +392,10 @@ function createEventCardElement(event) {
     // 确定事件状态样式
     // 如果是记录类型，默认设置为已完成状态，但标题保持正常显示
     const isCompleted = event.eventType === 'record' || event.status === 'completed';
-    // 只有计划类型且已完成的事件才使用划线和灰色标题
-    const titleClass = (event.eventType === 'plan' && isCompleted) ? 'line-through text-gray-400' : 'text-gray-800';
-    const descClass = isCompleted ? 'text-gray-400 line-through' : 'text-gray-600';
+    // 移除已完成计划的标题划线和灰色样式
+    const titleClass = 'text-gray-800';
+    // 记录类型的描述不使用划线
+    const descClass = event.eventType === 'record' ? 'text-gray-600' : (isCompleted ? 'text-gray-400 line-through' : 'text-gray-600');
     
     // 确定分类样式
     const categoryColors = {
@@ -565,7 +567,7 @@ function toggleEventStatus(eventId, checkbox) {
         const eventElement = checkbox.closest('[data-event-id]');
         const checkIcon = checkbox.querySelector('i');
         const eventTitle = eventElement.querySelector('.font-medium');
-        const eventDesc = eventElement.querySelectorAll('p, .text-sm.text-gray-500, .px-2.py-0.5');
+        const eventDesc = eventElement.querySelectorAll('p');
         
         // 根据事件类型确定复选框样式
         if (event.eventType === 'record') {
@@ -580,7 +582,12 @@ function toggleEventStatus(eventId, checkbox) {
                 checkbox.className = 'h-5 w-5 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer event-checkbox checked';
             }
             
-            // 记录类型事件不改变标题样式
+            // 记录类型事件不改变标题和描述样式
+            eventDesc.forEach(el => {
+                el.classList.remove('line-through', 'text-gray-400');
+                el.classList.add('text-gray-600');
+            });
+            
             // 显示通知
             showNotification(`事件"${event.title}"状态已更新`, 'info');
         } else {
@@ -592,9 +599,11 @@ function toggleEventStatus(eventId, checkbox) {
                 checkIcon.classList.add('opacity-0');
                 checkIcon.className = 'fas fa-check text-blue-600 text-xs opacity-0';
                 
-                // 移除标题的划线和灰色
-                eventTitle.classList.remove('line-through', 'text-gray-400');
-                eventDesc.forEach(el => el.classList.remove('line-through', 'text-gray-400'));
+                // 对于计划类型，只修改描述的样式，标题保持正常
+                eventDesc.forEach(el => {
+                    el.classList.remove('line-through', 'text-gray-400');
+                    el.classList.add('text-gray-600');
+                });
                 
                 // 显示通知
                 showNotification(`事件"${event.title}"已标记为未完成`, 'info');
@@ -605,9 +614,11 @@ function toggleEventStatus(eventId, checkbox) {
                 checkIcon.classList.remove('opacity-0');
                 checkIcon.className = 'fas fa-check text-blue-600 text-xs';
                 
-                // 添加标题的划线和灰色
-                eventTitle.classList.add('line-through', 'text-gray-400');
-                eventDesc.forEach(el => el.classList.add('line-through', 'text-gray-400'));
+                // 对于计划类型，只修改描述的样式，标题保持正常
+                eventDesc.forEach(el => {
+                    el.classList.add('line-through', 'text-gray-400');
+                    el.classList.remove('text-gray-600');
+                });
                 
                 // 显示通知
                 showNotification(`事件"${event.title}"已标记为完成！`, 'success');
