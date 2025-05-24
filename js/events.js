@@ -237,7 +237,8 @@ function createEventElement(event) {
     eventDiv.dataset.eventId = event.id;
     
     // 确定事件状态样式
-    const isCompleted = event.status === 'completed';
+    // 如果是记录类型，默认设置为已完成状态
+    const isCompleted = event.eventType === 'record' || event.status === 'completed';
     const titleClass = isCompleted ? 'line-through text-gray-400' : '';
     const descClass = isCompleted ? 'text-gray-400 line-through' : 'text-gray-600';
     
@@ -372,7 +373,8 @@ function createEventCardElement(event) {
     cardDiv.dataset.eventId = event.id;
     
     // 确定事件状态样式
-    const isCompleted = event.status === 'completed';
+    // 如果是记录类型，默认设置为已完成状态
+    const isCompleted = event.eventType === 'record' || event.status === 'completed';
     const titleClass = isCompleted ? 'line-through text-gray-400' : 'text-gray-800';
     const descClass = isCompleted ? 'text-gray-400 line-through' : 'text-gray-600';
     
