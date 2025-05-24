@@ -334,11 +334,11 @@ function createEventElement(event) {
     
     const checkIconClass = event.eventType === 'record'
         ? 'fas fa-check text-purple-600 text-xs'
-        : 'fas fa-check text-white text-xs';
+        : 'fas fa-check text-blue-600 text-xs';
     
     const checkboxBg = event.eventType === 'record'
         ? 'bg-purple-100'
-        : (isCompleted ? 'bg-green-500' : 'border-2 border-green-500');
+        : (isCompleted ? 'bg-blue-100' : 'border-2 border-blue-600');
     
     const checkIconVisibility = event.eventType === 'record' || isCompleted ? '' : 'opacity-0';
     
@@ -442,11 +442,11 @@ function createEventCardElement(event) {
     
     const checkIconClass = event.eventType === 'record'
         ? 'fas fa-check text-purple-600 text-xs'
-        : 'fas fa-check text-white text-xs';
+        : 'fas fa-check text-blue-600 text-xs';
     
     const checkboxBg = event.eventType === 'record'
         ? 'bg-purple-100'
-        : (isCompleted ? 'bg-green-500' : 'border-2 border-green-500');
+        : (isCompleted ? 'bg-blue-100' : 'border-2 border-blue-600');
     
     const checkIconVisibility = event.eventType === 'record' || isCompleted ? '' : 'opacity-0';
     
@@ -584,13 +584,13 @@ function toggleEventStatus(eventId, checkbox) {
             // 显示通知
             showNotification(`事件"${event.title}"状态已更新`, 'info');
         } else {
-            // 计划类型事件使用绿色图标样式
+            // 计划类型事件使用浅蓝色图标样式
             if (isCompleted) {
                 // 取消选中
-                checkbox.classList.remove('checked', 'bg-green-500');
-                checkbox.classList.add('border-2', 'border-green-500');
+                checkbox.classList.remove('checked', 'bg-blue-100');
+                checkbox.classList.add('border-2', 'border-blue-600');
                 checkIcon.classList.add('opacity-0');
-                checkIcon.className = 'fas fa-check text-white text-xs opacity-0';
+                checkIcon.className = 'fas fa-check text-blue-600 text-xs opacity-0';
                 
                 // 移除标题的划线和灰色
                 eventTitle.classList.remove('line-through', 'text-gray-400');
@@ -600,10 +600,10 @@ function toggleEventStatus(eventId, checkbox) {
                 showNotification(`事件"${event.title}"已标记为未完成`, 'info');
             } else {
                 // 选中
-                checkbox.classList.add('checked', 'bg-green-500');
-                checkbox.classList.remove('border-2', 'border-green-500');
+                checkbox.classList.add('checked', 'bg-blue-100');
+                checkbox.classList.remove('border-2', 'border-blue-600');
                 checkIcon.classList.remove('opacity-0');
-                checkIcon.className = 'fas fa-check text-white text-xs';
+                checkIcon.className = 'fas fa-check text-blue-600 text-xs';
                 
                 // 添加标题的划线和灰色
                 eventTitle.classList.add('line-through', 'text-gray-400');
