@@ -692,7 +692,153 @@
             }
             
             // 事件悬停显示详情
-            // ... existing code ...
+            // 添加防抖动变量
+            let tooltipTimeout = null;
+            let tooltipHideTimeout = null;
+            
+            document.addEventListener('mouseover', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const eventElement = e.target.closest('[data-event-id]');
+                    const eventId = eventElement.getAttribute('data-event-id');
+                    
+                    // 清除任何现有的隐藏计时器
+                    if (tooltipHideTimeout) {
+                        clearTimeout(tooltipHideTimeout);
+                        tooltipHideTimeout = null;
+                    }
+                    
+                    // 使用防抖动机制显示提示框
+                    if (tooltipTimeout) clearTimeout(tooltipTimeout);
+                    
+                    tooltipTimeout = setTimeout(() => {
+                        // 查找事件详情
+                        const event = getEvents().find(event => event.id === eventId);
+                        if (event) {
+                            // 创建或获取悬浮提示框
+                            let tooltip = document.getElementById('event-tooltip');
+                            if (!tooltip) {
+                                tooltip = document.createElement('div');
+                                tooltip.id = 'event-tooltip';
+                                tooltip.className = 'absolute z-50 bg-white p-3 rounded-lg shadow-lg border text-sm max-w-xs pointer-events-none';
+                                document.body.appendChild(tooltip);
+                            }
+                            
+                            // 设置提示框内容
+                            let statusText = '';
+                            let iconClass = '';
+                            let bgColorClass = '';
+                            
+                            if (event.eventType === 'record') {
+                                statusText = '记录的事件';
+                                iconClass = 'fas fa-bookmark text-purple-600';
+                                bgColorClass = 'bg-purple-50 border-purple-200';
+                            } else if (event.eventType === 'plan' && event.status === 'completed') {
+                                statusText = '已完成计划';
+                                iconClass = 'fas fa-check-circle text-green-600';
+                                bgColorClass = 'bg-green-50 border-green-200';
+                            } else {
+                                statusText = '计划';
+                                iconClass = 'fas fa-calendar-check text-blue-600';
+                                bgColorClass = 'bg-blue-50 border-blue-200';
+                            }
+                            
+                            // 格式化时间
+                            let timeStr = '';
+                            if (event.isAllDay) {
+                                timeStr = '全天';
+                            } else if (event.startTime && event.endTime) {
+                                const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                timeStr = `${start} - ${end}`;
+                            } else if (event.startTime) {
+                                timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                            }
+                            
+                            tooltip.className = `absolute z-50 p-3 rounded-lg shadow-lg border text-sm max-w-xs pointer-events-none ${bgColorClass}`;
+                            tooltip.innerHTML = `
+                                <div class="flex items-center font-medium text-gray-800 border-b pb-1 mb-2">
+                                    <i class="${iconClass} mr-1"></i>
+                                    ${statusText}: ${event.title}
+                                </div>
+                                <div>
+                                    <span class="font-medium">时间:</span> ${timeStr}
+                                </div>
+                                ${event.location ? `
+                                <div class="mt-1">
+                                    <span class="font-medium">地点:</span> ${event.location}
+                                </div>
+                                ` : ''}
+                                ${event.category ? `
+                                <div class="mt-1">
+                                    <span class="font-medium">分类:</span> ${event.category}
+                                </div>
+                                ` : ''}
+                                <div class="mt-2 text-xs text-gray-500 italic">点击查看详情</div>
+                            `;
+                            
+                            // 改进定位提示框逻辑
+                            const rect = eventElement.getBoundingClientRect();
+                            const tooltipWidth = 250; // 估计的提示框宽度
+                            
+                            // 计算水平位置，确保不会超出视窗
+                            let leftPos = rect.left + window.scrollX + rect.width / 2;
+                            if (leftPos + tooltipWidth/2 > window.innerWidth) {
+                                leftPos = window.innerWidth - tooltipWidth/2 - 10;
+                            } else if (leftPos - tooltipWidth/2 < 10) {
+                                leftPos = tooltipWidth/2 + 10;
+                            }
+                            
+                            tooltip.style.left = `${leftPos}px`;
+                            tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                            tooltip.style.display = 'block';
+                            
+                            // 使用requestAnimationFrame优化动画
+                            requestAnimationFrame(() => {
+                                tooltip.classList.add('visible');
+                            });
+                        }
+                    }, 100); // 100ms的延迟，防止快速移动鼠标时频繁触发
+                }
+            });
+
+            // 使用mouseleave代替mouseout，更适合整个元素的离开检测
+            document.addEventListener('mouseleave', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    // 清除显示计时器
+                    if (tooltipTimeout) {
+                        clearTimeout(tooltipTimeout);
+                        tooltipTimeout = null;
+                    }
+                    
+                    const tooltip = document.getElementById('event-tooltip');
+                    if (tooltip) {
+                        tooltip.classList.remove('visible');
+                        
+                        // 在动画完成后隐藏
+                        tooltipHideTimeout = setTimeout(() => {
+                            tooltip.style.display = 'none';
+                        }, 200);
+                    }
+                }
+            }, true);
+            
+            // 为整个日历网格添加鼠标离开事件，确保鼠标快速移动时也能隐藏提示框
+            document.getElementById('calendar-grid').addEventListener('mouseleave', function() {
+                const tooltip = document.getElementById('event-tooltip');
+                if (tooltip) {
+                    tooltip.classList.remove('visible');
+                    tooltip.style.display = 'none';
+                }
+            });
         });
 
         // 日历视图功能 - 加载计划和记录数据
@@ -1240,114 +1386,6 @@
                                 detailModal.classList.add('hidden');
                             });
                         }
-                    }
-                }
-            });
-
-            // 事件悬停显示详情
-            document.addEventListener('mouseover', function(e) {
-                if (e.target.closest('[data-event-id]')) {
-                    const eventElement = e.target.closest('[data-event-id]');
-                    const eventId = eventElement.getAttribute('data-event-id');
-                    
-                    // 查找事件详情
-                    const event = getEvents().find(event => event.id === eventId);
-                    if (event) {
-                        // 创建或获取悬浮提示框
-                        let tooltip = document.getElementById('event-tooltip');
-                        if (!tooltip) {
-                            tooltip = document.createElement('div');
-                            tooltip.id = 'event-tooltip';
-                            tooltip.className = 'absolute z-50 bg-white p-3 rounded-lg shadow-lg border text-sm max-w-xs';
-                            document.body.appendChild(tooltip);
-                        }
-                        
-                        // 设置提示框内容
-                        let statusText = '';
-                        let iconClass = '';
-                        let bgColorClass = '';
-                        
-                        if (event.eventType === 'record') {
-                            statusText = '记录的事件';
-                            iconClass = 'fas fa-bookmark text-purple-600';
-                            bgColorClass = 'bg-purple-50 border-purple-200';
-                        } else if (event.eventType === 'plan' && event.status === 'completed') {
-                            statusText = '已完成计划';
-                            iconClass = 'fas fa-check-circle text-green-600';
-                            bgColorClass = 'bg-green-50 border-green-200';
-                        } else {
-                            statusText = '计划';
-                            iconClass = 'fas fa-calendar-check text-blue-600';
-                            bgColorClass = 'bg-blue-50 border-blue-200';
-                        }
-                        
-                        // 格式化时间
-                        let timeStr = '';
-                        if (event.isAllDay) {
-                            timeStr = '全天';
-                        } else if (event.startTime && event.endTime) {
-                            const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                            const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                            timeStr = `${start} - ${end}`;
-                        } else if (event.startTime) {
-                            timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-                        }
-                        
-                        tooltip.className = `absolute z-50 p-3 rounded-lg shadow-lg border text-sm max-w-xs ${bgColorClass}`;
-                        tooltip.innerHTML = `
-                            <div class="flex items-center font-medium text-gray-800 border-b pb-1 mb-2">
-                                <i class="${iconClass} mr-1"></i>
-                                ${statusText}: ${event.title}
-                            </div>
-                            <div>
-                                <span class="font-medium">时间:</span> ${timeStr}
-                            </div>
-                            ${event.location ? `
-                            <div class="mt-1">
-                                <span class="font-medium">地点:</span> ${event.location}
-                            </div>
-                            ` : ''}
-                            ${event.category ? `
-                            <div class="mt-1">
-                                <span class="font-medium">分类:</span> ${event.category}
-                            </div>
-                            ` : ''}
-                            <div class="mt-2 text-xs text-gray-500 italic">点击查看详情</div>
-                        `;
-                        
-                        // 定位提示框
-                        const rect = eventElement.getBoundingClientRect();
-                        tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
-                        tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
-                        tooltip.style.display = 'block';
-                        
-                        // 添加可见性类以触发动画
-                        setTimeout(() => {
-                            tooltip.classList.add('visible');
-                        }, 10);
-                    }
-                }
-            });
-
-            document.addEventListener('mouseout', function(e) {
-                if (e.target.closest('[data-event-id]')) {
-                    const tooltip = document.getElementById('event-tooltip');
-                    if (tooltip) {
-                        tooltip.classList.remove('visible');
-                        
-                        // 在动画完成后隐藏
-                        setTimeout(() => {
-                            tooltip.style.display = 'none';
-                        }, 200);
                     }
                 }
             });
