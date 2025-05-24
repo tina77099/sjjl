@@ -300,7 +300,9 @@ function createEventElement(event) {
         'health': 'bg-yellow-100 text-yellow-800',
         'life': 'bg-purple-100 text-purple-800',
         'family': 'bg-pink-100 text-pink-800',
-        'social': 'bg-indigo-100 text-indigo-800'
+        'social': 'bg-indigo-100 text-indigo-800',
+        'experience': 'bg-pink-100 text-pink-800',
+        'leisure': 'bg-purple-100 text-purple-800'
     };
     
     const categoryNames = {
@@ -309,7 +311,9 @@ function createEventElement(event) {
         'health': '健康',
         'life': '生活',
         'family': '家庭',
-        'social': '社交'
+        'social': '社交',
+        'experience': '体验',
+        'leisure': '休闲'
     };
     
     const categoryStyle = categoryStyles[event.category] || 'bg-gray-100 text-gray-800';
@@ -388,7 +392,9 @@ function createEventCardElement(event) {
         'health': 'bg-yellow-500',
         'life': 'bg-purple-500',
         'family': 'bg-pink-500',
-        'social': 'bg-indigo-500'
+        'social': 'bg-indigo-500',
+        'experience': 'bg-pink-500',
+        'leisure': 'bg-purple-500'
     };
     
     // 分类中文名称
@@ -398,7 +404,9 @@ function createEventCardElement(event) {
         'health': '健康',
         'life': '生活',
         'family': '家庭',
-        'social': '社交'
+        'social': '社交',
+        'experience': '体验',
+        'leisure': '休闲'
     };
     
     const categoryColor = categoryColors[event.category] || 'bg-gray-500';
