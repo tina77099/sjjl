@@ -719,7 +719,7 @@
                             if (!tooltip) {
                                 tooltip = document.createElement('div');
                                 tooltip.id = 'event-tooltip';
-                                tooltip.className = 'absolute z-50 bg-white p-3 rounded-lg shadow-lg border text-sm max-w-xs pointer-events-none';
+                                tooltip.className = 'absolute z-50 bg-white p-3 rounded-lg shadow-lg border text-sm max-w-xs';
                                 document.body.appendChild(tooltip);
                             }
                             
@@ -763,7 +763,7 @@
                                 });
                             }
                             
-                            tooltip.className = `absolute z-50 p-3 rounded-lg shadow-lg border text-sm max-w-xs pointer-events-none ${bgColorClass}`;
+                            tooltip.className = `absolute z-50 p-3 rounded-lg shadow-lg border text-sm max-w-xs ${bgColorClass}`;
                             tooltip.innerHTML = `
                                 <div class="flex items-center font-medium text-gray-800 border-b pb-1 mb-2">
                                     <i class="${iconClass} mr-1"></i>
@@ -806,12 +806,12 @@
                                 tooltip.classList.add('visible');
                             });
                         }
-                    }, 100); // 100ms的延迟，防止快速移动鼠标时频繁触发
+                    }, 50); // 减少延迟时间，让提示框更快显示
                 }
             });
 
-            // 使用mouseleave代替mouseout，更适合整个元素的离开检测
-            document.addEventListener('mouseleave', function(e) {
+            // 使用mouseout事件，确保能正确触发
+            document.addEventListener('mouseout', function(e) {
                 if (e.target.closest('[data-event-id]')) {
                     // 清除显示计时器
                     if (tooltipTimeout) {
@@ -829,7 +829,7 @@
                         }, 200);
                     }
                 }
-            }, true);
+            });
             
             // 为整个日历网格添加鼠标离开事件，确保鼠标快速移动时也能隐藏提示框
             document.getElementById('calendar-grid').addEventListener('mouseleave', function() {
