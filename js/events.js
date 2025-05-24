@@ -9,6 +9,11 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// 分页相关变量
+let currentPage = 1;
+const eventsPerPage = 10; // 每页显示的事件数量
+let totalPages = 1;
+
 /**
  * 初始化事件列表页面
  */
@@ -26,12 +31,24 @@ function initializeEventsPage() {
     const filteredEvents = filterEvents(events, filterType, filterStatus, filterCategory);
     const sortedEvents = sortEvents(filteredEvents, sortOption);
     
+    // 计算总页数
+    totalPages = Math.ceil(sortedEvents.length / eventsPerPage);
+    if (totalPages === 0) totalPages = 1;
+    
+    // 确保当前页在有效范围内
+    if (currentPage > totalPages) {
+        currentPage = totalPages;
+    }
+    
     // 按日期分组事件
     const groupedEvents = groupEventsByDate(sortedEvents);
     
     // 渲染事件列表
     renderEventsList(groupedEvents);
     renderEventsCards(groupedEvents);
+    
+    // 渲染分页控件
+    renderPagination();
     
     // 添加事件监听器
     setupEventListeners();
@@ -168,6 +185,11 @@ function renderEventsList(groupedEvents) {
         { key: 'past', title: '过去', icon: 'calendar-minus' }
     ];
     
+    // 计算当前页的起始和结束索引
+    let totalRendered = 0;
+    let startIndex = (currentPage - 1) * eventsPerPage;
+    let endIndex = startIndex + eventsPerPage;
+    
     // 渲染每个组
     groupsToRender.forEach(group => {
         const events = groupedEvents[group.key];
@@ -186,12 +208,22 @@ function renderEventsList(groupedEvents) {
             `;
             listView.appendChild(groupDiv);
             
-            // 渲染该组的所有事件
+            // 渲染该组的事件，但只渲染当前页应该显示的部分
             const eventsContainer = document.getElementById(`${group.key}-events`);
-            events.forEach(event => {
-                const eventElement = createEventElement(event);
-                eventsContainer.appendChild(eventElement);
-            });
+            
+            for (let i = 0; i < events.length; i++) {
+                // 如果已经渲染了足够的事件，跳出循环
+                if (totalRendered >= eventsPerPage) break;
+                
+                // 如果当前事件索引在当前页范围内，渲染它
+                if (totalRendered + i >= startIndex && totalRendered + i < endIndex) {
+                    const eventElement = createEventElement(events[i]);
+                    eventsContainer.appendChild(eventElement);
+                }
+            }
+            
+            // 更新已渲染的事件总数
+            totalRendered += Math.min(events.length, endIndex - startIndex - totalRendered);
         }
     });
 }
@@ -215,12 +247,17 @@ function renderEventsCards(groupedEvents) {
         ...groupedEvents.past
     ];
     
+    // 计算当前页的事件
+    const startIndex = (currentPage - 1) * eventsPerPage;
+    const endIndex = Math.min(startIndex + eventsPerPage, allEvents.length);
+    const pageEvents = allEvents.slice(startIndex, endIndex);
+    
     // 创建卡片网格
     const gridDiv = document.createElement('div');
     gridDiv.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4';
     
-    // 渲染所有事件卡片
-    allEvents.forEach(event => {
+    // 渲染当前页的事件卡片
+    pageEvents.forEach(event => {
         const cardElement = createEventCardElement(event);
         gridDiv.appendChild(cardElement);
     });
@@ -484,19 +521,149 @@ function createEventCardElement(event) {
 }
 
 /**
+ * 渲染分页控件
+ */
+function renderPagination() {
+    // 检查是否已存在分页容器，如果不存在则创建
+    let paginationContainer = document.getElementById('pagination-container');
+    if (!paginationContainer) {
+        paginationContainer = document.createElement('div');
+        paginationContainer.id = 'pagination-container';
+        paginationContainer.className = 'flex justify-center items-center mt-6 space-x-2';
+        
+        // 将分页容器添加到列表视图和卡片视图之后
+        const listView = document.getElementById('listView');
+        if (listView) {
+            listView.parentNode.insertBefore(paginationContainer, listView.nextSibling);
+        }
+    } else {
+        // 清空现有分页内容
+        paginationContainer.innerHTML = '';
+    }
+    
+    // 如果总页数小于等于1，不显示分页
+    if (totalPages <= 1) {
+        paginationContainer.style.display = 'none';
+        return;
+    } else {
+        paginationContainer.style.display = 'flex';
+    }
+    
+    // 添加上一页按钮
+    const prevButton = document.createElement('button');
+    prevButton.className = `px-3 py-1 rounded ${currentPage === 1 ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`;
+    prevButton.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevButton.disabled = currentPage === 1;
+    prevButton.addEventListener('click', () => {
+        if (currentPage > 1) {
+            currentPage--;
+            initializeEventsPage();
+        }
+    });
+    paginationContainer.appendChild(prevButton);
+    
+    // 确定要显示的页码范围
+    let startPage = Math.max(1, currentPage - 2);
+    let endPage = Math.min(totalPages, startPage + 4);
+    
+    // 调整起始页以确保显示5个页码（如果有足够的页数）
+    if (endPage - startPage < 4 && totalPages > 5) {
+        startPage = Math.max(1, endPage - 4);
+    }
+    
+    // 添加第一页按钮（如果不在显示范围内）
+    if (startPage > 1) {
+        const firstPageButton = document.createElement('button');
+        firstPageButton.className = 'px-3 py-1 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200';
+        firstPageButton.textContent = '1';
+        firstPageButton.addEventListener('click', () => {
+            currentPage = 1;
+            initializeEventsPage();
+        });
+        paginationContainer.appendChild(firstPageButton);
+        
+        // 如果第一页和起始页之间有间隔，添加省略号
+        if (startPage > 2) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'px-2 py-1 text-gray-500';
+            ellipsis.textContent = '...';
+            paginationContainer.appendChild(ellipsis);
+        }
+    }
+    
+    // 添加页码按钮
+    for (let i = startPage; i <= endPage; i++) {
+        const pageButton = document.createElement('button');
+        pageButton.className = `px-3 py-1 rounded ${i === currentPage ? 'bg-indigo-600 text-white' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`;
+        pageButton.textContent = i.toString();
+        pageButton.addEventListener('click', () => {
+            currentPage = i;
+            initializeEventsPage();
+        });
+        paginationContainer.appendChild(pageButton);
+    }
+    
+    // 添加最后一页按钮（如果不在显示范围内）
+    if (endPage < totalPages) {
+        // 如果结束页和最后一页之间有间隔，添加省略号
+        if (endPage < totalPages - 1) {
+            const ellipsis = document.createElement('span');
+            ellipsis.className = 'px-2 py-1 text-gray-500';
+            ellipsis.textContent = '...';
+            paginationContainer.appendChild(ellipsis);
+        }
+        
+        const lastPageButton = document.createElement('button');
+        lastPageButton.className = 'px-3 py-1 rounded bg-indigo-100 text-indigo-700 hover:bg-indigo-200';
+        lastPageButton.textContent = totalPages.toString();
+        lastPageButton.addEventListener('click', () => {
+            currentPage = totalPages;
+            initializeEventsPage();
+        });
+        paginationContainer.appendChild(lastPageButton);
+    }
+    
+    // 添加下一页按钮
+    const nextButton = document.createElement('button');
+    nextButton.className = `px-3 py-1 rounded ${currentPage === totalPages ? 'bg-gray-200 text-gray-500 cursor-not-allowed' : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200'}`;
+    nextButton.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextButton.disabled = currentPage === totalPages;
+    nextButton.addEventListener('click', () => {
+        if (currentPage < totalPages) {
+            currentPage++;
+            initializeEventsPage();
+        }
+    });
+    paginationContainer.appendChild(nextButton);
+}
+
+/**
  * 设置事件监听器
  */
 function setupEventListeners() {
     // 筛选和排序事件监听
-    document.getElementById('filterType').addEventListener('change', initializeEventsPage);
-    document.getElementById('filterStatus').addEventListener('change', initializeEventsPage);
-    document.getElementById('filterCategory').addEventListener('change', initializeEventsPage);
-    document.getElementById('sortEvents').addEventListener('change', initializeEventsPage);
+    document.getElementById('filterType').addEventListener('change', function() {
+        currentPage = 1; // 重置到第一页
+        initializeEventsPage();
+    });
+    document.getElementById('filterStatus').addEventListener('change', function() {
+        currentPage = 1; // 重置到第一页
+        initializeEventsPage();
+    });
+    document.getElementById('filterCategory').addEventListener('change', function() {
+        currentPage = 1; // 重置到第一页
+        initializeEventsPage();
+    });
+    document.getElementById('sortEvents').addEventListener('change', function() {
+        currentPage = 1; // 重置到第一页
+        initializeEventsPage();
+    });
     
     // 搜索框事件监听
     const searchInput = document.querySelector('input[placeholder="搜索事件..."]');
     if (searchInput) {
         searchInput.addEventListener('input', function() {
+            currentPage = 1; // 重置到第一页
             const searchTerm = this.value.toLowerCase();
             const eventItems = document.querySelectorAll('[data-event-id]');
             
