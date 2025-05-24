@@ -1170,5 +1170,75 @@
                 <!-- 引入组件和公共JS文件 -->
                 <script src="js/components.js"></script>
                 <script src="js/common.js"></script>
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        // ... existing code ...
+                        
+                        // 弹出窗口功能
+                        const planModal = document.getElementById('modal-new-plan');
+                        const recordModal = document.getElementById('modal-new-record');
+                        
+                        // 打开弹出窗口
+                        document.getElementById('btn-new-plan').addEventListener('click', function() {
+                            planModal.classList.remove('hidden');
+                            document.body.style.overflow = 'hidden'; // 防止背景滚动
+                        });
+                        
+                        document.getElementById('btn-new-record').addEventListener('click', function() {
+                            recordModal.classList.remove('hidden');
+                            document.body.style.overflow = 'hidden';
+                        });
+                        
+                        // 关闭弹出窗口
+                        document.getElementById('close-plan-modal').addEventListener('click', function() {
+                            planModal.classList.add('hidden');
+                            document.body.style.overflow = '';
+                        });
+                        
+                        document.getElementById('cancel-plan-btn').addEventListener('click', function() {
+                            planModal.classList.add('hidden');
+                            document.body.style.overflow = '';
+                        });
+                        
+                        document.getElementById('close-record-modal').addEventListener('click', function() {
+                            recordModal.classList.add('hidden');
+                            document.body.style.overflow = '';
+                        });
+                        
+                        document.getElementById('cancel-record-btn').addEventListener('click', function() {
+                            recordModal.classList.add('hidden');
+                            document.body.style.overflow = '';
+                        });
+                        
+                        // 点击模态窗口外部关闭
+                        planModal.addEventListener('click', function(e) {
+                            if (e.target === planModal) {
+                                planModal.classList.add('hidden');
+                                document.body.style.overflow = '';
+                            }
+                        });
+                        
+                        recordModal.addEventListener('click', function(e) {
+                            if (e.target === recordModal) {
+                                recordModal.classList.add('hidden');
+                                document.body.style.overflow = '';
+                            }
+                        });
+                        
+                        // 设置今天的日期
+                        const today = new Date();
+                        const formattedDate = today.toISOString().substring(0, 10);
+                        document.getElementById('plan-due-date').value = formattedDate;
+                        document.getElementById('record-date').value = formattedDate;
+                        
+                        // 确保表单处理程序初始化
+                        if (typeof initializeFormHandlers === 'function') {
+                            initializeFormHandlers();
+                            console.log('已初始化表单处理程序');
+                        } else {
+                            console.error('未找到initializeFormHandlers函数');
+                        }
+                    });
+                </script>
             </body>
         </html>
