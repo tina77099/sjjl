@@ -357,15 +357,6 @@ function createEventElement(event) {
                     <span class="text-sm text-gray-500">${event.location}</span>
                 </div>
             ` : ''}
-            ${event.tags && event.tags.length > 0 ? `
-                <div class="mt-2 flex flex-wrap gap-1">
-                    ${event.tags.map(tag => {
-                        // 将英文标签转换为中文
-                        const tagName = categoryNames[tag] || tag;
-                        return `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tagName}</span>`;
-                    }).join('')}
-                </div>
-            ` : ''}
         </div>
     `;
     
@@ -450,16 +441,6 @@ function createEventCardElement(event) {
                     </button>
                 </div>
             </div>
-            ${event.tags && event.tags.length > 0 ? `
-                <div class="mt-2 flex flex-wrap gap-1">
-                    ${event.tags.slice(0, 3).map(tag => {
-                        // 将英文标签转换为中文
-                        const tagName = categoryNames[tag] || tag;
-                        return `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tagName}</span>`;
-                    }).join('')}
-                    ${event.tags.length > 3 ? `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">+${event.tags.length - 3}</span>` : ''}
-                </div>
-            ` : ''}
         </div>
     `;
     
