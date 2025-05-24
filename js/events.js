@@ -237,9 +237,10 @@ function createEventElement(event) {
     eventDiv.dataset.eventId = event.id;
     
     // 确定事件状态样式
-    // 如果是记录类型，默认设置为已完成状态
+    // 如果是记录类型，默认设置为已完成状态，但标题保持正常显示
     const isCompleted = event.eventType === 'record' || event.status === 'completed';
-    const titleClass = isCompleted ? 'line-through text-gray-400' : '';
+    // 只有计划类型且已完成的事件才使用划线和灰色标题
+    const titleClass = (event.eventType === 'plan' && isCompleted) ? 'line-through text-gray-400' : '';
     const descClass = isCompleted ? 'text-gray-400 line-through' : 'text-gray-600';
     
     // 格式化日期和时间
@@ -326,12 +327,27 @@ function createEventElement(event) {
         ? '<span class="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">计划</span>'
         : '<span class="ml-2 px-2 py-0.5 bg-purple-600 text-white text-xs rounded-full">记录</span>';
     
+    // 根据事件类型确定复选框颜色和样式
+    const checkboxClass = event.eventType === 'record' 
+        ? 'bg-purple-100 rounded-full flex items-center justify-center cursor-pointer event-checkbox' 
+        : 'rounded-full flex items-center justify-center cursor-pointer event-checkbox';
+    
+    const checkIconClass = event.eventType === 'record'
+        ? 'fas fa-check text-purple-600 text-xs'
+        : 'fas fa-check text-white text-xs';
+    
+    const checkboxBg = event.eventType === 'record'
+        ? 'bg-purple-100'
+        : (isCompleted ? 'bg-green-500' : 'border-2 border-green-500');
+    
+    const checkIconVisibility = event.eventType === 'record' || isCompleted ? '' : 'opacity-0';
+    
     // 构建HTML
     eventDiv.innerHTML = `
         <div class="flex items-center justify-between">
             <div class="flex items-center">
-                <div class="h-5 w-5 rounded-full ${isCompleted ? 'bg-green-500' : 'border-2 border-green-500'} flex items-center justify-center cursor-pointer event-checkbox ${isCompleted ? 'checked' : ''}">
-                    <i class="fas fa-check text-white text-xs ${isCompleted ? '' : 'opacity-0'}"></i>
+                <div class="h-5 w-5 ${checkboxBg} ${checkboxClass} ${isCompleted ? 'checked' : ''}">
+                    <i class="${checkIconClass} ${checkIconVisibility}"></i>
                 </div>
                 <span class="ml-3 font-medium ${titleClass}">${event.title}</span>
                 ${categoryBadge}
@@ -373,9 +389,10 @@ function createEventCardElement(event) {
     cardDiv.dataset.eventId = event.id;
     
     // 确定事件状态样式
-    // 如果是记录类型，默认设置为已完成状态
+    // 如果是记录类型，默认设置为已完成状态，但标题保持正常显示
     const isCompleted = event.eventType === 'record' || event.status === 'completed';
-    const titleClass = isCompleted ? 'line-through text-gray-400' : 'text-gray-800';
+    // 只有计划类型且已完成的事件才使用划线和灰色标题
+    const titleClass = (event.eventType === 'plan' && isCompleted) ? 'line-through text-gray-400' : 'text-gray-800';
     const descClass = isCompleted ? 'text-gray-400 line-through' : 'text-gray-600';
     
     // 确定分类样式
@@ -418,14 +435,29 @@ function createEventCardElement(event) {
         timeStr = `${hours}:${minutes}`;
     }
     
+    // 根据事件类型确定复选框颜色和样式
+    const checkboxClass = event.eventType === 'record' 
+        ? 'bg-purple-100 rounded-full flex items-center justify-center cursor-pointer event-checkbox' 
+        : 'rounded-full flex items-center justify-center cursor-pointer event-checkbox';
+    
+    const checkIconClass = event.eventType === 'record'
+        ? 'fas fa-check text-purple-600 text-xs'
+        : 'fas fa-check text-white text-xs';
+    
+    const checkboxBg = event.eventType === 'record'
+        ? 'bg-purple-100'
+        : (isCompleted ? 'bg-green-500' : 'border-2 border-green-500');
+    
+    const checkIconVisibility = event.eventType === 'record' || isCompleted ? '' : 'opacity-0';
+    
     // 构建HTML
     cardDiv.innerHTML = `
         <div class="h-2 ${categoryColor}"></div>
         <div class="p-4">
             <div class="flex justify-between items-start">
                 <h3 class="font-medium ${titleClass}">${event.title}</h3>
-                <div class="h-6 w-6 rounded-full ${isCompleted ? 'bg-green-500' : 'border-2 border-green-500'} flex items-center justify-center cursor-pointer event-checkbox ${isCompleted ? 'checked' : ''}">
-                    <i class="fas fa-check text-white text-xs ${isCompleted ? '' : 'opacity-0'}"></i>
+                <div class="h-6 w-6 ${checkboxBg} ${checkboxClass} ${isCompleted ? 'checked' : ''}">
+                    <i class="${checkIconClass} ${checkIconVisibility}"></i>
                 </div>
             </div>
             ${event.description ? `<p class="mt-2 text-sm ${descClass} line-clamp-2">${event.description}</p>` : ''}
@@ -535,26 +567,51 @@ function toggleEventStatus(eventId, checkbox) {
         const eventTitle = eventElement.querySelector('.font-medium');
         const eventDesc = eventElement.querySelectorAll('p, .text-sm.text-gray-500, .px-2.py-0.5');
         
-        if (isCompleted) {
-            // 取消选中
-            checkbox.classList.remove('checked', 'bg-green-500');
-            checkbox.classList.add('border-2', 'border-green-500');
-            checkIcon.classList.add('opacity-0');
-            eventTitle.classList.remove('line-through', 'text-gray-400');
-            eventDesc.forEach(el => el.classList.remove('line-through', 'text-gray-400'));
+        // 根据事件类型确定复选框样式
+        if (event.eventType === 'record') {
+            // 记录类型事件使用紫色图标样式
+            if (isCompleted) {
+                // 取消选中 - 对于记录类型，我们保持紫色样式但可能需要调整某些状态
+                checkIcon.className = 'fas fa-check text-purple-600 text-xs';
+                checkbox.className = 'h-5 w-5 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer event-checkbox';
+            } else {
+                // 选中 - 对于记录类型，我们保持紫色样式
+                checkIcon.className = 'fas fa-check text-purple-600 text-xs';
+                checkbox.className = 'h-5 w-5 bg-purple-100 rounded-full flex items-center justify-center cursor-pointer event-checkbox checked';
+            }
             
+            // 记录类型事件不改变标题样式
             // 显示通知
-            showNotification(`事件"${event.title}"已标记为未完成`, 'info');
+            showNotification(`事件"${event.title}"状态已更新`, 'info');
         } else {
-            // 选中
-            checkbox.classList.add('checked', 'bg-green-500');
-            checkbox.classList.remove('border-2', 'border-green-500');
-            checkIcon.classList.remove('opacity-0');
-            eventTitle.classList.add('line-through', 'text-gray-400');
-            eventDesc.forEach(el => el.classList.add('line-through', 'text-gray-400'));
-            
-            // 显示通知
-            showNotification(`事件"${event.title}"已标记为完成！`, 'success');
+            // 计划类型事件使用绿色图标样式
+            if (isCompleted) {
+                // 取消选中
+                checkbox.classList.remove('checked', 'bg-green-500');
+                checkbox.classList.add('border-2', 'border-green-500');
+                checkIcon.classList.add('opacity-0');
+                checkIcon.className = 'fas fa-check text-white text-xs opacity-0';
+                
+                // 移除标题的划线和灰色
+                eventTitle.classList.remove('line-through', 'text-gray-400');
+                eventDesc.forEach(el => el.classList.remove('line-through', 'text-gray-400'));
+                
+                // 显示通知
+                showNotification(`事件"${event.title}"已标记为未完成`, 'info');
+            } else {
+                // 选中
+                checkbox.classList.add('checked', 'bg-green-500');
+                checkbox.classList.remove('border-2', 'border-green-500');
+                checkIcon.classList.remove('opacity-0');
+                checkIcon.className = 'fas fa-check text-white text-xs';
+                
+                // 添加标题的划线和灰色
+                eventTitle.classList.add('line-through', 'text-gray-400');
+                eventDesc.forEach(el => el.classList.add('line-through', 'text-gray-400'));
+                
+                // 显示通知
+                showNotification(`事件"${event.title}"已标记为完成！`, 'success');
+            }
         }
     }
 }
