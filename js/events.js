@@ -346,7 +346,7 @@ function createEventElement(event) {
             </div>
         </div>
         <div class="mt-2 pl-8">
-            <p class="text-sm ${descClass}">${event.description || '无描述'}</p>
+            ${event.description ? `<p class="text-sm ${descClass}">${event.description}</p>` : ''}
             ${event.location ? `
                 <div class="mt-2 flex items-center">
                     <i class="fas fa-map-marker-alt text-gray-400 mr-1"></i>
@@ -355,7 +355,11 @@ function createEventElement(event) {
             ` : ''}
             ${event.tags && event.tags.length > 0 ? `
                 <div class="mt-2 flex flex-wrap gap-1">
-                    ${event.tags.map(tag => `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tag}</span>`).join('')}
+                    ${event.tags.map(tag => {
+                        // 将英文标签转换为中文
+                        const tagName = categoryNames[tag] || tag;
+                        return `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tagName}</span>`;
+                    }).join('')}
                 </div>
             ` : ''}
         </div>
@@ -387,6 +391,16 @@ function createEventCardElement(event) {
         'social': 'bg-indigo-500'
     };
     
+    // 分类中文名称
+    const categoryNames = {
+        'work': '工作',
+        'study': '学习',
+        'health': '健康',
+        'life': '生活',
+        'family': '家庭',
+        'social': '社交'
+    };
+    
     const categoryColor = categoryColors[event.category] || 'bg-gray-500';
     
     // 格式化日期和时间
@@ -413,7 +427,7 @@ function createEventCardElement(event) {
                     <i class="fas fa-check text-white text-xs ${isCompleted ? '' : 'opacity-0'}"></i>
                 </div>
             </div>
-            <p class="mt-2 text-sm ${descClass} line-clamp-2">${event.description || '无描述'}</p>
+            ${event.description ? `<p class="mt-2 text-sm ${descClass} line-clamp-2">${event.description}</p>` : ''}
             <div class="mt-3 flex items-center justify-between">
                 <div class="flex items-center">
                     <i class="fas fa-calendar-alt text-gray-400 mr-1"></i>
@@ -430,7 +444,11 @@ function createEventCardElement(event) {
             </div>
             ${event.tags && event.tags.length > 0 ? `
                 <div class="mt-2 flex flex-wrap gap-1">
-                    ${event.tags.slice(0, 3).map(tag => `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tag}</span>`).join('')}
+                    ${event.tags.slice(0, 3).map(tag => {
+                        // 将英文标签转换为中文
+                        const tagName = categoryNames[tag] || tag;
+                        return `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">${tagName}</span>`;
+                    }).join('')}
                     ${event.tags.length > 3 ? `<span class="px-2 py-0.5 bg-gray-100 text-gray-600 text-xs rounded-full">+${event.tags.length - 3}</span>` : ''}
                 </div>
             ` : ''}
