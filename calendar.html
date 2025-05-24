@@ -211,13 +211,6 @@
                         <button class="px-3 py-1 border rounded-r-lg bg-white">
                             <i class="fas fa-chevron-right"></i>
                         </button>
-                        <div class="ml-4">
-                            <select class="px-3 py-1 border rounded-lg bg-white">
-                                <option value="month">月视图</option>
-                                <option value="week">周视图</option>
-                                <option value="day">日视图</option>
-                            </select>
-                        </div>
                     </div>
                 </div>
                 
@@ -824,13 +817,6 @@
                 renderCalendar(currentDate, currentView);
             });
             
-            // 监听视图切换
-            const viewSelect = document.querySelector('select');
-            viewSelect.addEventListener('change', function() {
-                currentView = this.value;
-                renderCalendar(currentDate, currentView);
-            });
-            
             // 渲染日历视图
             function renderCalendar(date, view) {
                 // 更新显示的月份和年份
@@ -838,16 +824,8 @@
                 const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
                 monthYearDisplay.textContent = `${date.getFullYear()}年${monthNames[date.getMonth()]}`;
                 
-                // 根据视图类型渲染不同的日历
-                if (view === 'month') {
-                    renderMonthView(date);
-                } else if (view === 'week') {
-                    // 实现周视图 (未完成)
-                    alert('周视图功能正在开发中');
-                } else if (view === 'day') {
-                    // 实现日视图 (未完成)
-                    alert('日视图功能正在开发中');
-                }
+                // 直接渲染月视图，不再判断视图类型
+                renderMonthView(date);
             }
             
             // 渲染月视图
