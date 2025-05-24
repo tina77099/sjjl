@@ -80,6 +80,38 @@
             background-position: center;
             background-repeat: no-repeat;
         }
+        
+        /* 日历格子样式 */
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e5e7eb;
+        }
+        
+        #calendar-grid > div {
+            background-color: white;
+            min-height: 100px;
+            height: auto;
+            overflow: visible;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* 事件文本样式 - 允许多行显示 */
+        [data-event-id] {
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        /* 事件描述样式 */
+        [data-event-id] div {
+            margin-top: 4px;
+            padding-left: 4px;
+            border-left: 2px solid rgba(0,0,0,0.1);
+        }
     </style>
 </head>
 <body class="bg-gray-50 font-sans">
@@ -185,37 +217,6 @@
                                 <option value="week">周视图</option>
                                 <option value="day">日视图</option>
                             </select>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- 事件筛选器 -->
-                <div class="mb-6 bg-white rounded-lg shadow p-4">
-                    <div class="flex justify-between items-center">
-                        <div>
-                            <h3 class="text-md font-medium text-gray-700 mb-3">事件筛选</h3>
-                            <div class="flex space-x-4">
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-indigo-600" id="filter-all" checked>
-                                    <span class="ml-2 text-gray-700">全部</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-purple-600" id="filter-records" checked>
-                                    <span class="ml-2 text-gray-700">记录的事件</span>
-                                </label>
-                                <label class="inline-flex items-center">
-                                    <input type="checkbox" class="form-checkbox h-4 w-4 text-green-600" id="filter-completed-plans" checked>
-                                    <span class="ml-2 text-gray-700">完成的计划</span>
-                                </label>
-                            </div>
-                        </div>
-                        <div class="flex space-x-2">
-                            <button id="export-data" class="px-3 py-1 text-xs bg-gray-100 text-gray-700 rounded hover:bg-gray-200 transition-colors">
-                                <i class="fas fa-file-export mr-1"></i>导出数据
-                            </button>
-                            <button id="generate-test-data" class="px-3 py-1 text-xs bg-blue-100 text-blue-700 rounded hover:bg-blue-200 transition-colors">
-                                <i class="fas fa-magic mr-1"></i>生成测试数据
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -586,7 +587,7 @@
                 let currentDateIterator = new Date(startDate);
                 while (currentDateIterator <= endDate) {
                     const cell = document.createElement('div');
-                    cell.className = 'bg-white p-2 min-h-[120px]';
+                    cell.className = 'bg-white p-3';  // 增加内边距
                     
                     // 日期显示
                     const dateDiv = document.createElement('div');
@@ -598,13 +599,13 @@
                     const isToday = isSameDay(currentDateIterator, new Date());
                     
                     if (isCurrentMonth) {
-                        dateDiv.className = isToday ? 'text-indigo-800 font-medium' : 'text-gray-800 font-medium';
+                        dateDiv.className = isToday ? 'text-indigo-800 font-medium mb-2' : 'text-gray-800 font-medium mb-2';  // 增加底部间距
                         // 高亮今天
                         if (isToday) {
                             cell.className += ' bg-indigo-50';
                         }
                     } else {
-                        dateDiv.className = 'text-gray-400 text-sm';
+                        dateDiv.className = 'text-gray-400 text-sm mb-2';  // 增加底部间距
                     }
                     
                     dateDiv.textContent = currentDateIterator.getDate();
@@ -617,28 +618,25 @@
                     // 如果有事件，则创建事件容器
                     if (dateEvents.length > 0) {
                         const eventsContainer = document.createElement('div');
-                        eventsContainer.className = 'mt-1 space-y-1';
+                        eventsContainer.className = 'mt-2 space-y-2';  // 增加事件之间的间距
                         
-                        // 每个日期最多显示3个事件
-                        const maxDisplayEvents = 3;
-                        
-                        // 显示事件
-                        dateEvents.slice(0, maxDisplayEvents).forEach(event => {
+                        // 显示所有事件，不再限制数量
+                        dateEvents.forEach(event => {
                             const eventDiv = document.createElement('div');
                             
                             // 根据事件类型设置不同的样式
                             if (event.eventType === 'plan' && event.status === 'completed') {
                                 // 完成的计划
-                                eventDiv.className = 'bg-green-100 text-green-800 text-xs p-1 rounded truncate flex items-center';
-                                eventDiv.innerHTML = `<i class="fas fa-check-circle mr-1"></i>`;
+                                eventDiv.className = 'bg-green-100 text-green-800 text-xs p-2 rounded flex items-start';  // 增加内边距，改为 items-start
+                                eventDiv.innerHTML = `<i class="fas fa-check-circle mr-2 mt-0.5"></i>`;  // 增加图标右侧间距，添加顶部间距
                             } else if (event.eventType === 'plan') {
                                 // 未完成的计划
-                                eventDiv.className = 'bg-blue-100 text-blue-800 text-xs p-1 rounded truncate flex items-center';
-                                eventDiv.innerHTML = `<i class="fas fa-calendar-check mr-1"></i>`;
+                                eventDiv.className = 'bg-blue-100 text-blue-800 text-xs p-2 rounded flex items-start';  // 增加内边距，改为 items-start
+                                eventDiv.innerHTML = `<i class="fas fa-calendar-check mr-2 mt-0.5"></i>`;  // 增加图标右侧间距，添加顶部间距
                             } else { // record
                                 // 记录的事件
-                                eventDiv.className = 'bg-purple-100 text-purple-800 text-xs p-1 rounded truncate flex items-center';
-                                eventDiv.innerHTML = `<i class="fas fa-bookmark mr-1"></i>`;
+                                eventDiv.className = 'bg-purple-100 text-purple-800 text-xs p-2 rounded flex items-start';  // 增加内边距，改为 items-start
+                                eventDiv.innerHTML = `<i class="fas fa-bookmark mr-2 mt-0.5"></i>`;  // 增加图标右侧间距，添加顶部间距
                             }
                             
                             // 拼接事件时间和标题
@@ -660,7 +658,12 @@
                                 eventText = `${eventText}`;
                             }
                             
-                            eventDiv.innerHTML += eventText;
+                            // 显示完整的事件内容
+                            const eventTextSpan = document.createElement('span');
+                            eventTextSpan.className = 'flex-1';
+                            eventTextSpan.textContent = eventText;
+                            eventDiv.appendChild(eventTextSpan);
+                            
                             
                             // 设置鼠标悬停效果
                             eventDiv.style.cursor = 'pointer';
@@ -668,36 +671,9 @@
                             eventDiv.setAttribute('data-event-type', event.eventType);
                             eventDiv.setAttribute('data-event-status', event.status || '');
                             
-                            // 根据过滤条件决定是否显示
-                            let shouldShow = true;
-                            const filterAll = document.getElementById('filter-all').checked;
-                            const filterRecords = document.getElementById('filter-records').checked;
-                            const filterCompletedPlans = document.getElementById('filter-completed-plans').checked;
-                            
-                            if (!filterAll) {
-                                if (event.eventType === 'record' && !filterRecords) {
-                                    shouldShow = false;
-                                } else if (event.eventType === 'plan' && event.status === 'completed' && !filterCompletedPlans) {
-                                    shouldShow = false;
-                                }
-                            }
-                            
-                            if (shouldShow) {
-                                eventsContainer.appendChild(eventDiv);
-                            }
+                            // 直接添加所有事件到容器，不进行筛选
+                            eventsContainer.appendChild(eventDiv);
                         });
-                        
-                        // 如果事件超过显示限制，则显示"更多"
-                        if (dateEvents.length > maxDisplayEvents) {
-                            const moreDiv = document.createElement('div');
-                            moreDiv.className = 'text-xs text-gray-500 text-center cursor-pointer hover:text-indigo-600';
-                            moreDiv.textContent = `还有 ${dateEvents.length - maxDisplayEvents} 个事项`;
-                            moreDiv.onclick = function() {
-                                // 点击"更多"时显示该日的所有事件
-                                alert(`暂未实现查看更多事件功能，该日共有 ${dateEvents.length} 个事项`);
-                            };
-                            eventsContainer.appendChild(moreDiv);
-                        }
                         
                         cell.appendChild(eventsContainer);
                     }
@@ -770,38 +746,6 @@
                 }
             }
 
-            // 筛选器功能
-            const filterAll = document.getElementById('filter-all');
-            const filterRecords = document.getElementById('filter-records');
-            const filterCompletedPlans = document.getElementById('filter-completed-plans');
-            
-            // 筛选器变化时重新渲染日历
-            filterAll.addEventListener('change', function() {
-                if (this.checked) {
-                    filterRecords.checked = true;
-                    filterCompletedPlans.checked = true;
-                }
-                renderCalendar(currentDate, currentView);
-            });
-            
-            filterRecords.addEventListener('change', function() {
-                if (!this.checked && !filterCompletedPlans.checked) {
-                    filterAll.checked = false;
-                } else if (this.checked && filterCompletedPlans.checked) {
-                    filterAll.checked = true;
-                }
-                renderCalendar(currentDate, currentView);
-            });
-            
-            filterCompletedPlans.addEventListener('change', function() {
-                if (!this.checked && !filterRecords.checked) {
-                    filterAll.checked = false;
-                } else if (this.checked && filterRecords.checked) {
-                    filterAll.checked = true;
-                }
-                renderCalendar(currentDate, currentView);
-            });
-            
             // 事件点击显示详情
             document.addEventListener('click', function(e) {
                 if (e.target.closest('[data-event-id]')) {
@@ -1137,222 +1081,6 @@
                     }
                 }
             });
-
-            // 导出数据功能
-            const exportDataBtn = document.getElementById('export-data');
-            exportDataBtn.addEventListener('click', function() {
-                const events = getEvents();
-                const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(events, null, 2));
-                const downloadAnchorNode = document.createElement('a');
-                downloadAnchorNode.setAttribute("href", dataStr);
-                downloadAnchorNode.setAttribute("download", "events_backup_" + new Date().toISOString().slice(0, 10) + ".json");
-                document.body.appendChild(downloadAnchorNode);
-                downloadAnchorNode.click();
-                downloadAnchorNode.remove();
-            });
-            
-            // 生成测试数据功能
-            const generateTestDataBtn = document.getElementById('generate-test-data');
-            generateTestDataBtn.addEventListener('click', function() {
-                if (confirm('这将覆盖现有数据，确定要生成测试数据吗？')) {
-                    // 生成测试数据
-                    const testData = generateTestEvents();
-                    localStorage.setItem('events', JSON.stringify(testData));
-                    alert('测试数据已生成！');
-                    location.reload(); // 刷新页面以显示新数据
-                }
-            });
-            
-            // 生成测试事件数据
-            function generateTestEvents() {
-                const today = new Date();
-                const thisYear = today.getFullYear();
-                const thisMonth = today.getMonth();
-                
-                // 测试数据包含计划和记录两种类型
-                const testEvents = [
-                    // 计划 - 未完成
-                    {
-                        id: 'plan1',
-                        title: '团队会议',
-                        eventType: 'plan',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 1, 9, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 1, 10, 30).toISOString(),
-                        location: '会议室A',
-                        description: '讨论本周工作进度和下周计划',
-                        createdAt: new Date(thisYear, thisMonth - 1, 25).toISOString(),
-                        status: 'pending'
-                    },
-                    {
-                        id: 'plan2',
-                        title: '项目讨论',
-                        eventType: 'plan',
-                        category: 'project',
-                        startTime: new Date(thisYear, thisMonth, 2, 14, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 2, 15, 30).toISOString(),
-                        location: '会议室B',
-                        description: '讨论新项目的实施方案',
-                        createdAt: new Date(thisYear, thisMonth - 1, 28).toISOString(),
-                        status: 'pending'
-                    },
-                    
-                    // 记录
-                    {
-                        id: 'record1',
-                        title: '客户会议',
-                        eventType: 'record',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 4, 10, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 4, 11, 30).toISOString(),
-                        location: '线上',
-                        description: '与客户讨论需求变更',
-                        createdAt: new Date(thisYear, thisMonth, 4, 11, 35).toISOString()
-                    },
-                    
-                    // 计划 - 已完成
-                    {
-                        id: 'plan3',
-                        title: '健身',
-                        eventType: 'plan',
-                        category: 'health',
-                        startTime: new Date(thisYear, thisMonth, 4, 15, 30).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 4, 16, 30).toISOString(),
-                        location: '健身房',
-                        description: '每周固定健身时间',
-                        createdAt: new Date(thisYear, thisMonth, 1).toISOString(),
-                        status: 'completed',
-                        updatedAt: new Date(thisYear, thisMonth, 4, 16, 45).toISOString()
-                    },
-                    
-                    // 更多记录和计划
-                    {
-                        id: 'record2',
-                        title: '家庭日',
-                        eventType: 'record',
-                        category: 'family',
-                        isAllDay: true,
-                        startTime: new Date(thisYear, thisMonth, 7).toISOString(),
-                        location: '家',
-                        description: '与家人共度时光',
-                        createdAt: new Date(thisYear, thisMonth, 7, 22, 0).toISOString()
-                    },
-                    {
-                        id: 'record3',
-                        title: '产品评审',
-                        eventType: 'record',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 9, 13, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 9, 14, 30).toISOString(),
-                        location: '会议室C',
-                        description: '评审产品原型',
-                        createdAt: new Date(thisYear, thisMonth, 9, 14, 35).toISOString()
-                    },
-                    {
-                        id: 'plan4',
-                        title: '周会',
-                        eventType: 'plan',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 12, 9, 30).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 12, 10, 30).toISOString(),
-                        location: '会议室A',
-                        description: '部门周会',
-                        createdAt: new Date(thisYear, thisMonth, 5).toISOString(),
-                        status: 'completed',
-                        updatedAt: new Date(thisYear, thisMonth, 12, 10, 40).toISOString()
-                    },
-                    {
-                        id: 'record4',
-                        title: '当前日期',
-                        eventType: 'record',
-                        category: 'other',
-                        isAllDay: true,
-                        startTime: new Date(thisYear, thisMonth, 14).toISOString(),
-                        description: '今天是当前日期',
-                        createdAt: new Date(thisYear, thisMonth, 14, 8, 0).toISOString()
-                    },
-                    {
-                        id: 'plan5',
-                        title: '项目启动',
-                        eventType: 'plan',
-                        category: 'project',
-                        startTime: new Date(thisYear, thisMonth, 15, 14, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 15, 16, 0).toISOString(),
-                        location: '大会议室',
-                        description: '新项目启动会',
-                        createdAt: new Date(thisYear, thisMonth, 10).toISOString(),
-                        status: 'completed',
-                        updatedAt: new Date(thisYear, thisMonth, 15, 16, 15).toISOString()
-                    },
-                    {
-                        id: 'record5',
-                        title: '健身',
-                        eventType: 'record',
-                        category: 'health',
-                        startTime: new Date(thisYear, thisMonth, 17, 16, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 17, 17, 0).toISOString(),
-                        location: '健身房',
-                        description: '力量训练',
-                        createdAt: new Date(thisYear, thisMonth, 17, 17, 15).toISOString()
-                    },
-                    {
-                        id: 'record6',
-                        title: '团队建设',
-                        eventType: 'record',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 19, 10, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 19, 17, 0).toISOString(),
-                        location: '户外',
-                        description: '团队建设活动',
-                        createdAt: new Date(thisYear, thisMonth, 19, 17, 30).toISOString()
-                    },
-                    {
-                        id: 'record7',
-                        title: '客户回访',
-                        eventType: 'record',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 23, 15, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 23, 16, 0).toISOString(),
-                        location: '线上',
-                        description: '回访老客户',
-                        createdAt: new Date(thisYear, thisMonth, 23, 16, 15).toISOString()
-                    },
-                    {
-                        id: 'record8',
-                        title: '季度报告',
-                        eventType: 'record',
-                        category: 'work',
-                        startTime: new Date(thisYear, thisMonth, 25).toISOString(),
-                        description: '提交季度报告',
-                        createdAt: new Date(thisYear, thisMonth, 25, 18, 0).toISOString()
-                    },
-                    {
-                        id: 'plan6',
-                        title: '培训课程',
-                        eventType: 'plan',
-                        category: 'study',
-                        startTime: new Date(thisYear, thisMonth, 27, 9, 0).toISOString(),
-                        endTime: new Date(thisYear, thisMonth, 27, 11, 0).toISOString(),
-                        location: '培训室',
-                        description: '学习新技能',
-                        createdAt: new Date(thisYear, thisMonth, 20).toISOString(),
-                        status: 'completed',
-                        updatedAt: new Date(thisYear, thisMonth, 27, 11, 15).toISOString()
-                    },
-                    {
-                        id: 'record9',
-                        title: '月末总结',
-                        eventType: 'record',
-                        category: 'work',
-                        isAllDay: true,
-                        startTime: new Date(thisYear, thisMonth, 31).toISOString(),
-                        description: '总结本月工作，计划下月任务',
-                        createdAt: new Date(thisYear, thisMonth, 31, 17, 0).toISOString()
-                    }
-                ];
-                
-                return testEvents;
-            }
         });
     </script>
     
