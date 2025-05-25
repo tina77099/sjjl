@@ -4,10 +4,111 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>统计分析 - 事件记录</title>
+    <!-- 先加载Chart.js，确保其他脚本可以使用它 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+    
+    <!-- 测试Chart.js加载状态的脚本 -->
+    <script>
+        console.log('页面开始加载...');
+        console.log('Chart.js初始加载状态:', typeof Chart !== 'undefined' ? '已加载' : '未加载');
+        
+        window.addEventListener('DOMContentLoaded', function() {
+            console.log('DOM内容已加载');
+            console.log('Chart.js DOMContentLoaded时状态:', typeof Chart !== 'undefined' ? '已加载' : '未加载');
+            
+            // 如果Chart未加载，尝试使用备用CDN
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js未加载，尝试使用备用CDN...');
+                var script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+                script.onload = function() {
+                    console.log('Chart.js从备用CDN加载成功');
+                    // 手动初始化图表
+                    if (typeof initStatisticsPage === 'function') {
+                        initStatisticsPage();
+                    }
+                };
+                document.head.appendChild(script);
+            }
+        });
+        
+        window.addEventListener('load', function() {
+            console.log('页面完全加载');
+            console.log('Chart.js load事件时状态:', typeof Chart !== 'undefined' ? '已加载' : '未加载');
+            
+            // 测试创建简单图表
+            setTimeout(function() {
+                try {
+                    console.log('尝试创建测试图表...');
+                    const testCanvas = document.createElement('canvas');
+                    testCanvas.id = 'testChart';
+                    testCanvas.width = 100;
+                    testCanvas.height = 100;
+                    testCanvas.style.display = 'none';
+                    document.body.appendChild(testCanvas);
+                    
+                    const ctx = testCanvas.getContext('2d');
+                    if (ctx && typeof Chart !== 'undefined') {
+                        const testChart = new Chart(ctx, {
+                            type: 'bar',
+                            data: {
+                                labels: ['测试'],
+                                datasets: [{
+                                    label: '测试数据',
+                                    data: [5],
+                                    backgroundColor: 'rgba(75, 192, 192, 0.2)'
+                                }]
+                            }
+                        });
+                        console.log('测试图表创建成功:', testChart);
+                    } else {
+                        console.error('无法创建测试图表，Canvas上下文或Chart不可用');
+                    }
+                } catch (e) {
+                    console.error('创建测试图表时出错:', e);
+                }
+            }, 1000);
+        });
+    </script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- 引入Chart.js用于图表展示 -->
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- 备用Chart.js CDN，如果主要CDN失败时使用 -->
+    <script>
+        // 检查Chart是否已加载，如果未加载，则从备用CDN加载
+        window.addEventListener('DOMContentLoaded', function() {
+            if (typeof Chart === 'undefined') {
+                console.warn('Chart.js未能从主要CDN加载，尝试备用CDN...');
+                var script = document.createElement('script');
+                script.src = 'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js';
+                script.onload = function() {
+                    console.log('Chart.js从备用CDN加载成功');
+                    // 重新初始化图表
+                    if (typeof initStatisticsPage === 'function') {
+                        initStatisticsPage();
+                    }
+                };
+                script.onerror = function() {
+                    console.error('两个CDN都无法加载Chart.js，将显示替代内容');
+                    // 显示所有图表容器的替代内容
+                    document.querySelectorAll('.h-64').forEach(function(container) {
+                        var parent = container.closest('.bg-white');
+                        if (parent) {
+                            var title = parent.querySelector('h3') ? parent.querySelector('h3').textContent : '图表';
+                            container.innerHTML = `
+                                <div class="flex items-center justify-center h-full flex-col">
+                                    <i class="fas fa-chart-pie text-gray-300 text-5xl mb-3"></i>
+                                    <p class="text-gray-500">无法加载${title}，请刷新页面重试</p>
+                                </div>
+                            `;
+                        }
+                    });
+                };
+                document.head.appendChild(script);
+            }
+        });
+    </script>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- 侧边栏 -->
@@ -97,6 +198,9 @@
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">统计分析</h2>
                     <div class="flex items-center">
+                        <button id="refresh-charts" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors mr-3">
+                            <i class="fas fa-sync-alt mr-2"></i>刷新图表
+                        </button>
                         <select class="px-3 py-2 border rounded-lg bg-white mr-3">
                             <option value="week">本周</option>
                             <option value="month" selected>本月</option>
@@ -188,23 +292,8 @@
                             <div class="h-64">
                                 <canvas id="categoryChart"></canvas>
                             </div>
-                            <div class="grid grid-cols-2 gap-4 mt-6">
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                                    <span class="text-sm text-gray-600">工作 (45%)</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                                    <span class="text-sm text-gray-600">学习 (20%)</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></div>
-                                    <span class="text-sm text-gray-600">健康 (15%)</span>
-                                </div>
-                                <div class="flex items-center">
-                                    <div class="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                                    <span class="text-sm text-gray-600">生活 (20%)</span>
-                                </div>
+                            <div class="grid grid-cols-1 gap-4 mt-6">
+                                <!-- 图例将由JavaScript动态生成，已调整为两行布局 -->
                             </div>
                         </div>
                     </div>
@@ -237,7 +326,7 @@
                                 <canvas id="timeAllocationChart"></canvas>
                             </div>
                             <div class="mt-6">
-                                <p class="text-sm text-gray-600">工作时间占比 <span class="font-medium">45%</span>，学习时间占比 <span class="font-medium">20%</span>，健康时间占比 <span class="font-medium">15%</span>，生活时间占比 <span class="font-medium">20%</span>。</p>
+                                <p class="text-sm text-gray-600"><!-- 时间分配描述将由JavaScript动态生成 --></p>
                             </div>
                         </div>
                     </div>
@@ -267,16 +356,12 @@
                         </div>
                         <div class="p-6">
                             <div class="flex flex-wrap gap-2">
-                                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">会议 (12)</span>
-                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">项目 (9)</span>
-                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">学习 (8)</span>
-                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">健身 (7)</span>
-                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">截止日期 (6)</span>
-                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">客户 (5)</span>
-                                <span class="px-3 py-1 bg-pink-100 text-pink-800 rounded-full text-sm">家庭 (4)</span>
-                                <span class="px-3 py-1 bg-orange-100 text-orange-800 rounded-full text-sm">总结 (4)</span>
-                                <span class="px-3 py-1 bg-teal-100 text-teal-800 rounded-full text-sm">培训 (3)</span>
-                                <span class="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm">其他 (15)</span>
+                                <span class="px-3 py-1 bg-indigo-100 text-indigo-800 rounded-full text-sm">学习成长 (5)</span>
+                                <span class="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">体验突破 (3)</span>
+                                <span class="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm">休闲放松 (3)</span>
+                                <span class="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">工作职业 (2)</span>
+                                <span class="px-3 py-1 bg-red-100 text-red-800 rounded-full text-sm">家庭生活 (1)</span>
+                                <span class="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">人际社群 (1)</span>
                             </div>
                             <div class="mt-6">
                                 <h4 class="font-medium text-gray-700 mb-3">标签使用趋势</h4>
@@ -291,6 +376,7 @@
                     <div class="bg-white rounded-lg shadow">
                         <div class="p-6 border-b">
                             <h3 class="text-xl font-bold text-gray-800">高效时段分析</h3>
+                            <p class="text-xs text-indigo-600 mt-1">时段标签已更新，更加清晰直观</p>
                         </div>
                         <div class="p-6">
                             <div class="h-64">
@@ -301,15 +387,15 @@
                                 <ul class="space-y-2 text-sm text-gray-600">
                                     <li class="flex items-start">
                                         <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                                        <span>上午9点-11点是您的黄金工作时段，建议安排重要任务</span>
+                                        <span>9-12点(上午)是您的黄金工作时段，建议安排重要任务</span>
                                     </li>
                                     <li class="flex items-start">
                                         <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                                        <span>下午2点-4点适合创意和协作工作</span>
+                                        <span>15-18点(傍晚)适合创意和协作工作</span>
                                     </li>
                                     <li class="flex items-start">
                                         <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
-                                        <span>晚上8点后效率明显下降，建议安排轻松活动</span>
+                                        <span>21-24点(深夜)效率明显下降，建议安排轻松活动</span>
                                     </li>
                                 </ul>
                             </div>
@@ -412,23 +498,6 @@
     <script>
         // 简单的交互逻辑
         document.addEventListener('DOMContentLoaded', function() {
-            const newEventBtn = document.querySelector('button.bg-indigo-600');
-            const newEventModal = document.getElementById('newEventModal');
-            const closeModalBtn = newEventModal.querySelector('button.text-gray-500');
-            const cancelBtn = newEventModal.querySelector('button[type="button"]');
-            
-            newEventBtn.addEventListener('click', function() {
-                newEventModal.classList.remove('hidden');
-            });
-            
-            closeModalBtn.addEventListener('click', function() {
-                newEventModal.classList.add('hidden');
-            });
-            
-            cancelBtn.addEventListener('click', function() {
-                newEventModal.classList.add('hidden');
-            });
-            
             // 移动端侧边栏切换
             const menuBtn = document.querySelector('button.md\\:hidden');
             const sidebar = document.querySelector('.w-64');
@@ -436,9 +505,6 @@
             menuBtn.addEventListener('click', function() {
                 sidebar.classList.toggle('hidden');
             });
-            
-            // 初始化图表
-            initCharts();
             
             // 弹出窗口功能
             const planModal = document.getElementById('modal-new-plan');
@@ -497,6 +563,130 @@
             document.getElementById('plan-due-date').value = formattedDate;
             document.getElementById('record-date').value = formattedDate;
             
+            // 设置当前时间
+            const hours = today.getHours().toString().padStart(2, '0');
+            const minutes = today.getMinutes().toString().padStart(2, '0');
+            document.getElementById('record-time').value = `${hours}:${minutes}`;
+            
+            // 初始化表单提交处理
+            const newPlanForm = document.getElementById('new-plan-form');
+            if (newPlanForm) {
+                newPlanForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // 获取表单数据
+                    const planTitle = document.getElementById('plan-title').value;
+                    const planDesc = document.getElementById('plan-desc').value;
+                    const planDueDate = document.getElementById('plan-due-date').value;
+                    const planTypeEl = document.querySelector('input[name="plan-type"]:checked');
+                    const planPriorityEl = document.querySelector('input[name="priority"]:checked');
+                    
+                    if (!planTypeEl || !planPriorityEl) {
+                        alert('请选择计划类型和优先级');
+                        return;
+                    }
+                    
+                    const planType = planTypeEl.value;
+                    const planPriority = planPriorityEl.value;
+                    
+                    // 创建计划对象
+                    const newPlan = {
+                        id: 'plan_' + Date.now(),
+                        title: planTitle,
+                        description: planDesc,
+                        eventType: 'plan',
+                        startTime: new Date(planDueDate).toISOString(),
+                        dueDate: new Date(planDueDate).toISOString(),
+                        isAllDay: true,
+                        category: planType,
+                        priority: planPriority,
+                        status: 'pending',
+                        tags: [planType],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    
+                    // 保存事件到localStorage
+                    saveEvent(newPlan);
+                    
+                    // 重置表单并关闭模态框
+                    this.reset();
+                    planModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    
+                    // 显示成功提示
+                    alert('计划已成功保存！');
+                });
+            }
+            
+            const newRecordForm = document.getElementById('new-record-form');
+            if (newRecordForm) {
+                newRecordForm.addEventListener('submit', function(e) {
+                    e.preventDefault();
+                    
+                    // 获取表单数据
+                    const recordTitle = document.getElementById('record-title').value.trim();
+                    const recordDesc = document.getElementById('record-desc').value.trim();
+                    const recordDate = document.getElementById('record-date').value;
+                    const recordTime = document.getElementById('record-time') ? document.getElementById('record-time').value : '00:00';
+                    const recordTypeEl = document.querySelector('input[name="record-type"]:checked');
+                    
+                    if (!recordTypeEl) {
+                        alert('请选择记录类型');
+                        return;
+                    }
+                    
+                    const recordType = recordTypeEl.value;
+                    
+                    // 组合日期和时间
+                    const dateTimeStr = `${recordDate}T${recordTime}`;
+                    
+                    // 创建记录对象
+                    const newRecord = {
+                        id: 'record_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                        title: recordTitle || '(无标题记录)',
+                        description: recordDesc,
+                        eventType: 'record',
+                        startTime: new Date(dateTimeStr).toISOString(),
+                        isAllDay: false,
+                        category: recordType,
+                        tags: [recordType],
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    };
+                    
+                    // 保存事件到localStorage
+                    saveEvent(newRecord);
+                    
+                    // 重置表单并关闭模态框
+                    this.reset();
+                    recordModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                    
+                    // 显示成功提示
+                    alert('记录已成功保存！');
+                });
+            }
+            
+            // 保存事件到localStorage
+            function saveEvent(event) {
+                // 获取现有事件列表
+                const events = JSON.parse(localStorage.getItem('events') || '[]');
+                
+                // 添加新事件
+                events.push(event);
+                
+                // 保存回localStorage
+                localStorage.setItem('events', JSON.stringify(events));
+                
+                // 如果有刷新图表函数，调用它
+                if (typeof handleRefreshCharts === 'function') {
+                    setTimeout(handleRefreshCharts, 500);
+                }
+                
+                return true;
+            }
+            
             // 确保表单处理程序初始化
             if (typeof initializeFormHandlers === 'function') {
                 initializeFormHandlers();
@@ -504,464 +694,6 @@
             } else {
                 console.error('未找到initializeFormHandlers函数');
             }
-        });
-        
-        // 初始化所有图表
-        function initCharts() {
-            // 事件分类统计饼图
-            const categoryCtx = document.getElementById('categoryChart').getContext('2d');
-            new Chart(categoryCtx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['工作', '学习', '健康', '生活'],
-                    datasets: [{
-                        data: [45, 20, 15, 20],
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(234, 179, 8, 0.8)',
-                            'rgba(168, 85, 247, 0.8)'
-                        ],
-                        borderWidth: 0
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    },
-                    cutout: '70%'
-                }
-            });
-            
-            // 每日事件数量趋势线图
-            const trendCtx = document.getElementById('trendChart').getContext('2d');
-            new Chart(trendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['1日', '5日', '10日', '15日', '20日', '25日', '30日'],
-                    datasets: [{
-                        label: '事件数量',
-                        data: [3, 5, 4, 6, 5, 7, 8],
-                        borderColor: 'rgba(79, 70, 229, 0.8)',
-                        backgroundColor: 'rgba(79, 70, 229, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-            
-            // 时间分配条形图
-            const timeAllocationCtx = document.getElementById('timeAllocationChart').getContext('2d');
-            new Chart(timeAllocationCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['工作', '学习', '健康', '生活'],
-                    datasets: [{
-                        label: '小时数',
-                        data: [45, 20, 15, 20],
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.8)',
-                            'rgba(16, 185, 129, 0.8)',
-                            'rgba(234, 179, 8, 0.8)',
-                            'rgba(168, 85, 247, 0.8)'
-                        ],
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-            
-            // 每周完成率线图
-            const completionRateCtx = document.getElementById('completionRateChart').getContext('2d');
-            new Chart(completionRateCtx, {
-                type: 'line',
-                data: {
-                    labels: ['第一周', '第二周', '第三周', '第四周'],
-                    datasets: [{
-                        label: '完成率',
-                        data: [75, 82, 92, 85],
-                        borderColor: 'rgba(16, 185, 129, 0.8)',
-                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                        tension: 0.3,
-                        fill: true
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        }
-                    }
-                }
-            });
-            
-            // 标签使用趋势
-            const tagTrendCtx = document.getElementById('tagTrendChart').getContext('2d');
-            new Chart(tagTrendCtx, {
-                type: 'line',
-                data: {
-                    labels: ['第一周', '第二周', '第三周', '第四周'],
-                    datasets: [
-                        {
-                            label: '会议',
-                            data: [3, 4, 2, 3],
-                            borderColor: 'rgba(79, 70, 229, 0.8)',
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            borderWidth: 2
-                        },
-                        {
-                            label: '项目',
-                            data: [2, 3, 2, 2],
-                            borderColor: 'rgba(16, 185, 129, 0.8)',
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            borderWidth: 2
-                        },
-                        {
-                            label: '学习',
-                            data: [1, 2, 3, 2],
-                            borderColor: 'rgba(245, 158, 11, 0.8)',
-                            backgroundColor: 'transparent',
-                            tension: 0.3,
-                            borderWidth: 2
-                        }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            position: 'top',
-                            labels: {
-                                boxWidth: 10,
-                                usePointStyle: true,
-                                pointStyle: 'circle'
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 高效时段分析图表
-            const timeEfficiencyCtx = document.getElementById('timeEfficiencyChart').getContext('2d');
-            new Chart(timeEfficiencyCtx, {
-                type: 'bar',
-                data: {
-                    labels: ['6-9点', '9-12点', '12-15点', '15-18点', '18-21点', '21-24点'],
-                    datasets: [{
-                        label: '效率指数',
-                        data: [60, 95, 75, 85, 70, 45],
-                        backgroundColor: [
-                            'rgba(59, 130, 246, 0.6)',
-                            'rgba(16, 185, 129, 0.6)',
-                            'rgba(249, 115, 22, 0.6)',
-                            'rgba(16, 185, 129, 0.6)',
-                            'rgba(59, 130, 246, 0.6)',
-                            'rgba(156, 163, 175, 0.6)'
-                        ],
-                        borderRadius: 5
-                    }]
-                },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    scales: {
-                        y: {
-                            beginAtZero: true,
-                            max: 100,
-                            grid: {
-                                display: true,
-                                color: 'rgba(0, 0, 0, 0.05)'
-                            },
-                            ticks: {
-                                callback: function(value) {
-                                    return value + '%';
-                                }
-                            }
-                        },
-                        x: {
-                            grid: {
-                                display: false
-                            }
-                        }
-                    },
-                    plugins: {
-                        legend: {
-                            display: false
-                        },
-                        tooltip: {
-                            callbacks: {
-                                label: function(context) {
-                                    return '效率: ' + context.raw + '%';
-                                }
-                            }
-                        }
-                    }
-                }
-            });
-            
-            // 添加数据加载动画效果
-            document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
-                card.classList.add('animate-pulse-light');
-                setTimeout(() => {
-                    card.classList.remove('animate-pulse-light');
-                }, 1000);
-            });
-        }
-        
-        // 添加自定义日期选择功能
-        const dateSelect = document.querySelector('select');
-        dateSelect.addEventListener('change', function() {
-            if (this.value === 'custom') {
-                // 显示自定义日期选择器
-                const customDatePicker = document.createElement('div');
-                customDatePicker.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-                customDatePicker.innerHTML = `
-                    <div class="bg-white rounded-lg w-full max-w-md mx-4 p-6">
-                        <h3 class="text-xl font-bold text-gray-800 mb-4">选择日期范围</h3>
-                        <div class="grid grid-cols-2 gap-4 mb-4">
-                            <div>
-                                <label class="block text-gray-700 text-sm font-medium mb-2">开始日期</label>
-                                <input type="date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                            </div>
-                            <div>
-                                <label class="block text-gray-700 text-sm font-medium mb-2">结束日期</label>
-                                <input type="date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                            </div>
-                        </div>
-                        <div class="flex justify-end">
-                            <button class="px-4 py-2 text-gray-700 mr-2 cancel-btn">取消</button>
-                            <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors apply-btn">应用</button>
-                        </div>
-                    </div>
-                `;
-                document.body.appendChild(customDatePicker);
-                
-                // 添加事件监听
-                customDatePicker.querySelector('.cancel-btn').addEventListener('click', function() {
-                    document.body.removeChild(customDatePicker);
-                    dateSelect.value = 'month'; // 重置为默认值
-                });
-                
-                customDatePicker.querySelector('.apply-btn').addEventListener('click', function() {
-                    const startDate = customDatePicker.querySelector('input[type="date"]:first-of-type').value;
-                    const endDate = customDatePicker.querySelector('input[type="date"]:last-of-type').value;
-                    
-                    if (startDate && endDate) {
-                        // 应用自定义日期范围，重新加载数据
-                        document.body.removeChild(customDatePicker);
-                        
-                        // 显示加载中状态
-                        document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
-                            card.classList.add('animate-pulse-light');
-                        });
-                        
-                        // 模拟数据加载
-                        setTimeout(() => {
-                            document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
-                                card.classList.remove('animate-pulse-light');
-                            });
-                            // 这里可以添加实际的数据刷新逻辑
-                        }, 1000);
-                    }
-                });
-            } else {
-                // 处理其他时间范围选择
-                // 显示加载中状态
-                document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
-                    card.classList.add('animate-pulse-light');
-                });
-                
-                // 模拟数据加载
-                setTimeout(() => {
-                    document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
-                        card.classList.remove('animate-pulse-light');
-                    });
-                    // 这里可以添加实际的数据刷新逻辑
-                }, 800);
-            }
-        });
-        
-        // 添加导出报告功能
-        const exportBtn = document.querySelector('button.bg-indigo-100');
-        exportBtn.addEventListener('click', function() {
-            // 创建导出选项弹窗
-            const exportOptions = document.createElement('div');
-            exportOptions.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
-            exportOptions.innerHTML = `
-                <div class="bg-white rounded-lg w-full max-w-md mx-4 p-6">
-                    <h3 class="text-xl font-bold text-gray-800 mb-4">导出报告</h3>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">报告格式</label>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 format-option" data-format="pdf">
-                                <i class="fas fa-file-pdf text-red-500 text-xl mr-2"></i>
-                                <span>PDF</span>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 format-option" data-format="excel">
-                                <i class="fas fa-file-excel text-green-600 text-xl mr-2"></i>
-                                <span>Excel</span>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 format-option" data-format="csv">
-                                <i class="fas fa-file-csv text-indigo-500 text-xl mr-2"></i>
-                                <span>CSV</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-medium mb-2">包含内容</label>
-                        <div class="space-y-2">
-                            <div class="flex items-center">
-                                <input type="checkbox" id="includeCharts" class="h-4 w-4 text-indigo-600 rounded" checked>
-                                <label for="includeCharts" class="ml-2 text-gray-700 text-sm">
-                                    包含图表
-                                </label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="includeRawData" class="h-4 w-4 text-indigo-600 rounded" checked>
-                                <label for="includeRawData" class="ml-2 text-gray-700 text-sm">
-                                    包含原始数据
-                                </label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="checkbox" id="includeSummary" class="h-4 w-4 text-indigo-600 rounded" checked>
-                                <label for="includeSummary" class="ml-2 text-gray-700 text-sm">
-                                    包含分析总结
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="flex justify-end">
-                        <button class="px-4 py-2 text-gray-700 mr-2 cancel-export-btn">取消</button>
-                        <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors confirm-export-btn">
-                            <i class="fas fa-download mr-2"></i>导出
-                        </button>
-                    </div>
-                </div>
-            `;
-            document.body.appendChild(exportOptions);
-            
-            // 添加格式选择高亮
-            const formatOptions = exportOptions.querySelectorAll('.format-option');
-            formatOptions.forEach(option => {
-                option.addEventListener('click', function() {
-                    formatOptions.forEach(opt => opt.classList.remove('bg-indigo-50', 'border-indigo-500'));
-                    this.classList.add('bg-indigo-50', 'border-indigo-500');
-                });
-            });
-            
-            // 添加取消按钮事件
-            exportOptions.querySelector('.cancel-export-btn').addEventListener('click', function() {
-                document.body.removeChild(exportOptions);
-            });
-            
-            // 添加确认导出按钮事件
-            exportOptions.querySelector('.confirm-export-btn').addEventListener('click', function() {
-                // 获取选中的格式
-                const selectedFormat = exportOptions.querySelector('.format-option.bg-indigo-50')?.dataset.format || 'pdf';
-                const includeCharts = exportOptions.querySelector('#includeCharts').checked;
-                const includeRawData = exportOptions.querySelector('#includeRawData').checked;
-                const includeSummary = exportOptions.querySelector('#includeSummary').checked;
-                
-                // 关闭弹窗
-                document.body.removeChild(exportOptions);
-                
-                // 显示导出成功提示
-                const toast = document.createElement('div');
-                toast.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg z-50 flex items-center';
-                toast.innerHTML = `
-                    <i class="fas fa-check-circle mr-2"></i>
-                    <span>报告已成功导出为${selectedFormat.toUpperCase()}格式</span>
-                `;
-                document.body.appendChild(toast);
-                
-                // 3秒后自动关闭提示
-                setTimeout(() => {
-                    document.body.removeChild(toast);
-                }, 3000);
-            });
         });
     </script>
 
@@ -1013,6 +745,32 @@
     <!-- 引入组件和公共JS文件 -->
     <script src="js/components.js"></script>
     <script src="js/common.js"></script>
+    <script src="js/statistics.js"></script>
+    
+    <!-- 添加调试脚本 -->
+    <script>
+        // 调试脚本 - 检查图表初始化情况
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('正在检查图表初始化...');
+            setTimeout(function() {
+                const charts = [
+                    { id: 'categoryChart', instance: window.categoryChart },
+                    { id: 'trendChart', instance: window.trendChart },
+                    { id: 'timeAllocationChart', instance: window.timeAllocationChart },
+                    { id: 'completionRateChart', instance: window.completionRateChart },
+                    { id: 'tagTrendChart', instance: window.tagTrendChart },
+                    { id: 'timeEfficiencyChart', instance: window.timeEfficiencyChart }
+                ];
+                
+                charts.forEach(chart => {
+                    const element = document.getElementById(chart.id);
+                    console.log(`检查图表 ${chart.id}:`);
+                    console.log(`- DOM元素存在: ${element ? '是' : '否'}`);
+                    console.log(`- 图表实例存在: ${chart.instance ? '是' : '否'}`);
+                });
+            }, 1000);
+        });
+    </script>
 
 <!-- 添加弹出框HTML代码 -->
     
@@ -1207,6 +965,13 @@
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
                 </div>
 
+                <!-- 完成时间 -->
+                <div class="mb-4">
+                    <label for="record-time" class="block text-gray-700 font-medium mb-2">完成时间</label>
+                    <input type="time" id="record-time" name="completion-time" 
+                        class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                </div>
+
                 <!-- 事项描述 -->
                 <div class="mb-4">
                     <label for="record-desc" class="block text-gray-700 font-medium mb-2">事项详情</label>
@@ -1242,5 +1007,68 @@
         </div>
     </div>
 </div>
+
+<!-- 添加自动测试脚本 -->
+<script>
+    window.addEventListener('load', function() {
+        // 等待一秒后执行测试，确保页面完全加载
+        setTimeout(function() {
+            console.log('执行自动测试...');
+            
+            // 检查Chart.js是否加载
+            if (typeof Chart === 'undefined') {
+                console.error('Chart.js未加载，尝试手动加载');
+                
+                var script = document.createElement('script');
+                script.src = 'https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js';
+                script.onload = function() {
+                    console.log('Chart.js手动加载成功，重新初始化图表');
+                    if (typeof initStatisticsPage === 'function') {
+                        initStatisticsPage();
+                    }
+                };
+                document.head.appendChild(script);
+                return;
+            }
+            
+            // 检查canvas元素
+            const canvases = document.querySelectorAll('canvas');
+            if (canvases.length === 0) {
+                console.error('未找到canvas元素');
+                return;
+            }
+            
+            // 检查图表实例
+            const chartInstances = [
+                window.categoryChart,
+                window.trendChart,
+                window.timeAllocationChart,
+                window.completionRateChart,
+                window.tagTrendChart,
+                window.timeEfficiencyChart
+            ];
+            
+            // 统计已初始化的图表数量
+            const initializedCharts = chartInstances.filter(chart => chart !== null && chart !== undefined).length;
+            console.log(`已初始化图表: ${initializedCharts}/${chartInstances.length}`);
+            
+            // 如果图表实例数量不足，尝试刷新图表
+            if (initializedCharts < chartInstances.length) {
+                console.log('图表初始化不完整，尝试刷新...');
+                
+                // 如果有刷新按钮，点击它
+                const refreshBtn = document.getElementById('refresh-charts');
+                if (refreshBtn) {
+                    console.log('点击刷新按钮');
+                    refreshBtn.click();
+                } else if (typeof handleRefreshCharts === 'function') {
+                    // 否则直接调用刷新函数
+                    console.log('调用刷新函数');
+                    handleRefreshCharts();
+                }
+            }
+        }, 1000);
+    });
+</script>
 </body>
 </html>

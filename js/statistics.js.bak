@@ -1,0 +1,1883 @@
+// 统计分析页面脚本
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加调试信息
+    console.log('正在初始化统计页面...');
+    
+    // 检查Chart.js是否正确加载
+    if (typeof Chart === 'undefined') {
+        console.error('Chart.js未加载，无法初始化图表');
+        // 显示错误信息
+        showChartLoadError();
+        return;
+    } else {
+        console.log('Chart.js已加载，版本:', Chart.version);
+    }
+    
+    // 检查localStorage中的数据
+    const eventsData = localStorage.getItem('events');
+    console.log('localStorage中的events数据:', eventsData ? '数据长度: ' + eventsData.length : 'null');
+    
+    // 如果没有事件数据，创建测试数据
+    if (!eventsData || JSON.parse(eventsData).length === 0) {
+        console.log('未找到事件数据，创建测试数据...');
+        createTestData();
+    }
+    
+    // 检查canvas元素
+    const canvasElements = document.querySelectorAll('canvas');
+    console.log('页面中的canvas元素数量:', canvasElements.length);
+    
+    if (canvasElements.length === 0) {
+        console.error('没有找到canvas元素，无法初始化图表');
+        return;
+    }
+    
+    canvasElements.forEach(canvas => {
+        // 确保canvas元素有合理的尺寸
+        if (canvas.width === 0 || canvas.height === 0) {
+            canvas.width = canvas.parentElement.clientWidth || 300;
+            canvas.height = canvas.parentElement.clientHeight || 200;
+            console.log(`为Canvas ${canvas.id} 设置尺寸: ${canvas.width}x${canvas.height}`);
+        }
+        console.log(`Canvas ID: ${canvas.id}, 宽度: ${canvas.width}, 高度: ${canvas.height}`);
+    });
+    
+    // 使用setTimeout确保DOM完全加载和处理
+    setTimeout(function() {
+        try {
+            // 初始化页面
+            initStatisticsPage();
+            
+            // 监听时间范围选择变化
+            const dateSelect = document.querySelector('select');
+            if (dateSelect) {
+                dateSelect.addEventListener('change', handleDateRangeChange);
+            }
+            
+            // 监听导出报告按钮
+            const exportBtn = document.querySelector('button.bg-indigo-100');
+            if (exportBtn) {
+                exportBtn.addEventListener('click', handleExportReport);
+            }
+            
+            // 监听刷新图表按钮
+            const refreshBtn = document.getElementById('refresh-charts');
+            if (refreshBtn) {
+                refreshBtn.addEventListener('click', handleRefreshCharts);
+            }
+            
+            // 页面加载完成后自动刷新图表一次，确保时段标签更新
+            setTimeout(function() {
+                console.log('自动刷新图表，更新时段标签...');
+                handleRefreshCharts();
+            }, 1000);
+        } catch (error) {
+            console.error('统计页面初始化出错:', error);
+            showToast('图表初始化失败，请刷新页面重试', 'error');
+        }
+    }, 500);
+});
+
+// 显示图表加载错误
+function showChartLoadError() {
+    document.querySelectorAll('.h-64').forEach(container => {
+        const title = container.closest('.bg-white')?.querySelector('h3')?.textContent || '图表';
+        container.innerHTML = `
+            <div class="flex items-center justify-center h-full flex-col">
+                <i class="fas fa-exclamation-circle text-red-300 text-5xl mb-3"></i>
+                <p class="text-red-500 font-medium">无法加载图表库</p>
+                <p class="text-gray-500 mt-2">请检查网络连接并刷新页面</p>
+                <button class="mt-4 px-4 py-2 bg-indigo-100 text-indigo-700 rounded-lg hover:bg-indigo-200 transition-colors retry-load-btn">
+                    <i class="fas fa-sync-alt mr-2"></i>重试
+                </button>
+            </div>
+        `;
+    });
+    
+    // 添加重试按钮事件
+    document.querySelectorAll('.retry-load-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            window.location.reload();
+        });
+    });
+}
+
+// 创建测试数据
+function createTestData() {
+    try {
+        console.log('开始创建测试数据...');
+        
+        // 获取当前日期
+        const now = new Date();
+        
+        // 创建测试事件数据
+        const testEvents = [];
+        
+        // 生成过去30天的事件
+        const categories = ['work', 'study', 'health', 'life', 'experience', 'social', 'family', 'leisure'];
+        const statuses = ['completed', 'in-progress', 'planned'];
+        const tags = ['会议', '项目', '学习', '健身', '截止日期', '客户', '家庭', '总结', '培训', '其他'];
+        
+        // 每天生成1-5个事件
+        for (let i = 0; i < 30; i++) {
+            const eventDate = new Date(now);
+            eventDate.setDate(now.getDate() - i);
+            
+            // 每天随机事件数量
+            const eventsPerDay = Math.floor(Math.random() * 5) + 1;
+            
+            for (let j = 0; j < eventsPerDay; j++) {
+                // 随机选择分类、状态和标签
+                const category = categories[Math.floor(Math.random() * categories.length)];
+                const status = statuses[Math.floor(Math.random() * statuses.length)];
+                
+                // 随机选择1-3个标签
+                const eventTags = [];
+                const tagCount = Math.floor(Math.random() * 3) + 1;
+                for (let k = 0; k < tagCount; k++) {
+                    const tag = tags[Math.floor(Math.random() * tags.length)];
+                    if (!eventTags.includes(tag)) {
+                        eventTags.push(tag);
+                    }
+                }
+                
+                // 创建事件开始和结束时间
+                const startHour = Math.floor(Math.random() * 12) + 8; // 8点到20点
+                const startTime = new Date(eventDate);
+                startTime.setHours(startHour, 0, 0, 0);
+                
+                const endTime = new Date(startTime);
+                endTime.setHours(startTime.getHours() + Math.floor(Math.random() * 3) + 1);
+                
+                // 创建事件对象
+                const event = {
+                    id: `event-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+                    title: `测试事件 ${i+1}-${j+1}`,
+                    description: `这是一个${getCategoryDisplayName(category)}类别的测试事件`,
+                    category: category,
+                    status: status,
+                    tags: eventTags,
+                    startTime: startTime.toISOString(),
+                    endTime: endTime.toISOString(),
+                    createdAt: eventDate.toISOString(),
+                    updatedAt: now.toISOString()
+                };
+                
+                testEvents.push(event);
+            }
+        }
+        
+        // 保存到localStorage
+        localStorage.setItem('events', JSON.stringify(testEvents));
+        console.log(`已创建${testEvents.length}个测试事件数据`);
+        
+        return testEvents;
+    } catch (error) {
+        console.error('创建测试数据时出错:', error);
+        
+        // 创建最小测试数据集
+        const minimumTestData = [
+            {
+                id: 'event-1',
+                title: '示例工作事件',
+                description: '这是一个工作类别的示例事件',
+                category: 'work',
+                status: 'completed',
+                tags: ['会议', '项目'],
+                startTime: new Date().toISOString(),
+                endTime: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: 'event-2',
+                title: '示例学习事件',
+                description: '这是一个学习类别的示例事件',
+                category: 'study',
+                status: 'in-progress',
+                tags: ['学习'],
+                startTime: new Date().toISOString(),
+                endTime: new Date().toISOString(),
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        ];
+        
+        // 保存最小测试数据
+        try {
+            localStorage.setItem('events', JSON.stringify(minimumTestData));
+            console.log('已创建最小测试数据集');
+            return minimumTestData;
+        } catch (innerError) {
+            console.error('创建最小测试数据集时出错:', innerError);
+            return [];
+        }
+    }
+}
+
+// 初始化统计页面
+function initStatisticsPage() {
+    try {
+        console.log('开始初始化统计页面...');
+        
+        // 获取当前选择的时间范围
+        const dateSelect = document.querySelector('select');
+        const dateRange = dateSelect ? dateSelect.value || 'month' : 'month';
+        
+        // 获取并处理数据
+        const statistics = calculateStatistics(dateRange);
+        console.log('计算得到的统计数据:', statistics);
+        
+        // 更新统计卡片
+        updateStatisticsCards(statistics);
+        
+        // 初始化图表
+        initCharts(statistics);
+        
+        console.log('统计页面初始化完成');
+    } catch (error) {
+        console.error('初始化统计页面时出错:', error);
+        
+        // 使用默认数据初始化页面
+        console.warn('使用默认数据初始化页面');
+        
+        // 创建默认统计数据
+        const defaultStatistics = createDefaultStatistics();
+        
+        // 使用默认数据更新UI
+        updateStatisticsCards(defaultStatistics);
+        initCharts(defaultStatistics);
+    }
+}
+
+// 创建默认统计数据
+function createDefaultStatistics() {
+    // 获取当前日期
+    const now = new Date();
+    const startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    
+    // 创建默认日期范围内的日期
+    const dailyEventCounts = {};
+    const currentDate = new Date(startDate);
+    while (currentDate <= endDate) {
+        const dateString = currentDate.toISOString().split('T')[0];
+        dailyEventCounts[dateString] = Math.floor(Math.random() * 5) + 1; // 1-5之间的随机数
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // 创建默认周数据
+    const weeklyCompletionRates = [
+        { week: '第1周', rate: 75 },
+        { week: '第2周', rate: 82 },
+        { week: '第3周', rate: 92 },
+        { week: '第4周', rate: 88 }
+    ];
+    
+    // 创建默认标签数据
+    const popularTags = [
+        { tag: '会议', count: 12 },
+        { tag: '项目', count: 9 },
+        { tag: '学习', count: 8 },
+        { tag: '健身', count: 7 },
+        { tag: '截止日期', count: 6 },
+        { tag: '客户', count: 5 },
+        { tag: '家庭', count: 4 },
+        { tag: '总结', count: 4 },
+        { tag: '培训', count: 3 },
+        { tag: '其他', count: 15 }
+    ];
+    
+    // 创建默认时段效率数据
+    const timeEfficiency = [
+        { slot: '6-9点', efficiency: 65 },
+        { slot: '9-12点', efficiency: 90 },
+        { slot: '12-15点', efficiency: 75 },
+        { slot: '15-18点', efficiency: 85 },
+        { slot: '18-21点', efficiency: 70 },
+        { slot: '21-24点', efficiency: 55 }
+    ];
+    
+    return {
+        overview: {
+            totalEvents: 42,
+            completedEvents: 35,
+            inProgressEvents: 5,
+            completionRate: 83,
+            totalEventsChangeRate: 12,
+            completedEventsChangeRate: 8,
+            inProgressEventsChangeRate: -3,
+            completionRateChangeRate: 5,
+            dateRange: { startDate, endDate }
+        },
+        eventsByCategory: {
+            'work': 45,
+            'study': 20,
+            'health': 15,
+            'life': 20
+        },
+        dailyEventCounts,
+        timeAllocation: {
+            'work': 45,
+            'study': 20,
+            'health': 15,
+            'life': 20
+        },
+        weeklyCompletionRates,
+        popularTags,
+        timeEfficiency
+    };
+}
+
+// 根据选定的时间范围获取并计算统计数据
+function calculateStatistics(dateRange) {
+    // 从localStorage获取所有事件
+    const events = JSON.parse(localStorage.getItem('events') || '[]');
+    
+    // 根据时间范围筛选事件
+    const { startDate, endDate } = getDateRange(dateRange);
+    const filteredEvents = filterEventsByDateRange(events, startDate, endDate);
+    
+    // 计算基本统计数据
+    const totalEvents = filteredEvents.length;
+    const completedEvents = filteredEvents.filter(event => event.status === 'completed').length;
+    const inProgressEvents = filteredEvents.filter(event => event.status === 'in-progress').length;
+    const completionRate = totalEvents > 0 ? Math.round((completedEvents / totalEvents) * 100) : 0;
+    
+    // 计算环比数据（与上一个时间段相比）
+    const prevDateRange = getPreviousDateRange(dateRange, startDate);
+    const prevFilteredEvents = filterEventsByDateRange(events, prevDateRange.startDate, prevDateRange.endDate);
+    const prevTotalEvents = prevFilteredEvents.length;
+    const prevCompletedEvents = prevFilteredEvents.filter(event => event.status === 'completed').length;
+    const prevInProgressEvents = prevFilteredEvents.filter(event => event.status === 'in-progress').length;
+    const prevCompletionRate = prevTotalEvents > 0 ? Math.round((prevCompletedEvents / prevTotalEvents) * 100) : 0;
+    
+    // 计算环比变化率
+    const totalEventsChangeRate = prevTotalEvents > 0 ? Math.round(((totalEvents - prevTotalEvents) / prevTotalEvents) * 100) : 0;
+    const completedEventsChangeRate = prevCompletedEvents > 0 ? Math.round(((completedEvents - prevCompletedEvents) / prevCompletedEvents) * 100) : 0;
+    const inProgressEventsChangeRate = prevInProgressEvents > 0 ? Math.round(((inProgressEvents - prevInProgressEvents) / prevInProgressEvents) * 100) : 0;
+    const completionRateChangeRate = prevCompletionRate > 0 ? Math.round(((completionRate - prevCompletionRate) / prevCompletionRate) * 100) : 0;
+    
+    // 按分类统计事件数量
+    const eventsByCategory = calculateEventsByCategory(filteredEvents);
+    
+    // 计算每日事件数量
+    const dailyEventCounts = calculateDailyEventCounts(filteredEvents, startDate, endDate);
+    
+    // 计算时间分配
+    const timeAllocation = calculateTimeAllocation(filteredEvents);
+    
+    // 计算每周完成率
+    const weeklyCompletionRates = calculateWeeklyCompletionRates(events, startDate, endDate);
+    
+    // 统计热门标签
+    const popularTags = calculatePopularTags(filteredEvents);
+    
+    // 分析高效时段
+    const timeEfficiency = analyzeTimeEfficiency(filteredEvents);
+    
+    return {
+        overview: {
+            totalEvents,
+            completedEvents,
+            inProgressEvents,
+            completionRate,
+            totalEventsChangeRate,
+            completedEventsChangeRate,
+            inProgressEventsChangeRate,
+            completionRateChangeRate,
+            dateRange: { startDate, endDate }
+        },
+        eventsByCategory,
+        dailyEventCounts,
+        timeAllocation,
+        weeklyCompletionRates,
+        popularTags,
+        timeEfficiency
+    };
+}
+
+// 获取指定时间范围的起止日期
+function getDateRange(range) {
+    const now = new Date();
+    let startDate, endDate;
+    
+    switch(range) {
+        case 'week':
+            // 本周（从周一到周日）
+            startDate = new Date(now);
+            startDate.setDate(now.getDate() - now.getDay() + (now.getDay() === 0 ? -6 : 1));
+            startDate.setHours(0, 0, 0, 0);
+            
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+            
+        case 'month':
+            // 本月
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+            
+        case 'quarter':
+            // 本季度
+            const quarter = Math.floor(now.getMonth() / 3);
+            startDate = new Date(now.getFullYear(), quarter * 3, 1);
+            endDate = new Date(now.getFullYear(), (quarter + 1) * 3, 0, 23, 59, 59, 999);
+            break;
+            
+        case 'year':
+            // 本年
+            startDate = new Date(now.getFullYear(), 0, 1);
+            endDate = new Date(now.getFullYear(), 11, 31, 23, 59, 59, 999);
+            break;
+            
+        case 'custom':
+            // 自定义日期范围会通过另一个函数设置
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+            
+        default:
+            // 默认为本月
+            startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+            endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+    
+    return { startDate, endDate };
+}
+
+// 根据日期范围筛选事件
+function filterEventsByDateRange(events, startDate, endDate) {
+    return events.filter(event => {
+        const eventDate = new Date(event.startTime || event.createdAt);
+        return eventDate >= startDate && eventDate <= endDate;
+    });
+}
+
+// 获取上一个时间段的日期范围
+function getPreviousDateRange(range, currentStartDate) {
+    const startDate = new Date(currentStartDate);
+    let endDate;
+    
+    switch(range) {
+        case 'week':
+            // 上一周
+            startDate.setDate(startDate.getDate() - 7);
+            endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            endDate.setHours(23, 59, 59, 999);
+            break;
+            
+        case 'month':
+            // 上个月
+            startDate.setMonth(startDate.getMonth() - 1);
+            endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999);
+            break;
+            
+        case 'quarter':
+            // 上个季度
+            startDate.setMonth(startDate.getMonth() - 3);
+            endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 3, 0, 23, 59, 59, 999);
+            break;
+            
+        case 'year':
+            // 上一年
+            startDate.setFullYear(startDate.getFullYear() - 1);
+            endDate = new Date(startDate.getFullYear(), 11, 31, 23, 59, 59, 999);
+            break;
+            
+        default:
+            // 默认为上个月
+            startDate.setMonth(startDate.getMonth() - 1);
+            endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59, 999);
+    }
+    
+    return { startDate, endDate };
+}
+
+// 按分类统计事件数量
+function calculateEventsByCategory(events) {
+    const categories = {
+        'work': 0,
+        'study': 0,
+        'health': 0,
+        'life': 0,
+        'experience': 0,
+        'social': 0,
+        'family': 0,
+        'leisure': 0
+    };
+    
+    // 统计各分类的事件数量
+    events.forEach(event => {
+        const category = event.category || 'other';
+        if (categories[category] !== undefined) {
+            categories[category]++;
+        } else {
+            categories.other = (categories.other || 0) + 1;
+        }
+    });
+    
+    return categories;
+}
+
+// 初始化所有图表
+function initCharts(statistics) {
+    // 在初始化前清除所有已存在的图表
+    destroyAllCharts();
+    
+    console.log('开始初始化所有图表...');
+    
+    // 使用获取到的实际数据初始化图表
+    try {
+        console.log('初始化分类图表...');
+        initCategoryChart(statistics.eventsByCategory);
+        
+        console.log('初始化趋势图表...');
+        initTrendChart(statistics.dailyEventCounts);
+        
+        console.log('初始化时间分配图表...');
+        initTimeAllocationChart(statistics.timeAllocation);
+        
+        console.log('初始化完成率图表...');
+        initCompletionRateChart(statistics.weeklyCompletionRates);
+        
+        console.log('初始化标签趋势图表...');
+        initTagTrendChart(statistics.popularTags);
+        
+        console.log('初始化高效时段图表...');
+        initTimeEfficiencyChart(statistics.timeEfficiency);
+        
+        console.log('所有图表初始化完成');
+    } catch (error) {
+        console.error('初始化图表时出错:', error);
+        showToast('图表初始化失败，请刷新页面重试', 'error');
+    }
+}
+
+// 销毁所有图表实例
+function destroyAllCharts() {
+    const charts = [
+        window.categoryChart,
+        window.trendChart,
+        window.timeAllocationChart,
+        window.completionRateChart,
+        window.tagTrendChart,
+        window.timeEfficiencyChart
+    ];
+    
+    console.log('销毁现有图表实例...');
+    
+    charts.forEach((chart, index) => {
+        try {
+            if (chart && typeof chart.destroy === 'function') {
+                chart.destroy();
+                console.log(`图表 #${index} 销毁成功`);
+            }
+        } catch (error) {
+            console.error(`销毁图表 #${index} 时出错:`, error);
+        }
+    });
+    
+    window.categoryChart = null;
+    window.trendChart = null;
+    window.timeAllocationChart = null;
+    window.completionRateChart = null;
+    window.tagTrendChart = null;
+    window.timeEfficiencyChart = null;
+}
+
+// 初始化分类统计图表
+function initCategoryChart(eventsByCategory) {
+    try {
+        console.log('初始化分类图表，数据:', eventsByCategory);
+        
+        const categoryCanvas = document.getElementById('categoryChart');
+        if (!categoryCanvas) {
+            console.error('找不到categoryChart元素');
+            return;
+        }
+        
+        // 确保canvas有合理的尺寸
+        if (categoryCanvas.width === 0 || categoryCanvas.height === 0) {
+            const container = categoryCanvas.closest('.h-64');
+            categoryCanvas.width = container ? container.clientWidth : 300;
+            categoryCanvas.height = container ? container.clientHeight : 200;
+            console.log(`设置categoryChart尺寸: ${categoryCanvas.width}x${categoryCanvas.height}`);
+        }
+        
+        const categoryCtx = categoryCanvas.getContext('2d');
+        if (!categoryCtx) {
+            console.error('无法获取2D上下文');
+            return;
+        }
+        
+        // 提取数据
+        const categories = Object.keys(eventsByCategory).filter(cat => eventsByCategory[cat] > 0);
+        console.log('筛选后的分类:', categories);
+        
+        // 如果没有数据，使用默认数据
+        if (categories.length === 0) {
+            console.warn('没有分类数据，使用默认数据');
+            
+            // 使用默认数据
+            const defaultData = {
+                'work': 45,
+                'study': 20,
+                'health': 15,
+                'life': 20
+            };
+            
+            // 使用默认数据初始化图表
+            initCategoryChartWithData(categoryCtx, defaultData);
+            return;
+        }
+        
+        // 正常初始化图表
+        initCategoryChartWithData(categoryCtx, eventsByCategory);
+    } catch (error) {
+        console.error('初始化分类图表时出错:', error);
+        // 在canvas上显示错误信息
+        showChartError('categoryChart', '无法加载分类图表');
+    }
+}
+
+// 使用提供的数据初始化分类图表
+function initCategoryChartWithData(categoryCtx, data) {
+    // 提取数据
+    const categories = Object.keys(data).filter(cat => data[cat] > 0);
+    const counts = categories.map(cat => data[cat]);
+    const total = counts.reduce((sum, count) => sum + count, 0);
+    
+    // 计算百分比
+    const percentages = counts.map(count => Math.round((count / total) * 100));
+    
+    // 定义颜色
+    const backgroundColors = [
+        'rgba(59, 130, 246, 0.8)', // 蓝色
+        'rgba(16, 185, 129, 0.8)', // 绿色
+        'rgba(234, 179, 8, 0.8)',  // 黄色
+        'rgba(168, 85, 247, 0.8)',  // 紫色
+        'rgba(239, 68, 68, 0.8)',   // 红色
+        'rgba(236, 72, 153, 0.8)',  // 粉色
+        'rgba(249, 115, 22, 0.8)',  // 橙色
+        'rgba(107, 114, 128, 0.8)'  // 灰色
+    ];
+    
+    // 更新图例文本
+    const legendItems = document.querySelectorAll('.grid.grid-cols-2.gap-4.mt-6 .flex.items-center');
+    categories.forEach((category, index) => {
+        if (index < legendItems.length) {
+            const legendText = `${getCategoryDisplayName(category)} (${percentages[index]}%)`;
+            legendItems[index].querySelector('span').textContent = legendText;
+            legendItems[index].querySelector('div').style.backgroundColor = backgroundColors[index].replace('0.8', '1');
+        }
+    });
+    
+    // 创建或更新图表
+    if (window.categoryChart) {
+        window.categoryChart.data.labels = categories.map(getCategoryDisplayName);
+        window.categoryChart.data.datasets[0].data = counts;
+        window.categoryChart.data.datasets[0].backgroundColor = backgroundColors.slice(0, categories.length);
+        window.categoryChart.update();
+    } else {
+        try {
+            window.categoryChart = new Chart(categoryCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: categories.map(getCategoryDisplayName),
+                    datasets: [{
+                        data: counts,
+                        backgroundColor: backgroundColors.slice(0, categories.length),
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    },
+                    cutout: '70%'
+                }
+            });
+            console.log('分类图表创建成功');
+        } catch (error) {
+            console.error('创建分类图表实例时出错:', error);
+        }
+    }
+}
+
+// 在canvas上显示错误信息
+function showChartError(canvasId, message) {
+    try {
+        const canvas = document.getElementById(canvasId);
+        if (!canvas) return;
+        
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+        
+        // 清除画布
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        
+        // 设置背景色
+        ctx.fillStyle = '#f9fafb';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        
+        // 绘制错误信息
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '14px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText(message, canvas.width / 2, canvas.height / 2);
+        
+        // 绘制提示信息
+        ctx.fillStyle = '#6b7280';
+        ctx.font = '12px Arial';
+        ctx.fillText('请刷新页面重试', canvas.width / 2, canvas.height / 2 + 20);
+    } catch (error) {
+        console.error('显示图表错误信息时出错:', error);
+    }
+}
+
+// 初始化趋势图表
+function initTrendChart(dailyEventCounts) {
+    const trendCtx = document.getElementById('trendChart').getContext('2d');
+    
+    // 按时间顺序排序日期
+    const sortedDates = Object.keys(dailyEventCounts).sort();
+    
+    // 选择有代表性的日期作为标签（例如，每5天或每周的第一天）
+    const labelDates = selectRepresentativeDates(sortedDates);
+    
+    // 提取所有日期的数据
+    const allCounts = sortedDates.map(date => dailyEventCounts[date]);
+    
+    // 计算平均每日事件数
+    const totalEvents = allCounts.reduce((sum, count) => sum + count, 0);
+    const averageDaily = totalEvents / allCounts.length;
+    
+    // 更新平均每日事件数显示
+    const averageDailyElement = document.querySelector('#trendChart').closest('.bg-white').querySelector('.mt-6 p span.font-medium:last-child');
+    if (averageDailyElement) {
+        averageDailyElement.textContent = averageDaily.toFixed(1);
+    }
+    
+    // 创建或更新图表
+    if (window.trendChart) {
+        window.trendChart.data.labels = labelDates.map(formatDateLabel);
+        window.trendChart.data.datasets[0].data = labelDates.map(date => dailyEventCounts[date]);
+        window.trendChart.update();
+    } else {
+        window.trendChart = new Chart(trendCtx, {
+            type: 'line',
+            data: {
+                labels: labelDates.map(formatDateLabel),
+                datasets: [{
+                    label: '事件数量',
+                    data: labelDates.map(date => dailyEventCounts[date]),
+                    borderColor: 'rgba(79, 70, 229, 0.8)',
+                    backgroundColor: 'rgba(79, 70, 229, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            title: function(context) {
+                                return formatDateLabel(context[0].label, true);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 选择有代表性的日期作为标签
+function selectRepresentativeDates(dates) {
+    if (dates.length <= 7) {
+        return dates; // 如果日期不多，全部显示
+    }
+    
+    // 计算间隔，使标签数量在5-7之间
+    const interval = Math.ceil(dates.length / 7);
+    
+    // 选择均匀分布的日期
+    const selectedDates = [];
+    for (let i = 0; i < dates.length; i += interval) {
+        selectedDates.push(dates[i]);
+    }
+    
+    // 确保包含最后一天
+    if (selectedDates[selectedDates.length - 1] !== dates[dates.length - 1]) {
+        selectedDates.push(dates[dates.length - 1]);
+    }
+    
+    return selectedDates;
+}
+
+// 格式化日期标签
+function formatDateLabel(dateString, fullFormat = false) {
+    const date = new Date(dateString);
+    
+    if (fullFormat) {
+        return `${date.getFullYear()}年${date.getMonth() + 1}月${date.getDate()}日`;
+    }
+    
+    return `${date.getMonth() + 1}月${date.getDate()}日`;
+}
+
+// 获取分类显示名称
+function getCategoryDisplayName(category) {
+    const categoryNames = {
+        'work': '工作职业',
+        'study': '学习成长',
+        'health': '健康管理',
+        'life': '日常生活',
+        'experience': '体验突破',
+        'social': '人际社群',
+        'family': '家庭生活',
+        'leisure': '休闲放松',
+        'other': '其他'
+    };
+    
+    return categoryNames[category] || category;
+}
+
+// 初始化时间分配图表
+function initTimeAllocationChart(timeAllocation) {
+    const timeAllocationCtx = document.getElementById('timeAllocationChart').getContext('2d');
+    
+    // 提取数据
+    const categories = Object.keys(timeAllocation).filter(cat => timeAllocation[cat] > 0);
+    const hours = categories.map(cat => timeAllocation[cat]);
+    
+    // 定义颜色
+    const backgroundColors = [
+        'rgba(59, 130, 246, 0.8)', // 蓝色
+        'rgba(16, 185, 129, 0.8)', // 绿色
+        'rgba(234, 179, 8, 0.8)',  // 黄色
+        'rgba(168, 85, 247, 0.8)',  // 紫色
+        'rgba(239, 68, 68, 0.8)',   // 红色
+        'rgba(236, 72, 153, 0.8)',  // 粉色
+        'rgba(249, 115, 22, 0.8)',  // 橙色
+        'rgba(107, 114, 128, 0.8)'  // 灰色
+    ];
+    
+    // 更新时间分配描述
+    updateTimeAllocationDescription(timeAllocation);
+    
+    // 创建或更新图表
+    if (window.timeAllocationChart) {
+        window.timeAllocationChart.data.labels = categories.map(getCategoryDisplayName);
+        window.timeAllocationChart.data.datasets[0].data = hours;
+        window.timeAllocationChart.data.datasets[0].backgroundColor = backgroundColors.slice(0, categories.length);
+        window.timeAllocationChart.update();
+    } else {
+        window.timeAllocationChart = new Chart(timeAllocationCtx, {
+            type: 'bar',
+            data: {
+                labels: categories.map(getCategoryDisplayName),
+                datasets: [{
+                    label: '小时数',
+                    data: hours,
+                    backgroundColor: backgroundColors.slice(0, categories.length),
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 更新时间分配描述
+function updateTimeAllocationDescription(timeAllocation) {
+    const descriptionElement = document.querySelector('#timeAllocationChart').closest('.bg-white').querySelector('.mt-6 p');
+    if (!descriptionElement) return;
+    
+    // 计算总时间
+    const total = Object.values(timeAllocation).reduce((sum, hours) => sum + hours, 0);
+    if (total === 0) return;
+    
+    // 计算每个分类的百分比
+    const percentages = {};
+    Object.keys(timeAllocation).forEach(category => {
+        if (timeAllocation[category] > 0) {
+            percentages[category] = Math.round((timeAllocation[category] / total) * 100);
+        }
+    });
+    
+    // 创建描述文本
+    const descriptions = Object.keys(percentages)
+        .filter(category => percentages[category] > 0)
+        .map(category => `${getCategoryDisplayName(category)}时间占比 <span class="font-medium">${percentages[category]}%</span>`);
+    
+    // 更新描述文本
+    descriptionElement.innerHTML = descriptions.join('，') + '。';
+}
+
+// 初始化完成率图表
+function initCompletionRateChart(weeklyRates) {
+    const completionRateCtx = document.getElementById('completionRateChart').getContext('2d');
+    
+    // 提取数据
+    const weeks = weeklyRates.map(week => week.week);
+    const rates = weeklyRates.map(week => week.rate);
+    
+    // 找出最高完成率的周
+    let highestRateWeek = '';
+    let highestRate = 0;
+    
+    weeklyRates.forEach(week => {
+        if (week.rate > highestRate) {
+            highestRate = week.rate;
+            highestRateWeek = week.week;
+        }
+    });
+    
+    // 更新完成率描述
+    const descriptionElement = document.querySelector('#completionRateChart').closest('.bg-white').querySelector('.mt-6 p');
+    if (descriptionElement && highestRateWeek) {
+        descriptionElement.innerHTML = `${highestRateWeek}完成率最高，达到 <span class="font-medium">${highestRate}%</span>。整体趋势${getTrendDescription(rates)}。`;
+    }
+    
+    // 创建或更新图表
+    if (window.completionRateChart) {
+        window.completionRateChart.data.labels = weeks;
+        window.completionRateChart.data.datasets[0].data = rates;
+        window.completionRateChart.update();
+    } else {
+        window.completionRateChart = new Chart(completionRateCtx, {
+            type: 'line',
+            data: {
+                labels: weeks,
+                datasets: [{
+                    label: '完成率',
+                    data: rates,
+                    borderColor: 'rgba(16, 185, 129, 0.8)',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    tension: 0.3,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return `完成率: ${context.raw}%`;
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 获取趋势描述
+function getTrendDescription(data) {
+    if (data.length < 2) return '数据不足';
+    
+    // 计算趋势（简单方法：比较首尾值）
+    const first = data[0];
+    const last = data[data.length - 1];
+    
+    if (last > first) return '呈上升状态，表现良好';
+    if (last < first) return '呈下降状态，需要加强';
+    return '保持稳定';
+}
+
+// 初始化标签趋势图表
+function initTagTrendChart(popularTags) {
+    const tagTrendCtx = document.getElementById('tagTrendChart').getContext('2d');
+    
+    // 获取前3个最常用的标签
+    const top3Tags = popularTags.slice(0, 3);
+    
+    // 更新热门标签显示
+    updatePopularTagsDisplay(popularTags);
+    
+    // 分类中文名称映射
+    const categoryNames = {
+        'study': '学习成长',
+        'experience': '体验突破',
+        'leisure': '休闲放松',
+        'family': '家庭生活',
+        'work': '工作职业',
+        'social': '人际社群'
+    };
+    
+    // 模拟每周趋势数据（实际应用中应该从真实数据计算）
+    const weekLabels = ['第一周', '第二周', '第三周', '第四周'];
+    const datasets = top3Tags.map((tag, index) => {
+        // 生成模拟数据
+        const baseCount = tag.count / 4;
+        const weeklyData = [
+            Math.max(0, Math.round(baseCount * (0.8 + Math.random() * 0.4))),
+            Math.max(0, Math.round(baseCount * (0.8 + Math.random() * 0.4))),
+            Math.max(0, Math.round(baseCount * (0.8 + Math.random() * 0.4))),
+            Math.max(0, Math.round(baseCount * (0.8 + Math.random() * 0.4)))
+        ];
+        
+        // 颜色定义
+        const colors = [
+            'rgba(79, 70, 229, 0.8)',  // 蓝紫
+            'rgba(16, 185, 129, 0.8)',  // 绿色
+            'rgba(245, 158, 11, 0.8)'   // 黄色
+        ];
+        
+        // 使用中文标签名称（如果标签是分类则转换，否则保持原样）
+        const displayTag = categoryNames[tag.tag] || tag.tag;
+        
+        return {
+            label: displayTag,
+            data: weeklyData,
+            borderColor: colors[index],
+            backgroundColor: 'transparent',
+            tension: 0.3,
+            borderWidth: 2
+        };
+    });
+    
+    // 创建或更新图表
+    if (window.tagTrendChart) {
+        window.tagTrendChart.data.labels = weekLabels;
+        window.tagTrendChart.data.datasets = datasets;
+        window.tagTrendChart.update();
+    } else {
+        window.tagTrendChart = new Chart(tagTrendCtx, {
+            type: 'line',
+            data: {
+                labels: weekLabels,
+                datasets: datasets
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: {
+                            boxWidth: 10,
+                            usePointStyle: true,
+                            pointStyle: 'circle'
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 更新热门标签显示
+function updatePopularTagsDisplay(popularTags) {
+    const tagContainer = document.querySelector('.flex.flex-wrap.gap-2');
+    if (!tagContainer) return;
+    
+    // 清空现有标签
+    tagContainer.innerHTML = '';
+    
+    // 分类中文名称映射
+    const categoryNames = {
+        'study': '学习成长',
+        'experience': '体验突破',
+        'leisure': '休闲放松',
+        'family': '家庭生活',
+        'work': '工作职业',
+        'social': '人际社群'
+    };
+    
+    // 添加热门标签
+    const colors = [
+        'indigo', 'blue', 'green', 'yellow', 'red', 
+        'purple', 'pink', 'orange', 'teal', 'gray'
+    ];
+    
+    popularTags.forEach((tag, index) => {
+        const color = colors[index % colors.length];
+        const tagElement = document.createElement('span');
+        tagElement.className = `px-3 py-1 bg-${color}-100 text-${color}-800 rounded-full text-sm`;
+        
+        // 使用中文标签名称（如果标签是分类则转换，否则保持原样）
+        const displayTag = categoryNames[tag.tag] || tag.tag;
+        
+        tagElement.textContent = `${displayTag} (${tag.count})`;
+        tagContainer.appendChild(tagElement);
+    });
+}
+
+// 初始化高效时段分析图表
+function initTimeEfficiencyChart(timeEfficiency) {
+    const timeEfficiencyCtx = document.getElementById('timeEfficiencyChart').getContext('2d');
+    
+    // 提取数据
+    const timeSlots = timeEfficiency.map(item => item.slot);
+    const efficiencyScores = timeEfficiency.map(item => item.efficiency);
+    
+    // 定义颜色
+    const backgroundColors = timeEfficiency.map(item => {
+        const score = item.efficiency;
+        if (score >= 80) return 'rgba(16, 185, 129, 0.6)'; // 高效率 - 绿色
+        if (score >= 60) return 'rgba(59, 130, 246, 0.6)'; // 中等效率 - 蓝色
+        if (score >= 40) return 'rgba(249, 115, 22, 0.6)'; // 一般效率 - 橙色
+        return 'rgba(156, 163, 175, 0.6)'; // 低效率 - 灰色
+    });
+    
+    // 更新高效时段建议
+    updateTimeEfficiencySuggestions(timeEfficiency);
+    
+    // 创建或更新图表
+    if (window.timeEfficiencyChart) {
+        window.timeEfficiencyChart.data.labels = timeSlots;
+        window.timeEfficiencyChart.data.datasets[0].data = efficiencyScores;
+        window.timeEfficiencyChart.data.datasets[0].backgroundColor = backgroundColors;
+        window.timeEfficiencyChart.update();
+    } else {
+        window.timeEfficiencyChart = new Chart(timeEfficiencyCtx, {
+            type: 'bar',
+            data: {
+                labels: timeSlots,
+                datasets: [{
+                    label: '效率指数',
+                    data: efficiencyScores,
+                    backgroundColor: backgroundColors,
+                    borderRadius: 5
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 100,
+                        grid: {
+                            display: true,
+                            color: 'rgba(0, 0, 0, 0.05)'
+                        },
+                        ticks: {
+                            callback: function(value) {
+                                return value + '%';
+                            }
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                return '效率: ' + context.raw + '%';
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
+// 更新高效时段建议
+function updateTimeEfficiencySuggestions(timeEfficiency) {
+    const suggestionsContainer = document.querySelector('#timeEfficiencyChart').closest('.bg-white').querySelector('ul');
+    if (!suggestionsContainer) return;
+    
+    // 清空现有建议
+    suggestionsContainer.innerHTML = '';
+    
+    // 按效率排序
+    const sortedEfficiency = [...timeEfficiency].sort((a, b) => b.efficiency - a.efficiency);
+    
+    // 添加前三个时段的建议
+    const suggestions = [];
+    
+    if (sortedEfficiency.length > 0 && sortedEfficiency[0].efficiency >= 70) {
+        suggestions.push(`${sortedEfficiency[0].slot}是您的黄金工作时段，建议安排重要任务`);
+    }
+    
+    if (sortedEfficiency.length > 1 && sortedEfficiency[1].efficiency >= 60) {
+        suggestions.push(`${sortedEfficiency[1].slot}适合创意和协作工作`);
+    }
+    
+    // 找出效率最低的时段
+    const leastEfficient = sortedEfficiency[sortedEfficiency.length - 1];
+    if (leastEfficient && leastEfficient.efficiency < 50) {
+        suggestions.push(`${leastEfficient.slot}效率明显下降，建议安排轻松活动`);
+    }
+    
+    // 如果没有足够的建议，添加一个通用建议
+    if (suggestions.length < 3) {
+        suggestions.push('定期分析您的高效时段，调整日程安排以提高整体效率');
+    }
+    
+    // 添加建议到容器
+    suggestions.forEach(suggestion => {
+        const li = document.createElement('li');
+        li.className = 'flex items-start';
+        li.innerHTML = `
+            <i class="fas fa-check-circle text-green-500 mt-1 mr-2"></i>
+            <span>${suggestion}</span>
+        `;
+        suggestionsContainer.appendChild(li);
+    });
+}
+
+// 更新所有图表
+function updateCharts(statistics) {
+    initCategoryChart(statistics.eventsByCategory);
+    initTrendChart(statistics.dailyEventCounts);
+    initTimeAllocationChart(statistics.timeAllocation);
+    initCompletionRateChart(statistics.weeklyCompletionRates);
+    initTagTrendChart(statistics.popularTags);
+    initTimeEfficiencyChart(statistics.timeEfficiency);
+}
+
+// 处理刷新图表按钮点击
+function handleRefreshCharts() {
+    // 显示加载动画
+    showLoadingAnimation();
+    
+    // 清除Chart实例
+    destroyAllCharts();
+    
+    setTimeout(() => {
+        try {
+            // 获取当前选择的时间范围
+            const dateSelect = document.querySelector('select');
+            const dateRange = dateSelect ? dateSelect.value || 'month' : 'month';
+            
+            // 计算统计数据
+            const statistics = calculateStatistics(dateRange);
+            
+            // 更新界面
+            updateStatisticsCards(statistics);
+            updateCharts(statistics);
+            
+            // 显示成功提示
+            showToast('图表已成功刷新', 'success');
+            
+            // 隐藏加载动画
+            hideLoadingAnimation();
+        } catch (error) {
+            console.error('刷新图表时发生错误:', error);
+            
+            // 显示错误提示
+            showToast('刷新图表时出错，请重试', 'error');
+            
+            // 隐藏加载动画
+            hideLoadingAnimation();
+            
+            // 使用默认数据初始化页面
+            const defaultStatistics = createDefaultStatistics();
+            updateStatisticsCards(defaultStatistics);
+            initCharts(defaultStatistics);
+        }
+    }, 800);
+}
+
+// 显示加载动画
+function showLoadingAnimation() {
+    document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
+        card.classList.add('animate-pulse-light');
+    });
+}
+
+// 隐藏加载动画
+function hideLoadingAnimation() {
+    document.querySelectorAll('.bg-white.rounded-lg.shadow').forEach(card => {
+        card.classList.remove('animate-pulse-light');
+    });
+}
+
+// 显示提示信息
+function showToast(message, type = 'success') {
+    // 移除之前的提示
+    const existingToast = document.querySelector('.toast-message');
+    if (existingToast) {
+        document.body.removeChild(existingToast);
+    }
+    
+    // 创建提示元素
+    const toast = document.createElement('div');
+    toast.className = `fixed bottom-4 right-4 px-4 py-2 rounded-lg shadow-lg z-50 flex items-center toast-message transition-opacity duration-300`;
+    
+    // 根据类型设置样式
+    if (type === 'success') {
+        toast.classList.add('bg-green-500', 'text-white');
+        toast.innerHTML = `<i class="fas fa-check-circle mr-2"></i>${message}`;
+    } else {
+        toast.classList.add('bg-red-500', 'text-white');
+        toast.innerHTML = `<i class="fas fa-exclamation-circle mr-2"></i>${message}`;
+    }
+    
+    // 添加到文档
+    document.body.appendChild(toast);
+    
+    // 3秒后关闭提示
+    setTimeout(() => {
+        toast.classList.add('opacity-0');
+        setTimeout(() => {
+            if (toast.parentNode) {
+                document.body.removeChild(toast);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// 处理日期范围变化
+function handleDateRangeChange(e) {
+    const newRange = e.target.value;
+    
+    if (newRange === 'custom') {
+        // 显示自定义日期选择器
+        showCustomDatePicker();
+    } else {
+        // 重新计算并更新数据
+        updateStatistics(newRange);
+    }
+}
+
+// 更新统计数据和图表
+function updateStatistics(dateRange) {
+    // 显示加载动画
+    showLoadingAnimation();
+    
+    // 延迟执行，以便动画效果明显
+    setTimeout(() => {
+        try {
+            // 重新计算统计数据
+            const statistics = calculateStatistics(dateRange);
+            
+            // 更新卡片和图表
+            updateStatisticsCards(statistics);
+            updateCharts(statistics);
+        } catch (error) {
+            console.error('更新统计数据时出错:', error);
+            showToast('更新数据失败，请重试', 'error');
+        } finally {
+            // 隐藏加载动画
+            hideLoadingAnimation();
+        }
+    }, 800);
+}
+
+// 显示自定义日期选择器
+function showCustomDatePicker() {
+    const customDatePicker = document.createElement('div');
+    customDatePicker.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    customDatePicker.innerHTML = `
+        <div class="bg-white rounded-lg w-full max-w-md mx-4 p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">选择日期范围</h3>
+            <div class="grid grid-cols-2 gap-4 mb-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">开始日期</label>
+                    <input type="date" id="custom-start-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-medium mb-2">结束日期</label>
+                    <input type="date" id="custom-end-date" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button class="px-4 py-2 text-gray-700 mr-2 cancel-btn">取消</button>
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors apply-btn">应用</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(customDatePicker);
+    
+    // 设置默认日期为本月
+    const today = new Date();
+    const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+    const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    
+    document.getElementById('custom-start-date').valueAsDate = startOfMonth;
+    document.getElementById('custom-end-date').valueAsDate = endOfMonth;
+    
+    // 添加事件监听
+    customDatePicker.querySelector('.cancel-btn').addEventListener('click', function() {
+        document.body.removeChild(customDatePicker);
+        const dateSelect = document.querySelector('select');
+        dateSelect.value = 'month'; // 重置为默认值
+    });
+    
+    customDatePicker.querySelector('.apply-btn').addEventListener('click', function() {
+        const startDate = new Date(document.getElementById('custom-start-date').value);
+        const endDate = new Date(document.getElementById('custom-end-date').value);
+        endDate.setHours(23, 59, 59, 999); // 设置为当天结束时间
+        
+        if (startDate && endDate) {
+            // 应用自定义日期范围，更新统计数据
+            updateStatisticsWithCustomRange(startDate, endDate);
+            document.body.removeChild(customDatePicker);
+        }
+    });
+}
+
+// 使用自定义日期范围更新统计数据
+function updateStatisticsWithCustomRange(startDate, endDate) {
+    // 显示加载动画
+    showLoadingAnimation();
+    
+    // 延迟执行，以便动画效果明显
+    setTimeout(() => {
+        try {
+            // 从localStorage获取所有事件
+            const events = JSON.parse(localStorage.getItem('events') || '[]');
+            
+            // 根据自定义日期范围筛选事件
+            const filteredEvents = filterEventsByDateRange(events, startDate, endDate);
+            
+            // 计算该日期范围的统计数据
+            const statistics = {
+                overview: {
+                    totalEvents: filteredEvents.length,
+                    completedEvents: filteredEvents.filter(event => event.status === 'completed').length,
+                    inProgressEvents: filteredEvents.filter(event => event.status === 'in-progress').length,
+                    completionRate: 0,
+                    totalEventsChangeRate: 0,
+                    completedEventsChangeRate: 0,
+                    inProgressEventsChangeRate: 0,
+                    completionRateChangeRate: 0,
+                    dateRange: { startDate, endDate }
+                },
+                eventsByCategory: calculateEventsByCategory(filteredEvents),
+                dailyEventCounts: calculateDailyEventCounts(filteredEvents, startDate, endDate),
+                timeAllocation: calculateTimeAllocation(filteredEvents),
+                weeklyCompletionRates: calculateWeeklyCompletionRates(events, startDate, endDate),
+                popularTags: calculatePopularTags(filteredEvents),
+                timeEfficiency: analyzeTimeEfficiency(filteredEvents)
+            };
+            
+            // 计算完成率
+            if (statistics.overview.totalEvents > 0) {
+                statistics.overview.completionRate = Math.round((statistics.overview.completedEvents / statistics.overview.totalEvents) * 100);
+            }
+            
+            // 更新卡片和图表
+            updateStatisticsCards(statistics);
+            updateCharts(statistics);
+            
+            // 显示成功提示
+            showToast('数据已更新', 'success');
+        } catch (error) {
+            console.error('自定义日期范围更新统计数据时出错:', error);
+            showToast('更新数据失败，请重试', 'error');
+        } finally {
+            // 隐藏加载动画
+            hideLoadingAnimation();
+        }
+    }, 800);
+}
+
+// 处理导出报告
+function handleExportReport() {
+    // 创建导出选项弹窗
+    const exportOptions = document.createElement('div');
+    exportOptions.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50';
+    exportOptions.innerHTML = `
+        <div class="bg-white rounded-lg w-full max-w-md mx-4 p-6">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">导出报告</h3>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-medium mb-2">报告格式</label>
+                <div class="grid grid-cols-3 gap-3">
+                    <div class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 format-option" data-format="pdf">
+                        <i class="fas fa-file-pdf text-red-500 text-xl mr-2"></i>
+                        <span>PDF</span>
+                    </div>
+                    <div class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 format-option" data-format="excel">
+                        <i class="fas fa-file-excel text-green-600 text-xl mr-2"></i>
+                        <span>Excel</span>
+                    </div>
+                    <div class="flex items-center p-3 border rounded-lg cursor-pointer hover:bg-indigo-50 format-option" data-format="csv">
+                        <i class="fas fa-file-csv text-indigo-500 text-xl mr-2"></i>
+                        <span>CSV</span>
+                    </div>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 text-sm font-medium mb-2">包含内容</label>
+                <div class="space-y-2">
+                    <div class="flex items-center">
+                        <input type="checkbox" id="includeCharts" class="h-4 w-4 text-indigo-600 rounded" checked>
+                        <label for="includeCharts" class="ml-2 text-gray-700 text-sm">
+                            包含图表
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="includeRawData" class="h-4 w-4 text-indigo-600 rounded" checked>
+                        <label for="includeRawData" class="ml-2 text-gray-700 text-sm">
+                            包含原始数据
+                        </label>
+                    </div>
+                    <div class="flex items-center">
+                        <input type="checkbox" id="includeSummary" class="h-4 w-4 text-indigo-600 rounded" checked>
+                        <label for="includeSummary" class="ml-2 text-gray-700 text-sm">
+                            包含分析总结
+                        </label>
+                    </div>
+                </div>
+            </div>
+            <div class="flex justify-end">
+                <button class="px-4 py-2 text-gray-700 mr-2 cancel-export-btn">取消</button>
+                <button class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors confirm-export-btn">
+                    <i class="fas fa-download mr-2"></i>导出
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(exportOptions);
+    
+    // 添加格式选择高亮
+    const formatOptions = exportOptions.querySelectorAll('.format-option');
+    formatOptions.forEach(option => {
+        option.addEventListener('click', function() {
+            formatOptions.forEach(opt => opt.classList.remove('bg-indigo-50', 'border-indigo-500'));
+            this.classList.add('bg-indigo-50', 'border-indigo-500');
+        });
+    });
+    
+    // 默认选中第一个格式选项
+    formatOptions[0].classList.add('bg-indigo-50', 'border-indigo-500');
+    
+    // 添加取消按钮事件
+    exportOptions.querySelector('.cancel-export-btn').addEventListener('click', function() {
+        document.body.removeChild(exportOptions);
+    });
+    
+    // 添加确认导出按钮事件
+    exportOptions.querySelector('.confirm-export-btn').addEventListener('click', function() {
+        // 获取选中的格式
+        const selectedFormat = exportOptions.querySelector('.format-option.bg-indigo-50')?.dataset.format || 'pdf';
+        const includeCharts = exportOptions.querySelector('#includeCharts').checked;
+        const includeRawData = exportOptions.querySelector('#includeRawData').checked;
+        const includeSummary = exportOptions.querySelector('#includeSummary').checked;
+        
+        // 执行导出操作
+        exportReport(selectedFormat, { includeCharts, includeRawData, includeSummary });
+        
+        // 关闭弹窗
+        document.body.removeChild(exportOptions);
+    });
+}
+
+// 导出报告
+function exportReport(format, options) {
+    // 获取当前统计数据
+    const dateRange = document.querySelector('select').value || 'month';
+    const statistics = calculateStatistics(dateRange);
+    
+    // 模拟导出过程（实际应用中可能需要调用后端API）
+    console.log(`导出${format}格式报告`, options);
+    console.log('导出数据:', statistics);
+    
+    // 显示导出成功提示
+    showToast(`报告已成功导出为${format.toUpperCase()}格式`, 'success');
+}
+
+// 更新统计卡片
+function updateStatisticsCards(statistics) {
+    const { overview } = statistics;
+    
+    // 更新总事件数
+    const totalEventsElement = document.querySelector('.bg-indigo-100 + div h3 + p');
+    if (totalEventsElement) {
+        totalEventsElement.textContent = overview.totalEvents;
+    }
+    
+    // 更新已完成事件数
+    const completedEventsElement = document.querySelector('.bg-green-100 + div h3 + p');
+    if (completedEventsElement) {
+        completedEventsElement.textContent = overview.completedEvents;
+    }
+    
+    // 更新进行中事件数
+    const inProgressEventsElement = document.querySelector('.bg-yellow-100 + div h3 + p');
+    if (inProgressEventsElement) {
+        inProgressEventsElement.textContent = overview.inProgressEvents;
+    }
+    
+    // 更新完成率
+    const completionRateElement = document.querySelector('.bg-purple-100 + div h3 + p');
+    if (completionRateElement) {
+        completionRateElement.textContent = `${overview.completionRate}%`;
+    }
+    
+    // 更新环比变化率
+    updateChangeRate('.bg-indigo-100', overview.totalEventsChangeRate);
+    updateChangeRate('.bg-green-100', overview.completedEventsChangeRate);
+    updateChangeRate('.bg-yellow-100', overview.inProgressEventsChangeRate);
+    updateChangeRate('.bg-purple-100', overview.completionRateChangeRate);
+}
+
+// 更新环比变化率显示
+function updateChangeRate(iconSelector, changeRate) {
+    const container = document.querySelector(`${iconSelector}`);
+    if (!container) return;
+    
+    const changeRateElement = container.closest('.bg-white')?.querySelector('.text-green-600, .text-red-600, .text-gray-600');
+    if (changeRateElement) {
+        // 根据变化率正负值设置样式和箭头
+        if (changeRate > 0) {
+            changeRateElement.className = 'text-green-600 font-medium';
+            changeRateElement.innerHTML = `↑ ${changeRate}%`;
+        } else if (changeRate < 0) {
+            changeRateElement.className = 'text-red-600 font-medium';
+            changeRateElement.innerHTML = `↓ ${Math.abs(changeRate)}%`;
+        } else {
+            changeRateElement.className = 'text-gray-600 font-medium';
+            changeRateElement.innerHTML = `${changeRate}%`;
+        }
+    }
+}
+
+// 计算每日事件数量
+function calculateDailyEventCounts(events, startDate, endDate) {
+    // 创建日期范围内每一天的映射
+    const dailyCounts = {};
+    const currentDate = new Date(startDate);
+    
+    // 初始化每一天的计数为0
+    while (currentDate <= endDate) {
+        const dateString = currentDate.toISOString().split('T')[0];
+        dailyCounts[dateString] = 0;
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    // 统计每天的事件数量
+    events.forEach(event => {
+        const eventDate = new Date(event.startTime || event.createdAt);
+        const dateString = eventDate.toISOString().split('T')[0];
+        
+        if (dailyCounts[dateString] !== undefined) {
+            dailyCounts[dateString]++;
+        }
+    });
+    
+    return dailyCounts;
+}
+
+// 计算时间分配
+function calculateTimeAllocation(events) {
+    const categories = {
+        'work': 0,
+        'study': 0,
+        'health': 0,
+        'life': 0,
+        'experience': 0,
+        'social': 0,
+        'family': 0,
+        'leisure': 0
+    };
+    
+    // 为简化计算，假设每个事件花费1小时
+    // 实际应用中，可以根据事件的开始时间和结束时间计算实际花费的时间
+    events.forEach(event => {
+        const category = event.category || 'other';
+        if (categories[category] !== undefined) {
+            categories[category]++;
+        } else {
+            categories.other = (categories.other || 0) + 1;
+        }
+    });
+    
+    return categories;
+}
+
+// 计算每周完成率
+function calculateWeeklyCompletionRates(events, startDate, endDate) {
+    const weeklyRates = [];
+    const currentDate = new Date(startDate);
+    const weekDuration = 7 * 24 * 60 * 60 * 1000; // 一周的毫秒数
+    
+    // 按周分组计算完成率
+    while (currentDate <= endDate) {
+        const weekEndDate = new Date(currentDate.getTime() + weekDuration);
+        if (weekEndDate > endDate) {
+            weekEndDate.setTime(endDate.getTime());
+        }
+        
+        // 筛选当前周的事件
+        const weekEvents = events.filter(event => {
+            const eventDate = new Date(event.startTime || event.createdAt);
+            return eventDate >= currentDate && eventDate <= weekEndDate;
+        });
+        
+        // 计算完成率
+        const totalWeekEvents = weekEvents.length;
+        const completedWeekEvents = weekEvents.filter(event => event.status === 'completed').length;
+        const completionRate = totalWeekEvents > 0 ? Math.round((completedWeekEvents / totalWeekEvents) * 100) : 0;
+        
+        // 添加到结果数组
+        const weekNumber = Math.ceil((currentDate - startDate) / weekDuration) + 1;
+        weeklyRates.push({
+            week: `第${weekNumber}周`,
+            rate: completionRate
+        });
+        
+        // 移动到下一周
+        currentDate.setTime(currentDate.getTime() + weekDuration);
+    }
+    
+    return weeklyRates;
+}
+
+// 统计热门标签
+function calculatePopularTags(events) {
+    const tagCounts = {};
+    
+    // 统计每个标签的使用次数
+    events.forEach(event => {
+        if (Array.isArray(event.tags)) {
+            event.tags.forEach(tag => {
+                tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+            });
+        }
+    });
+    
+    // 转换为数组并按使用次数排序
+    const sortedTags = Object.entries(tagCounts)
+        .map(([tag, count]) => ({ tag, count }))
+        .sort((a, b) => b.count - a.count)
+        .slice(0, 10); // 只取前10个
+    
+    return sortedTags;
+}
+
+// 分析高效时段
+function analyzeTimeEfficiency(events) {
+    // 时段定义（24小时制）
+    const timeSlots = [
+        { label: '6-9点(早上)', start: 6, end: 9 },
+        { label: '9-12点(上午)', start: 9, end: 12 },
+        { label: '12-15点(下午)', start: 12, end: 15 },
+        { label: '15-18点(傍晚)', start: 15, end: 18 },
+        { label: '18-21点(晚上)', start: 18, end: 21 },
+        { label: '21-24点(深夜)', start: 21, end: 24 }
+    ];
+    
+    // 每个时段的完成事件数量
+    const slotCompletions = timeSlots.map(slot => {
+        const slotEvents = events.filter(event => {
+            if (!event.startTime) return false;
+            
+            const eventDate = new Date(event.startTime);
+            const hour = eventDate.getHours();
+            return hour >= slot.start && hour < slot.end;
+        });
+        
+        const totalEvents = slotEvents.length;
+        const completedEvents = slotEvents.filter(event => event.status === 'completed').length;
+        
+        // 计算效率得分（考虑完成率和事件数量）
+        const baseScore = totalEvents > 0 ? (completedEvents / totalEvents) * 100 : 0;
+        const volumeBonus = Math.min(20, totalEvents * 2); // 事件数量奖励，最高20分
+        
+        return {
+            slot: slot.label,
+            efficiency: Math.min(100, Math.round(baseScore + volumeBonus))
+        };
+    });
+    
+    return slotCompletions;
+}
+
+// 更新所有图表
+function updateCharts(statistics) {
+    initCategoryChart(statistics.eventsByCategory);
+    initTrendChart(statistics.dailyEventCounts);
+    initTimeAllocationChart(statistics.timeAllocation);
+    initCompletionRateChart(statistics.weeklyCompletionRates);
+    initTagTrendChart(statistics.popularTags);
+    initTimeEfficiencyChart(statistics.timeEfficiency);
+} 

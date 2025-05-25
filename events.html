@@ -143,8 +143,8 @@
                 <!-- 事件列表视图 -->
                 <div id="listView" class="space-y-4">
                     <!-- 事件列表将通过JavaScript动态生成 -->
-                </div>
-                
+                            </div>
+                            
                 <!-- 事件卡片视图 -->
                 <div id="cardView" class="hidden">
                     <!-- 事件卡片将通过JavaScript动态生成 -->
@@ -258,12 +258,12 @@
                                         删除
                                     </button>
                                     <div class="flex space-x-3">
-                                        <button type="button" id="cancel-plan-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                            取消
-                                        </button>
-                                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                                            保存计划
-                                        </button>
+                                    <button type="button" id="cancel-plan-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                        取消
+                                    </button>
+                                    <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                        保存计划
+                                    </button>
                                     </div>
                                 </div>
                             </form>
@@ -367,12 +367,12 @@
                                         删除
                                     </button>
                                     <div class="flex space-x-3">
-                                        <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                                            取消
-                                        </button>
-                                        <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                                            保存记录
-                                        </button>
+                                    <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                        取消
+                                    </button>
+                                    <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                        保存记录
+                                    </button>
                                     </div>
                                 </div>
                             </form>
@@ -548,6 +548,11 @@
                         document.getElementById('plan-due-date').value = formattedDate;
                         document.getElementById('record-date').value = formattedDate;
                         
+                        // 设置当前时间
+                        const hours = today.getHours().toString().padStart(2, '0');
+                        const minutes = today.getMinutes().toString().padStart(2, '0');
+                        document.getElementById('record-time').value = `${hours}:${minutes}`;
+                        
                         // 确保表单处理程序初始化
                         if (typeof initializeFormHandlers === 'function') {
                             initializeFormHandlers();
@@ -560,5 +565,5 @@
             </main>
         </div>
     </div>
-</body>
-</html>
+            </body>
+        </html>
