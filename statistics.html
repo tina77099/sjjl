@@ -4,7 +4,6 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>统计分析 - 事件记录</title>
-    <!-- 先加载Chart.js，确保其他脚本可以使用它 -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
     
     <!-- 测试Chart.js加载状态的脚本 -->
@@ -143,6 +142,12 @@
                             <i class="fas fa-chart-pie mr-3"></i>
                             <span>统计分析</span>
                         </a>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="weekly_report.html" class="flex items-center">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            <span>一周一悟</span>
+                        </a>
+                    </li>
                     </li>
                     <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
                         <a href="tags.html" class="flex items-center">
@@ -195,9 +200,11 @@
 
             <!-- 统计分析内容 -->
             <main class="p-6">
+
                 <div class="flex justify-between items-center mb-6">
                     <h2 class="text-2xl font-bold text-gray-800">统计分析</h2>
                     <div class="flex items-center">
+                  
                         <button id="refresh-charts" class="px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors mr-3">
                             <i class="fas fa-sync-alt mr-2"></i>刷新图表
                         </button>

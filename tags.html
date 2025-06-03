@@ -6,6 +6,24 @@
     <title>标签管理 - 事件记录</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .apple-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .apple-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+        }
+        .apple-scrollbar::-webkit-scrollbar-track {
+            background-color: rgba(229, 231, 235, 0.3);
+            border-radius: 4px;
+        }
+        .tab-active {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+        }
+    </style>
 </head>
 <body class="bg-gray-50 font-sans">
     <!-- 侧边栏 -->
@@ -40,6 +58,12 @@
                             <i class="fas fa-chart-pie mr-3"></i>
                             <span>统计分析</span>
                         </a>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="weekly_report.html" class="flex items-center">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            <span>一周一悟</span>
+                        </a>
+                    </li>
                     </li>
                     <li class="px-6 py-3 bg-indigo-50 text-indigo-600 font-medium">
                         <a href="tags.html" class="flex items-center">
@@ -81,1213 +105,287 @@
 
             <!-- 标签管理内容 -->
             <main class="p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-2xl font-bold text-gray-800">分类筛选</h2>
-                    <div class="flex items-center space-x-3">
-                        <div class="relative">
-                            <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="filterTags">
-                                <option value="all">全部标签</option>
-                                <option value="work">工作</option>
-                                <option value="study">学习</option>
-                                <option value="health">健康</option>
-                                <option value="life">生活</option>
-                                <option value="other">其他</option>
-                            </select>
-                            <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
-                        </div>
-                        <div class="relative">
-                            <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="sortTags">
-                                <option value="name-asc">名称 (A→Z)</option>
-                                <option value="name-desc">名称 (Z→A)</option>
-                                <option value="count-desc">使用次数 (多→少)</option>
-                                <option value="count-asc">使用次数 (少→多)</option>
-                                <option value="date-desc">创建日期 (新→旧)</option>
-                                <option value="date-asc">创建日期 (旧→新)</option>
-                            </select>
-                            <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
-                        </div>
-                    </div>
+                <!-- 标签页切换 -->
+                <div class="flex border-b border-gray-200 mb-6">
+                    <button id="tab-tags" class="px-4 py-2 font-medium tab-active">标签管理</button>
+                    <button id="tab-categories" class="px-4 py-2 font-medium text-gray-500">分类管理</button>
                 </div>
                 
-                <!-- 标签列表 -->
-                <div class="bg-white rounded-lg shadow overflow-hidden">
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标签名称</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">颜色</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">使用次数</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建日期</th>
-                                    <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                <!-- 标签项 -->
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-sm">会议</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full">工作</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        计划、事件
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="h-5 w-5 rounded-full bg-blue-500 mr-2"></div>
-                                            <span class="text-sm text-gray-500">#3B82F6</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        24
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        2023-10-01
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <span class="px-2 py-1 bg-green-100 text-green-800 rounded-full text-sm">学习</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full">学习</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        计划、事件
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="h-5 w-5 rounded-full bg-green-500 mr-2"></div>
-                                            <span class="text-sm text-gray-500">#10B981</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        18
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        2023-10-02
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <span class="px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm">健身</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full">健康</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        事件
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="h-5 w-5 rounded-full bg-yellow-500 mr-2"></div>
-                                            <span class="text-sm text-gray-500">#F59E0B</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        12
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        2023-10-03
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <span class="px-2 py-1 bg-red-100 text-red-800 rounded-full text-sm">紧急</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 bg-red-100 text-red-800 text-xs rounded-full">工作</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        计划
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="h-5 w-5 rounded-full bg-red-500 mr-2"></div>
-                                            <span class="text-sm text-gray-500">#EF4444</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        8
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        2023-10-04
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                                <tr>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <span class="px-2 py-1 bg-purple-100 text-purple-800 rounded-full text-sm">家庭</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full">生活</span>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        计划、事件
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap">
-                                        <div class="flex items-center">
-                                            <div class="h-5 w-5 rounded-full bg-purple-500 mr-2"></div>
-                                            <span class="text-sm text-gray-500">#8B5CF6</span>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        15
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        2023-10-05
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
-                                            <i class="fas fa-edit"></i>
-                                        </button>
-                                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
-                                            <i class="fas fa-trash-alt"></i>
-                                        </button>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                    <div class="px-6 py-4 border-t">
-                        <div class="flex justify-between items-center">
-                            <div class="text-sm text-gray-500">
-                                显示 1-5 项，共 12 项
+                <!-- 标签管理模块 -->
+                <div id="tags-container" class="block">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">标签管理</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input type="text" id="tagSearchInput" placeholder="搜索标签..." class="pl-10 pr-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                             </div>
-                            <div class="flex items-center space-x-2">
-                                <div class="flex space-x-1">
-                                    <button class="px-3 py-1 rounded border text-gray-500 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                                        <i class="fas fa-chevron-left"></i>
-                                    </button>
-                                    <button class="px-3 py-1 rounded border bg-indigo-600 text-white">1</button>
-                                    <button class="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50">2</button>
-                                    <button class="px-3 py-1 rounded border text-gray-700 hover:bg-gray-50">3</button>
-                                    <button class="px-3 py-1 rounded border text-gray-500 hover:bg-gray-50">
-                                        <i class="fas fa-chevron-right"></i>
-                                    </button>
-                                </div>
+                            <div class="relative">
+                                <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="filterTags">
+                                    <option value="all">全部分类</option>
+                                    <option value="work">工作</option>
+                                    <option value="study">学习</option>
+                                    <option value="health">健康</option>
+                                    <option value="life">生活</option>
+                                    <option value="other">其他</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
                             </div>
-                        </div>
-                        <div class="flex justify-center mt-4">
-                            <button class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors" id="newTagBtn">
+                            <div class="relative">
+                                <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="sortTags">
+                                    <option value="name-asc">名称 (A→Z)</option>
+                                    <option value="name-desc">名称 (Z→A)</option>
+                                    <option value="count-desc">使用次数 (多→少)</option>
+                                    <option value="count-asc">使用次数 (少→多)</option>
+                                    <option value="date-desc">创建日期 (新→旧)</option>
+                                    <option value="date-asc">创建日期 (旧→新)</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                            </div>
+                            <button id="addTagBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
                                 <i class="fas fa-plus mr-2"></i>新建标签
                             </button>
                         </div>
                     </div>
+                    
+                    <!-- 标签列表 -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标签名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">颜色</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">使用次数</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建日期</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tags-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- 标签项会通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                            <div class="text-sm text-gray-500" id="tags-count">
+                                显示 1-5 项, 共 12 项
+                            </div>
+                            <div class="flex-1 flex justify-center sm:justify-end">
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fas fa-chevron-left text-xs"></i>
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-indigo-600 text-sm font-medium text-white">
+                                        1
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        2
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        3
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fas fa-chevron-right text-xs"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 分类管理模块 -->
+                <div id="categories-container" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">分类管理</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input type="text" id="categorySearchInput" placeholder="搜索分类..." class="pl-10 pr-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <button id="addCategoryBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>新建分类
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 分类列表 -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200" id="categories-table">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">颜色</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- 分类项会通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             </main>
-        </div>
-    </div>
-
-    <!-- 新建/编辑标签模态框 -->
-    <div id="tagModal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
-            <div class="flex justify-between items-center p-4 border-b">
-                <h3 class="text-xl font-medium text-gray-800" id="modalTitle">新建标签</h3>
-                <button class="text-gray-500 hover:text-gray-700" id="closeModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <form id="tagForm">
-                    <div class="space-y-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">标签名称</label>
-                            <input type="text" id="tagNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="输入标签名称" required>
+            
+            <!-- 标签模态框 -->
+            <div id="tagModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800" id="tagModalTitle">新建标签</h3>
+                        <button class="text-gray-400 hover:text-gray-600 close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="tagForm" class="p-4">
+                        <div class="mb-4">
+                            <label for="tagNameInput" class="block text-sm font-medium text-gray-700 mb-1">标签名称</label>
+                            <input type="text" id="tagNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" required>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">分类</label>
+                        <div class="mb-4">
+                            <label for="tagDescription" class="block text-sm font-medium text-gray-700 mb-1">描述 (可选)</label>
+                            <textarea id="tagDescription" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" rows="2"></textarea>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">所属分类</label>
                             <select id="tagCategorySelect" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
                                 <option value="work">工作</option>
                                 <option value="study">学习</option>
                                 <option value="health">健康</option>
                                 <option value="life">生活</option>
-                                <option value="priority">优先级</option>
                                 <option value="other">其他</option>
                             </select>
                         </div>
-                        <div>
+                        <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">适用范围</label>
-                            <div class="flex items-center space-x-4 mt-2">
+                            <div class="flex space-x-4">
                                 <div class="flex items-center">
                                     <input type="checkbox" id="applyToPlan" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
-                                    <label for="applyToPlan" class="ml-2 text-sm text-gray-700">计划</label>
+                                    <label for="applyToPlan" class="ml-2 block text-sm text-gray-700">计划</label>
                                 </div>
                                 <div class="flex items-center">
                                     <input type="checkbox" id="applyToEvent" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
-                                    <label for="applyToEvent" class="ml-2 text-sm text-gray-700">事件</label>
+                                    <label for="applyToEvent" class="ml-2 block text-sm text-gray-700">事件</label>
                                 </div>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">颜色</label>
-                            <div class="flex flex-wrap gap-2">
-                                <div class="h-8 w-8 rounded-full bg-red-500 cursor-pointer color-option" data-color="#EF4444"></div>
-                                <div class="h-8 w-8 rounded-full bg-orange-500 cursor-pointer color-option" data-color="#F97316"></div>
-                                <div class="h-8 w-8 rounded-full bg-yellow-500 cursor-pointer color-option" data-color="#F59E0B"></div>
-                                <div class="h-8 w-8 rounded-full bg-green-500 cursor-pointer color-option" data-color="#10B981"></div>
-                                <div class="h-8 w-8 rounded-full bg-blue-500 cursor-pointer color-option" data-color="#3B82F6"></div>
-                                <div class="h-8 w-8 rounded-full bg-indigo-500 cursor-pointer color-option" data-color="#6366F1"></div>
-                                <div class="h-8 w-8 rounded-full bg-purple-500 cursor-pointer color-option" data-color="#8B5CF6"></div>
-                                <div class="h-8 w-8 rounded-full bg-pink-500 cursor-pointer color-option" data-color="#EC4899"></div>
-                                <div class="h-8 w-8 rounded-full bg-gray-500 cursor-pointer color-option" data-color="#6B7280"></div>
-                                <div class="h-8 w-8 rounded-full bg-gray-800 cursor-pointer color-option" data-color="#1F2937"></div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">标签颜色</label>
+                            <div class="flex items-center mb-2">
+                                <div id="tagColorPreview" class="h-6 w-6 rounded-full mr-2" style="background-color: #3B82F6"></div>
+                                <input type="text" id="tagColorInput" class="w-32 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" value="#3B82F6">
                             </div>
-                            <input type="hidden" id="selectedColor" value="#3B82F6">
-                            <div class="mt-2 flex items-center">
-                                <div class="h-6 w-6 rounded-full bg-blue-500 mr-2" id="colorPreview"></div>
-                                <input type="text" class="px-3 py-1 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 text-sm" value="#3B82F6" id="colorInput">
+                            <div class="grid grid-cols-6 gap-2">
+                                <div class="color-option h-8 w-8 rounded-full bg-red-500 cursor-pointer" data-color="#EF4444"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-orange-500 cursor-pointer" data-color="#F97316"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-yellow-500 cursor-pointer" data-color="#F59E0B"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-green-500 cursor-pointer" data-color="#10B981"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-blue-500 cursor-pointer ring-2 ring-offset-2 ring-indigo-500" data-color="#3B82F6"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-indigo-500 cursor-pointer" data-color="#6366F1"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-purple-500 cursor-pointer" data-color="#8B5CF6"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-pink-500 cursor-pointer" data-color="#EC4899"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-gray-500 cursor-pointer" data-color="#6B7280"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-gray-800 cursor-pointer" data-color="#1F2937"></div>
                             </div>
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700 mb-1">描述</label>
-                            <textarea id="tagDescription" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" rows="2" placeholder="输入标签描述（可选）"></textarea>
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
                         </div>
-                    </div>
-                    <div class="mt-6 flex justify-end space-x-3">
-                        <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50" id="cancelTag">取消</button>
-                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
-                    </div>
-                </form>
+                    </form>
+                </div>
             </div>
-        </div>
-    </div>
-
-    <!-- 删除确认模态框 -->
-    <div id="deleteTagModal" class="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center hidden z-50">
-        <div class="bg-white rounded-lg shadow-lg w-full max-w-md mx-4">
-            <div class="p-6">
-                <h3 class="text-xl font-medium text-gray-800 mb-4">确认删除</h3>
-                <p class="text-gray-600 mb-2">您确定要删除这个标签吗？</p>
-                <p class="text-gray-600">此操作将从所有关联的<span class="font-semibold">计划和事件记录</span>中移除该标签，且无法撤销。</p>
-                <div class="mt-6 flex justify-end space-x-3">
-                    <button class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50" id="cancelDelete">取消</button>
-                    <button class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700" id="confirmDelete">删除</button>
+            
+            <!-- 分类模态框 -->
+            <div id="categoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800" id="categoryModalTitle">新建分类</h3>
+                        <button class="text-gray-400 hover:text-gray-600 close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="categoryForm" class="p-4">
+                        <div class="mb-4">
+                            <label for="categoryNameInput" class="block text-sm font-medium text-gray-700 mb-1">分类名称</label>
+                            <input type="text" id="categoryNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">适用范围</label>
+                            <div class="flex space-x-4">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="categoryApplyToPlan" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="categoryApplyToPlan" class="ml-2 block text-sm text-gray-700">计划</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="categoryApplyToEvent" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="categoryApplyToEvent" class="ml-2 block text-sm text-gray-700">事件</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">分类颜色</label>
+                            <div class="flex items-center mb-2">
+                                <div id="categoryColorPreview" class="h-6 w-6 rounded-full mr-2" style="background-color: #3B82F6"></div>
+                                <input type="text" id="categoryColorInput" class="w-32 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" value="#3B82F6">
+                            </div>
+                            <div class="grid grid-cols-6 gap-2">
+                                <div class="color-option h-8 w-8 rounded-full bg-red-500 cursor-pointer" data-color="#EF4444"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-orange-500 cursor-pointer" data-color="#F97316"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-yellow-500 cursor-pointer" data-color="#F59E0B"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-green-500 cursor-pointer" data-color="#10B981"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-blue-500 cursor-pointer ring-2 ring-offset-2 ring-indigo-500" data-color="#3B82F6"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-indigo-500 cursor-pointer" data-color="#6366F1"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-purple-500 cursor-pointer" data-color="#8B5CF6"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-pink-500 cursor-pointer" data-color="#EC4899"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-gray-500 cursor-pointer" data-color="#6B7280"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-gray-800 cursor-pointer" data-color="#1F2937"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 删除确认模态框 -->
+            <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800" id="deleteModalTitle">确认删除</h3>
+                        <button class="text-gray-400 hover:text-gray-600 close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-700" id="deleteModalMessage">您确定要删除这个项目吗？</p>
+                    </div>
+                    <div class="flex justify-end space-x-3 p-4 border-t">
+                        <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
+                        <button type="button" id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">删除</button>
+                    </div>
                 </div>
             </div>
         </div>
     </div>
 
-    <script>
-        // 搜索功能
-        const searchInput = document.getElementById('searchInput');
-        searchInput.addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const tagRows = document.querySelectorAll('tbody tr');
-            
-            tagRows.forEach(row => {
-                const tagName = row.querySelector('td:first-child').textContent.toLowerCase();
-                const category = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                const applyTo = row.querySelector('td:nth-child(3)').textContent.toLowerCase();
-                
-                if (tagName.includes(searchTerm) || category.includes(searchTerm) || applyTo.includes(searchTerm)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-        
-        // 筛选功能
-        const filterTags = document.getElementById('filterTags');
-        filterTags.addEventListener('change', function() {
-            const filterValue = this.value.toLowerCase();
-            const tagRows = document.querySelectorAll('tbody tr');
-            
-            tagRows.forEach(row => {
-                if (filterValue === 'all') {
-                    row.style.display = '';
-                    return;
-                }
-                
-                const category = row.querySelector('td:nth-child(2)').textContent.toLowerCase();
-                if (category.includes(filterValue)) {
-                    row.style.display = '';
-                } else {
-                    row.style.display = 'none';
-                }
-            });
-        });
-        
-        // 排序功能
-        const sortTags = document.getElementById('sortTags');
-        sortTags.addEventListener('change', function() {
-            const sortValue = this.value;
-            const tagRows = Array.from(document.querySelectorAll('tbody tr'));
-            const tbody = document.querySelector('tbody');
-            
-            tagRows.sort((a, b) => {
-                if (sortValue === 'name-asc' || sortValue === 'name-desc') {
-                    const nameA = a.querySelector('td:first-child').textContent.toLowerCase();
-                    const nameB = b.querySelector('td:first-child').textContent.toLowerCase();
-                    return sortValue === 'name-asc' ? nameA.localeCompare(nameB) : nameB.localeCompare(nameA);
-                } else if (sortValue === 'count-desc' || sortValue === 'count-asc') {
-                    const countA = parseInt(a.querySelector('td:nth-child(5)').textContent);
-                    const countB = parseInt(b.querySelector('td:nth-child(5)').textContent);
-                    return sortValue === 'count-desc' ? countB - countA : countA - countB;
-                } else if (sortValue === 'date-desc' || sortValue === 'date-asc') {
-                    const dateA = a.querySelector('td:nth-child(6)').textContent;
-                    const dateB = b.querySelector('td:nth-child(6)').textContent;
-                    return sortValue === 'date-desc' ? dateB.localeCompare(dateA) : dateA.localeCompare(dateB);
-                }
-                return 0;
-            });
-            
-            // 清空表格并重新添加排序后的行
-            while (tbody.firstChild) {
-                tbody.removeChild(tbody.firstChild);
-            }
-            
-            tagRows.forEach(row => {
-                tbody.appendChild(row);
-            });
-        });
-        
-        // 模态框功能
-        const newTagBtn = document.getElementById('newTagBtn');
-        const tagModal = document.getElementById('tagModal');
-        const closeModal = document.getElementById('closeModal');
-        const cancelTag = document.getElementById('cancelTag');
-        
-        newTagBtn.addEventListener('click', function() {
-            document.getElementById('modalTitle').textContent = '新建标签';
-            document.getElementById('tagForm').reset();
-            document.getElementById('selectedColor').value = '#3B82F6';
-            document.getElementById('colorPreview').style.backgroundColor = '#3B82F6';
-            document.getElementById('colorInput').value = '#3B82F6';
-            document.getElementById('applyToPlan').checked = true;
-            document.getElementById('applyToEvent').checked = true;
-            tagModal.classList.remove('hidden');
-        });
-        
-        closeModal.addEventListener('click', function() {
-            tagModal.classList.add('hidden');
-        });
-        
-        cancelTag.addEventListener('click', function() {
-            tagModal.classList.add('hidden');
-        });
-        
-        // 颜色选择功能
-        const colorOptions = document.querySelectorAll('.color-option');
-        const colorPreview = document.getElementById('colorPreview');
-        const colorInput = document.getElementById('colorInput');
-        const selectedColor = document.getElementById('selectedColor');
-        
-        colorOptions.forEach(option => {
-            option.addEventListener('click', function() {
-                const color = this.getAttribute('data-color');
-                colorPreview.style.backgroundColor = color;
-                colorInput.value = color;
-                selectedColor.value = color;
-                
-                // 移除之前选中的边框
-                colorOptions.forEach(opt => {
-                    opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                });
-                
-                // 添加选中边框
-                this.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
-            });
-        });
-        
-        // 手动输入颜色
-        colorInput.addEventListener('input', function() {
-            const color = this.value;
-            // 验证颜色格式
-            if (/^#([0-9A-F]{3}){1,2}$/i.test(color)) {
-                colorPreview.style.backgroundColor = color;
-                selectedColor.value = color;
-                
-                // 移除之前选中的边框
-                colorOptions.forEach(opt => {
-                    opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                });
-                
-                // 如果颜色匹配预设，则选中对应选项
-                colorOptions.forEach(opt => {
-                    if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
-                        opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                    }
-                });
-            }
-        });
-        
-        // 编辑标签
-        const editBtns = document.querySelectorAll('.edit-tag-btn');
-        editBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                const row = this.closest('tr');
-                const tagName = row.querySelector('td:first-child span').textContent;
-                const category = row.querySelector('td:nth-child(2) span').textContent;
-                const applyTo = row.querySelector('td:nth-child(3)').textContent.trim();
-                const color = row.querySelector('td:nth-child(4) span').textContent;
-                
-                document.getElementById('modalTitle').textContent = '编辑标签';
-                document.getElementById('tagNameInput').value = tagName;
-                
-                // 设置适用范围
-                document.getElementById('applyToPlan').checked = applyTo.includes('计划');
-                document.getElementById('applyToEvent').checked = applyTo.includes('事件');
-                
-                // 设置分类
-                const categorySelect = document.getElementById('tagCategorySelect');
-                for (let i = 0; i < categorySelect.options.length; i++) {
-                    if (categorySelect.options[i].text.toLowerCase() === category.toLowerCase()) {
-                        categorySelect.selectedIndex = i;
-                        break;
-                    }
-                }
-                
-                // 设置颜色
-                document.getElementById('selectedColor').value = color;
-                document.getElementById('colorPreview').style.backgroundColor = color;
-                document.getElementById('colorInput').value = color;
-                
-                // 移除之前选中的边框
-                colorOptions.forEach(opt => {
-                    opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                });
-                
-                // 如果颜色匹配预设，则选中对应选项
-                colorOptions.forEach(opt => {
-                    if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
-                        opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                    }
-                });
-                
-                tagModal.classList.remove('hidden');
-            });
-        });
-        
-        // 删除标签
-        const deleteBtns = document.querySelectorAll('.delete-tag-btn');
-        const deleteModal = document.getElementById('deleteTagModal');
-        const cancelDelete = document.getElementById('cancelDelete');
-        const confirmDelete = document.getElementById('confirmDelete');
-        let currentDeleteRow = null;
-        
-        deleteBtns.forEach(btn => {
-            btn.addEventListener('click', function() {
-                currentDeleteRow = this.closest('tr');
-                deleteModal.classList.remove('hidden');
-            });
-        });
-        
-        cancelDelete.addEventListener('click', function() {
-            deleteModal.classList.add('hidden');
-            currentDeleteRow = null;
-        });
-        
-        confirmDelete.addEventListener('click', function() {
-            if (currentDeleteRow) {
-                currentDeleteRow.remove();
-                deleteModal.classList.add('hidden');
-                currentDeleteRow = null;
-                
-                // 更新显示的标签数量
-                updateTagCount();
-            }
-        });
-        
-        // 更新标签数量显示
-        function updateTagCount() {
-            const totalTags = document.querySelectorAll('tbody tr').length;
-            const countDisplay = document.querySelector('.text-sm.text-gray-500');
-            const visibleTags = Array.from(document.querySelectorAll('tbody tr')).filter(row => row.style.display !== 'none').length;
-            
-            countDisplay.textContent = `显示 1-${visibleTags} 项，共 ${totalTags} 项`;
-        }
-        
-        // 阻止表单提交刷新页面
-        document.getElementById('tagForm').addEventListener('submit', function(e) {
-            e.preventDefault();
-            
-            // 获取表单数据
-            const tagName = document.getElementById('tagNameInput').value;
-            const categorySelect = document.getElementById('tagCategorySelect');
-            const category = categorySelect.options[categorySelect.selectedIndex].text;
-            const color = document.getElementById('selectedColor').value;
-            const applyToPlan = document.getElementById('applyToPlan').checked;
-            const applyToEvent = document.getElementById('applyToEvent').checked;
-            
-            // 构建适用范围文本
-            let applyToText = [];
-            if (applyToPlan) applyToText.push('计划');
-            if (applyToEvent) applyToText.push('事件');
-            const applyToString = applyToText.join('、');
-            
-            // 这里可以添加保存标签的逻辑
-            // 如果是编辑现有标签，则更新对应行
-            // 如果是新建标签，则添加新行
-            
-            // 示例：添加新行
-            if (document.getElementById('modalTitle').textContent === '新建标签') {
-                const tbody = document.querySelector('tbody');
-                const newRow = document.createElement('tr');
-                
-                // 获取当前日期
-                const today = new Date();
-                const dateStr = today.getFullYear() + '-' + 
-                               String(today.getMonth() + 1).padStart(2, '0') + '-' + 
-                               String(today.getDate()).padStart(2, '0');
-                
-                // 设置新行的HTML
-                newRow.innerHTML = `
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <span class="px-2 py-1 bg-${getColorClass(color)}-100 text-${getColorClass(color)}-800 rounded-full text-sm">${tagName}</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 bg-${getCategoryColorClass(category)}-100 text-${getCategoryColorClass(category)}-800 text-xs rounded-full">${category}</span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${applyToString}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center">
-                            <div class="h-5 w-5 rounded-full" style="background-color: ${color}"></div>
-                            <span class="text-sm text-gray-500 ml-2">${color}</span>
-                        </div>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        0
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        ${dateStr}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button class="text-indigo-600 hover:text-indigo-900 mr-3 edit-tag-btn">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                        <button class="text-red-600 hover:text-red-900 delete-tag-btn">
-                            <i class="fas fa-trash-alt"></i>
-                        </button>
-                    </td>
-                `;
-                
-                // 添加新行到表格
-                tbody.appendChild(newRow);
-                
-                // 为新行的按钮添加事件监听器
-                const newEditBtn = newRow.querySelector('.edit-tag-btn');
-                const newDeleteBtn = newRow.querySelector('.delete-tag-btn');
-                
-                newEditBtn.addEventListener('click', function() {
-                    const row = this.closest('tr');
-                    const tagName = row.querySelector('td:first-child span').textContent;
-                    const category = row.querySelector('td:nth-child(2) span').textContent;
-                    const applyTo = row.querySelector('td:nth-child(3)').textContent.trim();
-                    const color = row.querySelector('td:nth-child(4) span').textContent;
-                    
-                    document.getElementById('modalTitle').textContent = '编辑标签';
-                    document.getElementById('tagNameInput').value = tagName;
-                    
-                    // 设置适用范围
-                    document.getElementById('applyToPlan').checked = applyTo.includes('计划');
-                    document.getElementById('applyToEvent').checked = applyTo.includes('事件');
-                    
-                    // 设置分类
-                    const categorySelect = document.getElementById('tagCategorySelect');
-                    for (let i = 0; i < categorySelect.options.length; i++) {
-                        if (categorySelect.options[i].text.toLowerCase() === category.toLowerCase()) {
-                            categorySelect.selectedIndex = i;
-                            break;
-                        }
-                    }
-                    
-                    // 设置颜色
-                    document.getElementById('selectedColor').value = color;
-                    document.getElementById('colorPreview').style.backgroundColor = color;
-                    document.getElementById('colorInput').value = color;
-                    
-                    // 移除之前选中的边框
-                    colorOptions.forEach(opt => {
-                        opt.classList.remove('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                    });
-                    
-                    // 如果颜色匹配预设，则选中对应选项
-                    colorOptions.forEach(opt => {
-                        if (opt.getAttribute('data-color').toLowerCase() === color.toLowerCase()) {
-                            opt.classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
-                        }
-                    });
-                    
-                    tagModal.classList.remove('hidden');
-                });
-                
-                newDeleteBtn.addEventListener('click', function() {
-                    currentDeleteRow = this.closest('tr');
-                    deleteModal.classList.remove('hidden');
-                });
-                
-                // 更新标签数量
-                updateTagCount();
-            } else {
-                // 编辑模式 - 更新现有行
-                const row = currentDeleteRow; // 使用全局变量来获取当前编辑的行
-                
-                if (row) {
-                    row.querySelector('td:first-child span').textContent = tagName;
-                    row.querySelector('td:first-child span').className = `px-2 py-1 bg-${getColorClass(color)}-100 text-${getColorClass(color)}-800 rounded-full text-sm`;
-                    
-                    row.querySelector('td:nth-child(2) span').textContent = category;
-                    row.querySelector('td:nth-child(2) span').className = `px-2 py-1 bg-${getCategoryColorClass(category)}-100 text-${getCategoryColorClass(category)}-800 text-xs rounded-full`;
-                    
-                    row.querySelector('td:nth-child(3)').textContent = applyToString;
-                    
-                    row.querySelector('td:nth-child(4) div div').style.backgroundColor = color;
-                    row.querySelector('td:nth-child(4) span').textContent = color;
-                }
-            }
-            
-            // 将标签数据保存到本地存储
-            saveTagToLocalStorage({
-                name: tagName,
-                category: category,
-                color: color,
-                applyTo: {
-                    plan: applyToPlan,
-                    event: applyToEvent
-                },
-                description: document.getElementById('tagDescription').value
-            });
-            
-            // 关闭模态框
-            tagModal.classList.add('hidden');
-        });
-        
-        // 保存标签到本地存储
-        function saveTagToLocalStorage(tagData) {
-            let tags = JSON.parse(localStorage.getItem('eventRecorderTags') || '[]');
-            
-            // 检查是否是更新现有标签
-            const existingTagIndex = tags.findIndex(tag => tag.name === tagData.name);
-            
-            if (existingTagIndex !== -1) {
-                // 更新现有标签
-                tags[existingTagIndex] = tagData;
-            } else {
-                // 添加新标签
-                tags.push(tagData);
-            }
-            
-            // 保存回本地存储
-            localStorage.setItem('eventRecorderTags', JSON.stringify(tags));
-        }
-        
-        // 辅助函数：根据颜色值获取对应的Tailwind颜色类名
-        function getColorClass(color) {
-            // 将常见颜色映射到Tailwind类名
-            const colorMap = {
-                "#EF4444": "red",
-                "#F59E0B": "yellow",
-                "#10B981": "green",
-                "#3B82F6": "blue",
-                "#8B5CF6": "purple",
-                "#EC4899": "pink",
-                "#6B7280": "gray",
-                "#000000": "black"
-            };
-            
-            return colorMap[color.toUpperCase()] || "gray"; // 默认使用灰色
-        }
-        
-        // 辅助函数：根据分类名称获取对应的颜色类名
-        function getCategoryColorClass(category) {
-            // 将分类映射到颜色
-            const categoryMap = {
-                "学习成长": "blue",
-                "经验突破": "green",
-                "休闲放松": "purple",
-                "家庭生活": "yellow",
-                "工作事业": "red",
-                "社交社区": "pink",
-                "优先级": "orange"
-            };
-            
-            return categoryMap[category] || "gray"; // 默认使用灰色
-        }
-        
-        // 初始化：为预设颜色中的第一个添加选中边框
-        colorOptions[4].classList.add('ring-2', 'ring-offset-2', 'ring-indigo-500');
-        
-        // 初始化：更新标签数量
-        updateTagCount();
-        
-        // 移动端侧边栏切换
-        const menuBtn = document.querySelector('button.md\\:hidden');
-        const sidebar = document.querySelector('.w-64');
-        
-        menuBtn.addEventListener('click', function() {
-            sidebar.classList.toggle('hidden');
-        });
-
-        // 显示通知消息的函数
-        function showNotification(message, type = 'info') {
-            const notification = document.createElement('div');
-            notification.className = 'fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 flex items-center';
-            
-            // 根据类型设置不同的样式
-            switch(type) {
-                case 'success':
-                    notification.classList.add('bg-green-500', 'text-white');
-                    notification.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + message;
-                    break;
-                case 'error':
-                    notification.classList.add('bg-red-500', 'text-white');
-                    notification.innerHTML = '<i class="fas fa-exclamation-circle mr-2"></i>' + message;
-                    break;
-                case 'warning':
-                    notification.classList.add('bg-yellow-500', 'text-white');
-                    notification.innerHTML = '<i class="fas fa-exclamation-triangle mr-2"></i>' + message;
-                    break;
-                default:
-                    notification.classList.add('bg-blue-500', 'text-white');
-                    notification.innerHTML = '<i class="fas fa-info-circle mr-2"></i>' + message;
-            }
-            
-            document.body.appendChild(notification);
-            
-            // 3秒后自动移除通知
-            setTimeout(() => {
-                notification.classList.add('opacity-0', 'transition-opacity', 'duration-300');
-                setTimeout(() => {
-                    notification.remove();
-                }, 300);
-            }, 3000);
-        }
-
-        // 导出标签功能
-        document.getElementById('exportTags').addEventListener('click', function() {
-            // 从本地存储获取标签数据
-            const tags = JSON.parse(localStorage.getItem('eventRecorderTags')) || [];
-            
-            // 转换为JSON字符串
-            const tagsJson = JSON.stringify(tags, null, 2);
-            
-            // 创建Blob对象
-            const blob = new Blob([tagsJson], { type: 'application/json' });
-            
-            // 创建下载链接
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = '标签导出_' + new Date().toISOString().split('T')[0] + '.json';
-            
-            // 模拟点击下载
-            document.body.appendChild(a);
-            a.click();
-            
-            // 清理
-            setTimeout(function() {
-                document.body.removeChild(a);
-                window.URL.revokeObjectURL(url);
-            }, 0);
-            
-            // 显示成功通知
-            showNotification('标签导出成功', 'success');
-        });
-
-        // 导入标签功能
-        document.getElementById('importTags').addEventListener('click', function() {
-            // 创建文件输入元素
-            const fileInput = document.createElement('input');
-            fileInput.type = 'file';
-            fileInput.accept = '.json';
-            
-            // 监听文件选择
-            fileInput.addEventListener('change', function(e) {
-                const file = e.target.files[0];
-                if (!file) return;
-                
-                const reader = new FileReader();
-                reader.onload = function(event) {
-                    try {
-                        // 解析JSON数据
-                        const importedTags = JSON.parse(event.target.result);
-                        
-                        // 验证数据格式
-                        if (!Array.isArray(importedTags)) {
-                            showNotification('导入失败：不是有效的标签数据格式', 'error');
-                            return;
-                        }
-                        
-                        // 获取现有标签
-                        const existingTags = JSON.parse(localStorage.getItem('eventRecorderTags')) || [];
-                        
-                        // 合并标签，避免重复（以名称为唯一标识）
-                        const mergedTags = [...existingTags];
-                        const existingTagNames = existingTags.map(tag => tag.name);
-                        
-                        let importCount = 0;
-                        importedTags.forEach(tag => {
-                            if (!existingTagNames.includes(tag.name)) {
-                                mergedTags.push(tag);
-                                importCount++;
-                            }
-                        });
-                        
-                        // 保存到本地存储
-                        localStorage.setItem('eventRecorderTags', JSON.stringify(mergedTags));
-                        
-                        // 显示成功通知
-                        showNotification(`成功导入 ${importCount} 个标签`, 'success');
-                        
-                        // 刷新页面以显示导入的标签
-                        setTimeout(() => {
-                            location.reload();
-                        }, 1500);
-                        
-                    } catch (error) {
-                        showNotification('导入失败：' + error.message, 'error');
-                    }
-                };
-                
-                reader.readAsText(file);
-            });
-            
-            // 模拟点击打开文件选择器
-            fileInput.click();
-        });
-
-        document.addEventListener('DOMContentLoaded', function() {
-            // 弹出窗口功能
-            const planModal = document.getElementById('modal-new-plan');
-            const recordModal = document.getElementById('modal-new-record');
-            
-            // 打开弹出窗口
-            document.getElementById('btn-new-plan').addEventListener('click', function() {
-                planModal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden'; // 防止背景滚动
-            });
-            
-            document.getElementById('btn-new-record').addEventListener('click', function() {
-                recordModal.classList.remove('hidden');
-                document.body.style.overflow = 'hidden';
-            });
-            
-            // 关闭弹出窗口
-            document.getElementById('close-plan-modal').addEventListener('click', function() {
-                planModal.classList.add('hidden');
-                document.body.style.overflow = '';
-            });
-            
-            document.getElementById('cancel-plan-btn').addEventListener('click', function() {
-                planModal.classList.add('hidden');
-                document.body.style.overflow = '';
-            });
-            
-            document.getElementById('close-record-modal').addEventListener('click', function() {
-                recordModal.classList.add('hidden');
-                document.body.style.overflow = '';
-            });
-            
-            document.getElementById('cancel-record-btn').addEventListener('click', function() {
-                recordModal.classList.add('hidden');
-                document.body.style.overflow = '';
-            });
-            
-            // 点击模态窗口外部关闭
-            planModal.addEventListener('click', function(e) {
-                if (e.target === planModal) {
-                    planModal.classList.add('hidden');
-                    document.body.style.overflow = '';
-                }
-            });
-            
-            recordModal.addEventListener('click', function(e) {
-                if (e.target === recordModal) {
-                    recordModal.classList.add('hidden');
-                    document.body.style.overflow = '';
-                }
-            });
-            
-            // 设置今天的日期
-            const today = new Date();
-            const formattedDate = today.toISOString().substring(0, 10);
-            document.getElementById('plan-due-date').value = formattedDate;
-            document.getElementById('record-date').value = formattedDate;
-            
-            // 设置当前时间
-            const hours = today.getHours().toString().padStart(2, '0');
-            const minutes = today.getMinutes().toString().padStart(2, '0');
-            document.getElementById('record-time').value = `${hours}:${minutes}`;
-            
-            // 确保表单处理程序初始化
-            if (typeof initializeFormHandlers === 'function') {
-                initializeFormHandlers();
-                console.log('已初始化表单处理程序');
-            } else {
-                console.error('未找到initializeFormHandlers函数');
-            }
-        });
-    </script>
-
-    <!-- 弹出窗口 - 新建计划 -->
-    <div id="modal-new-plan" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <div class="flex justify-between items-center p-6 border-b">
-                <h2 class="text-2xl font-bold text-gray-800">新建计划</h2>
-                <button id="close-plan-modal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <form id="new-plan-form">
-                    <!-- 计划标题 -->
-                    <div class="mb-4">
-                        <label for="plan-title" class="block text-gray-700 font-medium mb-2">计划标题</label>
-                        <input type="text" id="plan-title" name="title" 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
-                            placeholder="输入计划名称" required>
-                    </div>
-
-                    <!-- 计划类型 -->
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">计划类型</label>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
-                                <input type="radio" name="plan-type" id="type-work" class="mr-2" value="work" checked>
-                                <label for="type-work" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                                    工作职业
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
-                                <input type="radio" name="plan-type" id="type-study" class="mr-2" value="study">
-                                <label for="type-study" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                                    学习成长
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
-                                <input type="radio" name="plan-type" id="type-exp" class="mr-2" value="experience">
-                                <label for="type-exp" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
-                                    体验突破
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
-                                <input type="radio" name="plan-type" id="type-leisure" class="mr-2" value="leisure">
-                                <label for="type-leisure" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                                    休闲放松
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
-                                <input type="radio" name="plan-type" id="type-family" class="mr-2" value="family">
-                                <label for="type-family" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                                    家庭生活
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
-                                <input type="radio" name="plan-type" id="type-social" class="mr-2" value="social">
-                                <label for="type-social" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                                    人际社群
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 计划描述 -->
-                    <div class="mb-4">
-                        <label for="plan-desc" class="block text-gray-700 font-medium mb-2">计划详情描述</label>
-                        <textarea id="plan-desc" name="description" rows="3" 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
-                            placeholder="输入计划的详细描述"></textarea>
-                    </div>
-
-                    <!-- 截止日期 -->
-                    <div class="mb-4">
-                        <label for="plan-due-date" class="block text-gray-700 font-medium mb-2">截止日期</label>
-                        <input type="date" id="plan-due-date" name="due-date" 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
-                    </div>
-
-                    <!-- 优先级 -->
-                    <div class="mb-6">
-                        <label class="block text-gray-700 font-medium mb-2">优先级</label>
-                        <div class="flex space-x-4">
-                            <div class="flex items-center">
-                                <input type="radio" name="priority" id="priority-low" class="mr-2" value="low">
-                                <label for="priority-low" class="text-green-600">低</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="radio" name="priority" id="priority-medium" class="mr-2" value="medium" checked>
-                                <label for="priority-medium" class="text-yellow-600">中</label>
-                            </div>
-                            <div class="flex items-center">
-                                <input type="radio" name="priority" id="priority-high" class="mr-2" value="high">
-                                <label for="priority-high" class="text-red-600">高</label>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <!-- 按钮 -->
-                    <div class="flex justify-end space-x-3">
-                        <button type="button" id="cancel-plan-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                            取消
-                        </button>
-                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                            保存计划
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
+    <!-- 通知组件 -->
+    <div id="notification" class="fixed top-4 right-4 bg-green-100 text-green-800 px-4 py-3 rounded-lg shadow-md flex items-center z-50 transform transition-all duration-300 ease-in-out translate-x-full">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="notification-message">操作成功</span>
     </div>
 
-    <!-- 弹出窗口 - 记录事项 -->
-    <div id="modal-new-record" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
-            <div class="flex justify-between items-center p-6 border-b">
-                <h2 class="text-2xl font-bold text-gray-800">记录事项</h2>
-                <button id="close-record-modal" class="text-gray-500 hover:text-gray-700">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="p-6">
-                <form id="new-record-form">
-                    <!-- 事项标题 -->
-                    <div class="mb-4">
-                        <label for="record-title" class="block text-gray-700 font-medium mb-2">事项标题</label>
-                        <input type="text" id="record-title" name="title" 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
-                            placeholder="输入事项名称" required>
-                    </div>
-
-                    <!-- 事项分类 -->
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">事项分类</label>
-                        <div class="grid grid-cols-3 gap-3">
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
-                                <input type="radio" name="record-type" id="rec-type-study" class="mr-2" value="study" checked>
-                                <label for="rec-type-study" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
-                                    学习成长
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
-                                <input type="radio" name="record-type" id="rec-type-exp" class="mr-2" value="experience">
-                                <label for="rec-type-exp" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
-                                    体验突破
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
-                                <input type="radio" name="record-type" id="rec-type-leisure" class="mr-2" value="leisure">
-                                <label for="rec-type-leisure" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
-                                    休闲放松
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
-                                <input type="radio" name="record-type" id="rec-type-family" class="mr-2" value="family">
-                                <label for="rec-type-family" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
-                                    家庭生活
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
-                                <input type="radio" name="record-type" id="rec-type-work" class="mr-2" value="work">
-                                <label for="rec-type-work" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
-                                    工作职业
-                                </label>
-                            </div>
-                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
-                                <input type="radio" name="record-type" id="rec-type-social" class="mr-2" value="social">
-                                <label for="rec-type-social" class="flex items-center cursor-pointer">
-                                    <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
-                                    人际社群
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- 完成日期和时间 -->
-                    <div class="mb-4">
-                        <label class="block text-gray-700 font-medium mb-2">完成日期和时间</label>
-                        <div class="flex space-x-2">
-                            <input type="date" id="record-date" name="completion-date" 
-                                class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
-                            <input type="time" id="record-time" name="completion-time" 
-                                class="w-32 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
-                        </div>
-                    </div>
-
-                    <!-- 事项详情 -->
-                    <div class="mb-4">
-                        <label for="record-desc" class="block text-gray-700 font-medium mb-2">事项详情</label>
-                        <textarea id="record-desc" name="description" rows="3" 
-                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
-                            placeholder="输入事项的详细描述或感想"></textarea>
-                    </div>
-                    
-                    <!-- 按钮 -->
-                    <div class="flex justify-end space-x-3">
-                        <button type="button" id="delete-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hidden">
-                            删除
-                        </button>
-                        <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
-                            取消
-                        </button>
-                        <button type="submit" id="submit-record-btn" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
-                            保存记录
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- 引入脚本 -->
+    <script src="js/common.js"></script>
+    <script src="js/tags.js"></script>
+    <script src="js/categories.js"></script>
+    <script src="js/dynamic_categories.js"></script>
 </body>
 </html>
