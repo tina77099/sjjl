@@ -489,6 +489,9 @@ document.addEventListener('DOMContentLoaded', function() {
             fixPlanData();
             fixRecordData();
             
+            // 渲染动态分类卡片
+            renderCategoryCards();
+            
             // 清除现有分类记录容器内容，确保不会残留旧数据
             clearCategoryContainers();
             
@@ -541,57 +544,50 @@ document.addEventListener('DOMContentLoaded', function() {
     
     // 清除所有分类记录容器的内容
     function clearCategoryContainers() {
-        const allCategories = ['study', 'experience', 'leisure', 'family', 'work', 'social'];
-        const categoryNames = {
-            'study': '学习成长',
-            'experience': '体验突破',
-            'leisure': '休闲放松',
-            'family': '家庭生活',
-            'work': '工作职业',
-            'social': '人际社群'
-        };
+        console.log('清除分类容器内容（动态版本）');
         
-        allCategories.forEach(category => {
-            const categoryTitle = categoryNames[category];
+        // 获取所有动态生成的分类容器
+        const categoryContainers = document.querySelectorAll('[data-category]');
+        
+        categoryContainers.forEach(categoryContainer => {
+            const category = categoryContainer.dataset.category;
+            console.log(`清除分类 ${category} 容器的内容`);
             
-            // 查找分类容器
-            let categoryContainer = null;
-            const categoryTitleElements = document.querySelectorAll('h3.text-lg.font-semibold');
-            
-            for (const titleElement of categoryTitleElements) {
-                if (titleElement.textContent.trim().includes(categoryTitle)) {
-                    categoryContainer = titleElement.closest('.bg-white.rounded-lg.shadow');
-                    break;
-                }
-            }
-            
-            if (!categoryContainer) {
-                console.warn(`未找到分类 ${categoryTitle} 的容器，无法清除内容`);
-                return;
-            }
-            
-            // 获取标题容器
-            const titleContainer = categoryContainer.querySelector('.flex.items-center.justify-between.mb-2');
-            if (!titleContainer) {
-                console.warn(`未找到分类 ${categoryTitle} 的标题容器，无法清除内容`);
-                return;
-            }
-            
-            // 移除标题中的记录数量标记
-            const countBadge = titleContainer.querySelector('.ml-2.text-xs.bg-purple-100');
+            // 重置记录数量显示
+            const countBadge = categoryContainer.querySelector('.category-count');
             if (countBadge) {
-                countBadge.remove();
+                countBadge.textContent = '0 条';
             }
             
-            // 移除除了标题容器以外的所有子元素
-            Array.from(categoryContainer.children).forEach(child => {
-                if (child !== titleContainer) {
-                    child.remove();
+            // 获取内容容器
+            const contentContainer = categoryContainer.querySelector('.category-content');
+            if (contentContainer) {
+                // 清空内容并重置为空状态
+                contentContainer.innerHTML = `
+                    <div class="flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors empty-state">
+                        <p class="text-gray-400 text-sm">点击添加记录</p>
+                    </div>
+                `;
+                
+                // 为新的空状态绑定点击事件
+                const emptyState = contentContainer.querySelector('.empty-state');
+                if (emptyState) {
+                    emptyState.addEventListener('click', function() {
+                        const recordModal = document.getElementById('modal-new-record');
+                        if (recordModal) {
+                            const typeRadio = document.querySelector(`input[name="record-type"][value="${category}"]`);
+                            if (typeRadio) {
+                                typeRadio.checked = true;
+                            }
+                            recordModal.classList.remove('hidden');
+                            document.body.style.overflow = 'hidden';
+                        }
+                    });
                 }
-            });
-            
-            console.log(`已清除分类 ${categoryTitle} 容器的内容`);
+            }
         });
+        
+        console.log(`已清除 ${categoryContainers.length} 个分类容器的内容`);
     }
     
     // 立即初始化仪表盘
@@ -848,41 +844,29 @@ document.addEventListener('DOMContentLoaded', function() {
             const categoryTitle = categoryNames[category];
             console.log(`处理分类 ${categoryTitle} 的内容`);
             
-            // 查找分类容器
-            let categoryContainer = null;
-            const categoryTitleElements = document.querySelectorAll('h3.text-lg.font-semibold');
-            
-            for (const titleElement of categoryTitleElements) {
-                if (titleElement.textContent.trim() === categoryTitle) {
-                    categoryContainer = titleElement.closest('.bg-white.rounded-lg.shadow');
-                    
-                    // 添加记录数标记
-                    const recordCount = recordsByCategory[category].length;
-                    const countBadge = document.createElement('span');
-                    countBadge.className = 'ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full';
-                    countBadge.textContent = `${recordCount} 条`;
-                    titleElement.appendChild(countBadge);
-                    
-                    break;
-                }
-            }
-            
+            // 查找动态生成的分类容器
+            const categoryContainer = document.querySelector(`[data-category="${category}"]`);
             if (!categoryContainer) {
                 console.error(`未找到分类 ${categoryTitle} 的容器`);
-                return; // 跳过当前分类处理
+                return;
             }
             
-            // 获取标题容器
-            const titleContainer = categoryContainer.querySelector('.flex.items-center.justify-between.mb-2');
-            if (!titleContainer) {
-                console.error(`未找到分类 ${categoryTitle} 的标题容器`);
-                return; // 跳过当前分类处理
+            // 更新记录数量显示
+            const countBadge = categoryContainer.querySelector('.category-count');
+            const recordCount = recordsByCategory[category].length;
+            if (countBadge) {
+                countBadge.textContent = `${recordCount} 条`;
             }
             
-            // 清除现有的内容
-            // 先移除所有空状态和记录容器
-            const existingElements = categoryContainer.querySelectorAll('.flex.items-center.justify-center.h-20, .space-y-2');
-            existingElements.forEach(element => element.remove());
+            // 获取内容容器
+            const contentContainer = categoryContainer.querySelector('.category-content');
+            if (!contentContainer) {
+                console.error(`未找到分类 ${categoryTitle} 的内容容器`);
+                return;
+            }
+            
+            // 清除现有内容
+            contentContainer.innerHTML = '';
             
             // 获取当前分类的记录
             const records = recordsByCategory[category];
@@ -891,28 +875,24 @@ document.addEventListener('DOMContentLoaded', function() {
             if (!records || records.length === 0) {
                 console.log(`分类 ${categoryTitle} 没有记录，显示空状态`);
                 const emptyState = document.createElement('div');
-                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors';
+                emptyState.className = 'flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors empty-state';
                 emptyState.innerHTML = '<p class="text-gray-400 text-sm">点击添加记录</p>';
-                titleContainer.insertAdjacentElement('afterend', emptyState);
+                contentContainer.appendChild(emptyState);
                 
                 // 为空状态添加点击事件
                 emptyState.addEventListener('click', function() {
-                    // 打开记录模态框
                     const recordModal = document.getElementById('modal-new-record');
                     if (recordModal) {
-                        // 设置对应的分类
                         const typeRadio = document.querySelector(`input[name="record-type"][value="${category}"]`);
                         if (typeRadio) {
                             typeRadio.checked = true;
                         }
-                        
-                        // 显示模态框
                         recordModal.classList.remove('hidden');
                         document.body.style.overflow = 'hidden';
                     }
                 });
                 
-                return; // 处理完成，返回
+                return;
             }
             
             // 按日期倒序排序
@@ -923,10 +903,10 @@ document.addEventListener('DOMContentLoaded', function() {
             recordsContainer.className = 'space-y-2 max-h-64 overflow-y-auto pr-2 apple-scrollbar rounded-md transition-all';
             recordsContainer.style.backdropFilter = 'blur(5px)';
             recordsContainer.style.WebkitBackdropFilter = 'blur(5px)';
-            recordsContainer.dataset.category = category; // 添加数据属性标记分类
-            recordsContainer.dataset.page = '1'; // 当前页码
-            recordsContainer.dataset.hasMore = (records.length > 10).toString(); // 是否有更多记录
-            titleContainer.insertAdjacentElement('afterend', recordsContainer);
+            recordsContainer.dataset.category = category;
+            recordsContainer.dataset.page = '1';
+            recordsContainer.dataset.hasMore = (records.length > 10).toString();
+            contentContainer.appendChild(recordsContainer);
             
             // 初始显示10条记录
             const displayRecords = records.slice(0, 10);
@@ -940,48 +920,151 @@ document.addEventListener('DOMContentLoaded', function() {
             
             // 如果有更多记录，添加滚动监听
             if (records.length > 10) {
-                // 移除旧的滚动事件监听器，避免重复
                 recordsContainer.removeEventListener('scroll', recordScrollHandler);
                 
-                // 定义滚动事件处理函数
                 function recordScrollHandler() {
-                    // 当滚动到底部时加载更多
                     if (this.scrollHeight - this.scrollTop <= this.clientHeight + 50) {
                         const currentPage = parseInt(this.dataset.page || '1');
                         const hasMore = this.dataset.hasMore === 'true';
                         
                         if (hasMore) {
                             const nextPage = currentPage + 1;
-                            const start = currentPage * 10;
-                            const end = start + 10;
-                            const nextRecords = records.slice(start, end);
+                            const startIndex = (nextPage - 1) * 10;
+                            const endIndex = nextPage * 10;
+                            const nextRecords = records.slice(startIndex, endIndex);
                             
                             if (nextRecords.length > 0) {
-                                console.log(`加载更多 ${categoryTitle} 记录，第 ${nextPage} 页`);
-                                
-                                // 添加新记录
+                                console.log(`加载更多记录，第${nextPage}页，${nextRecords.length}条`);
                                 nextRecords.forEach(record => {
-                                    addRecordItem(record, recordsContainer);
+                                    addRecordItem(record, this);
                                 });
                                 
-                                // 更新页码
                                 this.dataset.page = nextPage.toString();
-                                
-                                // 检查是否还有更多记录
-                                this.dataset.hasMore = (records.length > end).toString();
-                            } else {
-                                this.dataset.hasMore = 'false';
+                                this.dataset.hasMore = (endIndex < records.length).toString();
                             }
                         }
                     }
                 }
                 
-                // 添加滚动事件监听
                 recordsContainer.addEventListener('scroll', recordScrollHandler);
             }
         });
     }
     
+    // 渲染动态分类卡片
+    function renderCategoryCards() {
+        console.log('开始渲染动态分类卡片');
+        
+        // 获取分类数据
+        const categories = window.categoriesManager ? window.categoriesManager.getCategories() : [];
+        
+        // 如果没有分类管理器，使用默认分类
+        let validCategories = categories;
+        if (validCategories.length === 0) {
+            console.warn('分类管理器不可用，使用默认分类');
+            validCategories = [
+                { id: 'study', name: '学习成长', color: 'blue', isDefault: true },
+                { id: 'experience', name: '体验突破', color: 'purple', isDefault: true },
+                { id: 'leisure', name: '休闲放松', color: 'green', isDefault: true },
+                { id: 'family', name: '家庭生活', color: 'yellow', isDefault: true },
+                { id: 'work', name: '工作职业', color: 'red', isDefault: true },
+                { id: 'social', name: '人际社群', color: 'indigo', isDefault: true }
+            ];
+        }
+        
+        // 获取分类卡片容器
+        const categoryContainer = document.getElementById('category-cards-container');
+        if (!categoryContainer) {
+            console.error('未找到分类卡片容器');
+            return;
+        }
+        
+        // 清空现有内容
+        categoryContainer.innerHTML = '';
+        
+        // 为每个分类创建卡片
+        validCategories.forEach(category => {
+            const cardHtml = `
+                <div class="bg-white rounded-lg shadow p-4" data-category="${category.id}">
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            <div class="w-2 h-2 bg-${category.color}-500 rounded-full mr-2"></div>
+                            <h3 class="text-lg font-semibold text-gray-800">${category.name}</h3>
+                            <span class="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full category-count">0 条</span>
+                        </div>
+                        <button class="text-purple-500 hover:text-purple-700 category-add-btn cursor-pointer" data-type="${category.id}">
+                            <i class="fas fa-plus"></i>
+                        </button>
+                    </div>
+                    <div class="category-content">
+                        <div class="flex items-center justify-center h-20 border-2 border-dashed border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors empty-state">
+                            <p class="text-gray-400 text-sm">点击添加记录</p>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            categoryContainer.insertAdjacentHTML('beforeend', cardHtml);
+        });
+        
+        // 为新生成的添加按钮绑定事件
+        bindCategoryAddButtons();
+        
+        console.log(`已渲染 ${validCategories.length} 个分类卡片`);
+    }
+
+    // 绑定分类添加按钮事件
+    function bindCategoryAddButtons() {
+        const addButtons = document.querySelectorAll('.category-add-btn');
+        addButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const categoryType = this.dataset.type;
+                console.log(`点击添加记录，分类: ${categoryType}`);
+                
+                // 打开记录模态框
+                const recordModal = document.getElementById('modal-new-record');
+                if (recordModal) {
+                    // 设置对应的分类
+                    const typeRadio = document.querySelector(`input[name="record-type"][value="${categoryType}"]`);
+                    if (typeRadio) {
+                        typeRadio.checked = true;
+                    }
+                    
+                    // 显示模态框
+                    recordModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                }
+            });
+        });
+        
+        // 为空状态区域绑定点击事件
+        const emptyStates = document.querySelectorAll('.empty-state');
+        emptyStates.forEach(emptyState => {
+            emptyState.addEventListener('click', function() {
+                const categoryCard = this.closest('[data-category]');
+                const categoryType = categoryCard ? categoryCard.dataset.category : null;
+                
+                if (categoryType) {
+                    console.log(`点击空状态添加记录，分类: ${categoryType}`);
+                    
+                    // 打开记录模态框
+                    const recordModal = document.getElementById('modal-new-record');
+                    if (recordModal) {
+                        // 设置对应的分类
+                        const typeRadio = document.querySelector(`input[name="record-type"][value="${categoryType}"]`);
+                        if (typeRadio) {
+                            typeRadio.checked = true;
+                        }
+                        
+                        // 显示模态框
+                        recordModal.classList.remove('hidden');
+                        document.body.style.overflow = 'hidden';
+                    }
+                }
+            });
+        });
+    }
+
     // 更新本周计划
     function updateWeeklyPlans(weeklyPlans) {
         console.log(`更新本周计划，共 ${weeklyPlans.length} 个计划`);
