@@ -124,34 +124,147 @@ class TagsManager {
     }
 
     /**
+     * 强制刷新数据状态
+     * 清除可能的内部缓存，强制从localStorage重新读取数据
+     * @returns {Array} 最新的标签数据
+     */
+    forceRefresh() {
+        console.log('🔄 执行强制数据刷新...');
+        
+        // 清除可能的浏览器缓存
+        if (typeof window !== 'undefined' && window.localStorage) {
+            // 重新读取数据确保最新状态
+            const rawData = localStorage.getItem(this.storageKey);
+            console.log(`📊 强制刷新读取的原始数据长度: ${rawData ? rawData.length : 0}`);
+            
+            if (rawData) {
+                try {
+                    const tags = JSON.parse(rawData);
+                    console.log(`📈 强制刷新解析出 ${tags.length} 个标签`);
+                    return tags;
+                } catch (error) {
+                    console.error('强制刷新时解析数据失败:', error);
+                    return [];
+                }
+            }
+        }
+        
+        return [];
+    }
+
+    /**
+     * 等待数据同步完成
+     * @param {number} delay 延迟时间(毫秒)
+     * @returns {Promise} Promise对象
+     */
+    waitForDataSync(delay = 100) {
+        console.log(`⏱️ 等待数据同步完成 (${delay}ms)...`);
+        return new Promise(resolve => {
+            setTimeout(() => {
+                console.log('✅ 数据同步等待完成');
+                resolve();
+            }, delay);
+        });
+    }
+
+    /**
+     * 验证数据一致性
+     * @param {string} tagName 要检查的标签名称
+     * @returns {Object} 验证结果
+     */
+    validateDataConsistency(tagName) {
+        console.log(`🔍 验证标签 "${tagName}" 的数据一致性...`);
+        
+        // 方法1: 使用getTags()方法
+        const methodTags = this.getTags();
+        const methodFound = methodTags.find(tag => tag.name === tagName);
+        
+        // 方法2: 直接从localStorage读取
+        let directTags = [];
+        try {
+            const rawData = localStorage.getItem(this.storageKey);
+            directTags = rawData ? JSON.parse(rawData) : [];
+        } catch (error) {
+            console.error('直接读取localStorage失败:', error);
+        }
+        const directFound = directTags.find(tag => tag.name === tagName);
+        
+        const isConsistent = !!methodFound === !!directFound;
+        
+        console.log(`📊 数据一致性检查结果:`);
+        console.log(`   - getTags()方法: ${methodFound ? '找到' : '未找到'}`);
+        console.log(`   - 直接读取: ${directFound ? '找到' : '未找到'}`);
+        console.log(`   - 一致性: ${isConsistent ? '一致' : '不一致'}`);
+        
+        return {
+            isConsistent,
+            methodFound: !!methodFound,
+            directFound: !!directFound,
+            methodTags,
+            directTags
+        };
+    }
+
+    /**
      * 创建新标签
      * @param {Object} tagData 标签数据
      * @returns {Object} 创建结果
      */
-    createTag(tagData) {
+    async createTag(tagData) {
         try {
-            // 数据验证
+            console.log('🏷️ createTag 开始创建标签:', tagData);
+            
+            // 1. 强制刷新数据状态，确保最新数据
+            await this.waitForDataSync(50);
+            const refreshedTags = this.forceRefresh();
+            console.log(`🔄 刷新后获得 ${refreshedTags.length} 个标签`);
+            
+            // 2. 数据验证
             const validation = this.validateTagData(tagData);
             if (!validation.isValid) {
+                console.log('❌ 标签数据验证失败:', validation.error);
                 return { success: false, error: validation.error };
             }
 
-            const tags = this.getTags();
+            // 3. 双重验证：检查数据一致性
+            const consistencyCheck = this.validateDataConsistency(tagData.name);
+            if (!consistencyCheck.isConsistent) {
+                console.warn('⚠️ 检测到数据不一致，尝试重新同步...');
+                await this.waitForDataSync(100);
+                // 使用直接读取的数据作为准确来源
+                const tags = consistencyCheck.directTags;
+            } else {
+                // 使用常规方法获取的数据
+                var tags = this.getTags();
+            }
             
-            // 检查名称是否已存在
-            if (tags.some(tag => tag.name === tagData.name)) {
+            console.log(`📊 最终使用的标签数组长度: ${tags.length}`);
+            
+            // 4. 详细检查名称是否已存在（使用最新数据）
+            console.log(`🔍 准备检查名称 "${tagData.name}" 是否重复...`);
+            const existingTagsWithSameName = tags.filter(tag => tag.name === tagData.name);
+            console.log(`🔍 找到同名标签数量: ${existingTagsWithSameName.length}`);
+            
+            if (existingTagsWithSameName.length > 0) {
+                console.log('❌ 发现同名标签:', existingTagsWithSameName);
+                existingTagsWithSameName.forEach((tag, index) => {
+                    console.log(`   [${index}] ID: ${tag.id}, 名称: "${tag.name}", 创建时间: ${tag.createdAt}`);
+                });
                 return { success: false, error: '标签名称已存在' };
             }
+            
+            console.log('✅ 名称检查通过，无重复标签');
 
-            // 验证分类是否存在
+            // 5. 验证分类是否存在
             if (tagData.categoryId && window.categoriesManager) {
                 const category = window.categoriesManager.getCategoryById(tagData.categoryId);
                 if (!category) {
+                    console.log('❌ 指定的分类不存在:', tagData.categoryId);
                     return { success: false, error: '指定的分类不存在' };
                 }
             }
 
-            // 创建新标签
+            // 6. 创建新标签
             const newTag = {
                 id: this.generateTagId(tagData.name),
                 name: tagData.name,
@@ -164,13 +277,30 @@ class TagsManager {
                 updatedAt: new Date().toISOString()
             };
 
-            tags.push(newTag);
-            this.saveTags(tags);
+            console.log('🆕 新标签对象创建:', newTag);
 
-            console.log('创建标签成功:', newTag);
+            // 7. 添加到标签数组
+            tags.push(newTag);
+            console.log(`📈 标签数组更新，新长度: ${tags.length}`);
+            
+            // 8. 保存到localStorage
+            this.saveTags(tags);
+            console.log('💾 标签数据已保存到localStorage');
+            
+            // 9. 延迟验证保存结果
+            await this.waitForDataSync(100);
+            const savedTags = this.getTags();
+            const verifyTag = savedTags.find(tag => tag.id === newTag.id);
+            if (verifyTag) {
+                console.log('✅ 保存验证成功，标签已存在于localStorage');
+            } else {
+                console.error('❌ 保存验证失败，标签未找到');
+            }
+
+            console.log('✅ 创建标签成功:', newTag);
             return { success: true, data: newTag };
         } catch (error) {
-            console.error('创建标签失败:', error);
+            console.error('❌ 创建标签过程出错:', error);
             return { success: false, error: error.message };
         }
     }
@@ -200,9 +330,27 @@ class TagsManager {
 
             // 检查名称是否与其他标签冲突
             if (updateData.name && updateData.name !== tag.name) {
-                if (tags.some(t => t.id !== id && t.name === updateData.name)) {
-                    return { success: false, error: '标签名称已存在' };
+                console.log(`🔍 检查标签名称重复: "${updateData.name}" (当前: "${tag.name}")`);
+                const duplicateTag = tags.find(t => t.id !== id && t.name === updateData.name);
+                if (duplicateTag) {
+                    console.log(`❌ 发现重复标签:`, duplicateTag);
+                    
+                    // 返回详细的冲突信息
+                    return { 
+                        success: false, 
+                        error: '标签名称已存在',
+                        conflictType: 'duplicate_name',
+                        conflictData: {
+                            currentTag: tag,
+                            existingTag: duplicateTag,
+                            newName: updateData.name,
+                            suggestedNames: this.generateSuggestedNames(updateData.name, tags)
+                        }
+                    };
                 }
+                console.log(`✅ 名称检查通过，无重复`);
+            } else if (updateData.name) {
+                console.log(`📝 标签名称未改变: "${updateData.name}"`);
             }
 
             // 验证分类是否存在
@@ -236,34 +384,78 @@ class TagsManager {
      * @param {string} id 标签ID
      * @returns {Object} 删除结果
      */
-    deleteTag(id) {
+    async deleteTag(id) {
         try {
+            console.log(`🗑️ deleteTag 开始删除标签，ID: ${id}`);
+            
             const tags = this.getTags();
+            console.log(`📊 删除前标签总数: ${tags.length}`);
+            
             const tagIndex = tags.findIndex(tag => tag.id === id);
+            console.log(`🔍 要删除的标签索引: ${tagIndex}`);
             
             if (tagIndex === -1) {
+                console.log('❌ 删除失败：标签不存在');
                 return { success: false, error: '标签不存在' };
             }
 
             const tag = tags[tagIndex];
+            console.log(`📝 找到要删除的标签:`, tag);
 
             // 检查是否有关联的记录
             const hasRelatedData = this.checkTagUsage(id);
             if (hasRelatedData.hasUsage) {
+                console.log('❌ 删除失败：标签正在使用中', hasRelatedData.details);
                 return { 
                     success: false, 
                     error: `标签正在使用中，无法删除。${hasRelatedData.details}` 
                 };
             }
 
+            console.log('🔄 执行删除操作...');
+            
             // 删除标签
             tags.splice(tagIndex, 1);
+            console.log(`📉 标签从数组中移除，新长度: ${tags.length}`);
+            
+            // 保存到localStorage
             this.saveTags(tags);
+            console.log('💾 删除后的标签数据已保存到localStorage');
+            
+            // 强制刷新和数据同步
+            console.log('🔄 执行删除后的数据同步...');
+            await this.waitForDataSync(150); // 增加延迟确保数据写入完成
+            
+            // 强制刷新数据状态
+            const refreshedTags = this.forceRefresh();
+            console.log(`🔄 删除后强制刷新，当前标签数量: ${refreshedTags.length}`);
+            
+            // 验证删除结果
+            const verifyTag = refreshedTags.find(tag => tag.id === id);
+            if (!verifyTag) {
+                console.log('✅ 删除验证成功，标签已从localStorage移除');
+            } else {
+                console.error('❌ 删除验证失败，标签仍存在于localStorage:', verifyTag);
+                // 如果验证失败，尝试再次删除
+                console.log('🔄 尝试再次删除残留数据...');
+                const updatedTags = refreshedTags.filter(t => t.id !== id);
+                this.saveTags(updatedTags);
+                await this.waitForDataSync(100);
+            }
+            
+            // 额外验证：检查同名标签
+            const sameNameTags = refreshedTags.filter(t => t.name === tag.name && t.id !== id);
+            console.log(`🔍 删除后同名标签 "${tag.name}" 的数量: ${sameNameTags.length}`);
+            if (sameNameTags.length > 0) {
+                console.log('⚠️ 警告：删除后仍存在同名标签:', sameNameTags);
+            } else {
+                console.log(`✅ 确认删除彻底，无同名标签 "${tag.name}" 残留`);
+            }
 
-            console.log('删除标签成功:', tag);
+            console.log('✅ 删除标签成功:', tag);
             return { success: true, data: tag };
         } catch (error) {
-            console.error('删除标签失败:', error);
+            console.error('❌ 删除标签过程出错:', error);
             return { success: false, error: error.message };
         }
     }
@@ -547,6 +739,99 @@ class TagsManager {
             cleaned: unusedTags.length, 
             message: `成功清理了 ${unusedTags.length} 个未使用的标签` 
         };
+    }
+
+    /**
+     * 生成建议的替代名称
+     * @param {string} baseName 基础名称
+     * @param {Array} existingTags 现有标签列表
+     * @returns {Array} 建议名称数组
+     */
+    generateSuggestedNames(baseName, existingTags) {
+        const suggestions = [];
+        const existingNames = new Set(existingTags.map(tag => tag.name));
+        
+        // 策略1: 添加数字后缀
+        for (let i = 1; i <= 9; i++) {
+            const candidate = `${baseName}${i}`;
+            if (!existingNames.has(candidate)) {
+                suggestions.push(candidate);
+                if (suggestions.length >= 3) break;
+            }
+        }
+        
+        // 策略2: 添加描述性后缀
+        const suffixes = ['标签', '相关', '类别', '专用', '记录'];
+        for (const suffix of suffixes) {
+            const candidate = `${baseName}${suffix}`;
+            if (!existingNames.has(candidate) && !suggestions.includes(candidate)) {
+                suggestions.push(candidate);
+                if (suggestions.length >= 5) break;
+            }
+        }
+        
+        return suggestions.slice(0, 3); // 最多返回3个建议
+    }
+
+    /**
+     * 替换现有标签（删除旧标签并创建新标签）
+     * @param {string} oldTagId 要删除的旧标签ID
+     * @param {string} currentTagId 当前编辑的标签ID
+     * @param {Object} newTagData 新标签数据
+     * @returns {Object} 操作结果
+     */
+    replaceExistingTag(oldTagId, currentTagId, newTagData) {
+        try {
+            const tags = this.getTags();
+            
+            // 找到要删除的旧标签和当前编辑的标签
+            const oldTagIndex = tags.findIndex(tag => tag.id === oldTagId);
+            const currentTagIndex = tags.findIndex(tag => tag.id === currentTagId);
+            
+            if (oldTagIndex === -1) {
+                return { success: false, error: '要替换的标签不存在' };
+            }
+            
+            if (currentTagIndex === -1) {
+                return { success: false, error: '当前编辑的标签不存在' };
+            }
+            
+            const oldTag = tags[oldTagIndex];
+            const currentTag = tags[currentTagIndex];
+            
+            console.log(`🔄 执行标签替换: 删除 "${oldTag.name}" (${oldTag.id}), 更新 "${currentTag.name}" -> "${newTagData.name}"`);
+            
+            // 1. 删除旧标签
+            tags.splice(oldTagIndex, 1);
+            
+            // 2. 更新当前标签索引（如果旧标签在当前标签之前，索引需要调整）
+            const adjustedCurrentIndex = oldTagIndex < currentTagIndex ? currentTagIndex - 1 : currentTagIndex;
+            
+            // 3. 更新当前标签
+            const updatedTag = {
+                ...tags[adjustedCurrentIndex],
+                ...newTagData,
+                updatedAt: new Date().toISOString()
+            };
+            
+            tags[adjustedCurrentIndex] = updatedTag;
+            
+            // 4. 保存数据
+            this.saveTags(tags);
+            
+            console.log('标签替换成功:', updatedTag);
+            
+            return { 
+                success: true, 
+                data: updatedTag,
+                replacedTag: oldTag,
+                message: `成功将 "${oldTag.name}" 替换为 "${newTagData.name}"`
+            };
+            
+        } catch (error) {
+            console.error('标签替换失败:', error);
+            return { success: false, error: error.message };
+        }
     }
 }
 

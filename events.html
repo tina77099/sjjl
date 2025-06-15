@@ -257,6 +257,14 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- 标签选择 -->
+                                <div class="mb-6" style="display: block !important; visibility: visible !important;">
+                                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                                    </div>
+                                </div>
                                 
                                 <!-- 按钮 -->
                                 <div class="flex justify-between">
@@ -342,6 +350,14 @@
                                                 人际社群
                                             </label>
                                         </div>
+                                    </div>
+                                </div>
+
+                                <!-- 标签选择 -->
+                                <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                                    <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
                                     </div>
                                 </div>
 
@@ -493,23 +509,284 @@
                 <script src="js/components.js"></script>
                 <script src="js/common.js"></script>
                 <script src="js/events.js"></script>
+                <script src="js/categories-manager.js"></script>
+                <script src="js/tags-manager.js"></script>
+                <script src="js/tag-selector.js"></script>
+                <script src="js/dashboard.js"></script>
+
+                <style>
+                    /* 标签选择器样式 */
+                    .tag-selector {
+                        font-family: inherit;
+                    }
+
+                    .tag-card {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 6px 12px;
+                        border: 1px solid #e5e7eb;
+                        border-radius: 6px;
+                        cursor: pointer;
+                        transition: all 0.2s ease;
+                        background: white;
+                        position: relative;
+                    }
+
+                    .tag-card:hover {
+                        border-color: var(--tag-color, #3b82f6);
+                        background-color: rgba(59, 130, 246, 0.05);
+                    }
+
+                    .tag-card.selected {
+                        border-color: var(--tag-color, #3b82f6);
+                        background-color: var(--tag-color, #3b82f6);
+                        color: white;
+                    }
+
+                    .tag-card.disabled {
+                        opacity: 0.5;
+                        cursor: not-allowed;
+                    }
+
+                    .tag-card.disabled:hover {
+                        border-color: #e5e7eb;
+                        background-color: white;
+                    }
+
+                    .tag-color {
+                        width: 8px;
+                        height: 8px;
+                        border-radius: 50%;
+                        margin-right: 6px;
+                        flex-shrink: 0;
+                    }
+
+                    .tag-card.selected .tag-color {
+                        background-color: white !important;
+                    }
+
+                    .tag-name {
+                        font-size: 14px;
+                        font-weight: 500;
+                    }
+
+                    .tag-check {
+                        margin-left: 6px;
+                        font-size: 12px;
+                    }
+
+                    .selected-tag-item {
+                        display: inline-flex;
+                        align-items: center;
+                        padding: 4px 8px;
+                        background: #f3f4f6;
+                        border: 1px solid #d1d5db;
+                        border-radius: 4px;
+                        font-size: 13px;
+                    }
+
+                    .selected-tag-item .tag-color {
+                        width: 6px;
+                        height: 6px;
+                        margin-right: 4px;
+                    }
+
+                    .selected-tag-item .tag-name {
+                        font-size: 13px;
+                        font-weight: normal;
+                    }
+
+                    .remove-tag {
+                        margin-left: 6px;
+                        padding: 0;
+                        border: none;
+                        background: none;
+                        color: #6b7280;
+                        cursor: pointer;
+                        font-size: 10px;
+                    }
+
+                    .remove-tag:hover {
+                        color: #ef4444;
+                    }
+
+                    .category-header {
+                        font-size: 12px;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
+                    }
+
+                    .tag-list::-webkit-scrollbar {
+                        width: 6px;
+                    }
+
+                    .tag-list::-webkit-scrollbar-track {
+                        background: #f1f5f9;
+                        border-radius: 3px;
+                    }
+
+                    .tag-list::-webkit-scrollbar-thumb {
+                        background: #cbd5e1;
+                        border-radius: 3px;
+                    }
+
+                    .tag-list::-webkit-scrollbar-thumb:hover {
+                        background: #94a3b8;
+                    }
+                </style>
+
                 <script>
                     document.addEventListener('DOMContentLoaded', function() {
-                        // ... existing code ...
+                        console.log('🚀 DOMContentLoaded事件触发');
                         
-                        // 弹出窗口功能
+                        // === 全局变量 ===
+                        window.recordTagSelector = null;
+                        window.planTagSelector = null;
+                        
+                        // === 强制立即初始化管理器 ===
+                        console.log('🔧 开始强制初始化管理器...');
+                        
+                        try {
+                            // 强制初始化管理器
+                            if (!window.categoriesManager) {
+                                console.log('📦 初始化分类管理器...');
+                                window.categoriesManager = new CategoriesManager();
+                            }
+                            
+                            if (!window.tagsManager) {
+                                console.log('🏷️ 初始化标签管理器...');
+                                window.tagsManager = new TagsManager();
+                            }
+                            
+                            // 检查标签数据
+                            const allTags = window.tagsManager.getTags();
+                            console.log('📊 标签数据检查:', {
+                                totalTags: allTags.length,
+                                tagNames: allTags.map(t => t.name),
+                                TagSelectorClass: typeof TagSelector
+                            });
+                            
+                        } catch (globalError) {
+                            console.error('❌ 管理器初始化失败:', globalError);
+                        }
+
+                        // === 标签选择器初始化函数 ===
+                        function initializeRecordTagSelector() {
+                            console.log('🎯 初始化事件标签选择器...');
+                            const container = document.getElementById('record-tag-selector');
+                            
+                            if (!container) {
+                                console.error('❌ 找不到 record-tag-selector 容器');
+                                return false;
+                            }
+                            
+                            if (typeof TagSelector === 'undefined') {
+                                console.error('❌ TagSelector 类未定义');
+                                container.innerHTML = '<p class="text-red-500 text-center">TagSelector 类未加载</p>';
+                                return false;
+                            }
+                            
+                            if (!window.tagsManager) {
+                                console.error('❌ TagsManager 未初始化');
+                                container.innerHTML = '<p class="text-red-500 text-center">TagsManager 未初始化</p>';
+                                return false;
+                            }
+                            
+                            try {
+                                // 清空容器
+                                container.innerHTML = '';
+                                
+                                // 创建标签选择器
+                                window.recordTagSelector = new TagSelector('record-tag-selector', {
+                                    scope: 'both',  // 使用 both 确保能获取到标签
+                                    showSearch: true,
+                                    showCategories: true,
+                                    maxSelection: 5
+                                });
+                                
+                                console.log('✅ 事件标签选择器初始化成功');
+                                return true;
+                            } catch (error) {
+                                console.error('❌ 事件标签选择器初始化失败:', error);
+                                container.innerHTML = `<p class="text-red-500 text-center">初始化失败: ${error.message}</p>`;
+                                return false;
+                            }
+                        }
+                        
+                        function initializePlanTagSelector() {
+                            console.log('📋 初始化计划标签选择器...');
+                            const container = document.getElementById('plan-tag-selector');
+                            
+                            if (!container) {
+                                console.error('❌ 找不到 plan-tag-selector 容器');
+                                return false;
+                            }
+                            
+                            if (typeof TagSelector === 'undefined') {
+                                console.error('❌ TagSelector 类未定义');
+                                container.innerHTML = '<p class="text-red-500 text-center">TagSelector 类未加载</p>';
+                                return false;
+                            }
+                            
+                            if (!window.tagsManager) {
+                                console.error('❌ TagsManager 未初始化');
+                                container.innerHTML = '<p class="text-red-500 text-center">TagsManager 未初始化</p>';
+                                return false;
+                            }
+                            
+                            try {
+                                // 清空容器
+                                container.innerHTML = '';
+                                
+                                // 创建标签选择器
+                                window.planTagSelector = new TagSelector('plan-tag-selector', {
+                                    scope: 'both',  // 使用 both 确保能获取到标签
+                                    showSearch: true,
+                                    showCategories: true,
+                                    maxSelection: 5
+                                });
+                                
+                                console.log('✅ 计划标签选择器初始化成功');
+                                return true;
+                            } catch (error) {
+                                console.error('❌ 计划标签选择器初始化失败:', error);
+                                container.innerHTML = `<p class="text-red-500 text-center">初始化失败: ${error.message}</p>`;
+                                return false;
+                            }
+                        }
+                        
+                        // === 弹出窗口功能 ===
                         const planModal = document.getElementById('modal-new-plan');
                         const recordModal = document.getElementById('modal-new-record');
                         
-                        // 打开弹出窗口
+                        // 打开计划弹窗
                         document.getElementById('btn-new-plan').addEventListener('click', function() {
+                            console.log('🔷 打开新建计划弹窗');
                             planModal.classList.remove('hidden');
-                            document.body.style.overflow = 'hidden'; // 防止背景滚动
+                            document.body.style.overflow = 'hidden';
+                            
+                            // 延迟初始化标签选择器，确保弹窗完全显示
+                            setTimeout(() => {
+                                if (!window.planTagSelector) {
+                                    console.log('🔄 弹窗打开后初始化计划标签选择器');
+                                    initializePlanTagSelector();
+                                }
+                            }, 100);
                         });
                         
+                        // 打开事件弹窗
                         document.getElementById('btn-new-record').addEventListener('click', function() {
+                            console.log('🔶 打开新建事件弹窗');
                             recordModal.classList.remove('hidden');
                             document.body.style.overflow = 'hidden';
+                            
+                            // 延迟初始化标签选择器，确保弹窗完全显示
+                            setTimeout(() => {
+                                if (!window.recordTagSelector) {
+                                    console.log('🔄 弹窗打开后初始化事件标签选择器');
+                                    initializeRecordTagSelector();
+                                }
+                            }, 100);
                         });
                         
                         // 关闭弹出窗口

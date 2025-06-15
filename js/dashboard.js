@@ -485,22 +485,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 registerEventListeners();
             }
             
-            // 确保分类管理器已初始化
-            if (!window.categoriesManager) {
-                console.log('分类管理器未初始化，正在创建...');
-                window.categoriesManager = new CategoriesManager();
-            }
-            
-            // 等待分类管理器完全初始化
-            const categories = window.categoriesManager.getCategories();
-            console.log(`分类管理器状态: ${categories.length} 个分类`);
-            
             // 先修复可能存在的数据问题
             fixPlanData();
             fixRecordData();
             
-            // 渲染动态分类卡片 - 确保在分类管理器初始化后执行
-            console.log('准备渲染分类卡片...');
+            // 渲染动态分类卡片
             renderCategoryCards();
             
             // 清除现有分类记录容器内容，确保不会残留旧数据
@@ -539,10 +528,20 @@ document.addEventListener('DOMContentLoaded', function() {
                 });
             }
             
-            // 更新仪表盘各部分
+            // 更新仪表盘各部分 - 使用setTimeout确保DOM渲染完成
             updateWeeklyOverview(weeklyPlans, weeklyRecords);
             updateWeeklyPlans(weeklyPlans);
-            updateCategoryRecords(weeklyRecords);
+            
+            // 延迟执行updateCategoryRecords，确保DOM完全渲染
+            setTimeout(() => {
+                console.log('延迟执行updateCategoryRecords，确保DOM渲染完成');
+                try {
+                    updateCategoryRecords(weeklyRecords);
+                    console.log('updateCategoryRecords执行完成');
+                } catch (error) {
+                    console.error('updateCategoryRecords执行失败:', error);
+                }
+            }, 100);
             
             isDashboardInitialized = true;
             console.log('仪表盘初始化完成');
@@ -770,6 +769,17 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCategoryRecords(weeklyRecords) {
         console.log(`更新本周分类记录，共 ${weeklyRecords.length} 条记录`);
         
+        // 检查是否在首页，只有首页才需要处理分类容器
+        const isIndexPage = window.location.pathname.endsWith('index.html') || 
+                           window.location.pathname === '/' || 
+                           window.location.pathname.endsWith('/') ||
+                           window.location.pathname === '';
+        
+        if (!isIndexPage) {
+            console.log('不在首页，跳过分类记录更新');
+            return;
+        }
+        
         // 获取当前的分类系统
         const categories = window.categoriesManager ? window.categoriesManager.getCategories() : [];
         const validCategories = categories.map(cat => cat.id);
@@ -863,16 +873,35 @@ document.addEventListener('DOMContentLoaded', function() {
             const categoryTitle = categoryNames[category];
             console.log(`处理分类 ${categoryTitle} 的内容`);
             
-            // 查找动态生成的分类容器
-            const categoryContainer = document.querySelector(`[data-category="${category}"]`);
+            // 查找动态生成的分类容器，增加重试机制
+            let categoryContainer = document.querySelector(`[data-category="${category}"]`);
+            
+            // 如果第一次没找到，等待一下再试
             if (!categoryContainer) {
-                console.error(`未找到分类 ${categoryTitle} 的容器`);
-                return;
+                console.warn(`首次未找到分类 ${categoryTitle} 的容器，等待DOM渲染...`);
+                setTimeout(() => {
+                    categoryContainer = document.querySelector(`[data-category="${category}"]`);
+                    if (categoryContainer) {
+                        console.log(`延迟找到分类 ${categoryTitle} 的容器，继续处理`);
+                        processCategoryContainer(category, categoryTitle, categoryContainer, recordsByCategory);
+                    } else {
+                        console.log(`最终未找到分类 ${categoryTitle} 的容器，跳过处理（可能不在首页）`);
+                    }
+                }, 50);
+                return; // 跳过当前循环，等待异步处理
             }
             
+            // 立即处理找到的容器
+            processCategoryContainer(category, categoryTitle, categoryContainer, recordsByCategory);
+        });
+    }
+    
+    // 处理单个分类容器的函数
+    function processCategoryContainer(category, categoryTitle, categoryContainer, recordsByCategory) {
+        try {
             // 更新记录数量显示
             const countBadge = categoryContainer.querySelector('.category-count');
-            const recordCount = recordsByCategory[category].length;
+            const recordCount = recordsByCategory[category] ? recordsByCategory[category].length : 0;
             if (countBadge) {
                 countBadge.textContent = `${recordCount} 条`;
             }
@@ -967,7 +996,9 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 recordsContainer.addEventListener('scroll', recordScrollHandler);
             }
-        });
+        } catch (error) {
+            console.error(`处理分类 ${categoryTitle} 容器时出错:`, error);
+        }
     }
     
     // 渲染动态分类卡片
@@ -976,19 +1007,18 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 获取分类数据
         const categories = window.categoriesManager ? window.categoriesManager.getCategories() : [];
-        console.log('获取到的分类数据:', categories);
         
         // 如果没有分类管理器，使用默认分类
         let validCategories = categories;
         if (validCategories.length === 0) {
             console.warn('分类管理器不可用，使用默认分类');
             validCategories = [
-                { id: 'study', name: '学习成长', color: 'blue', colorHex: '#3B82F6', isDefault: true },
-                { id: 'experience', name: '体验突破', color: 'purple', colorHex: '#8B5CF6', isDefault: true },
-                { id: 'leisure', name: '休闲放松', color: 'green', colorHex: '#10B981', isDefault: true },
-                { id: 'family', name: '家庭生活', color: 'yellow', colorHex: '#F59E0B', isDefault: true },
-                { id: 'work', name: '工作职业', color: 'red', colorHex: '#EF4444', isDefault: true },
-                { id: 'social', name: '人际社群', color: 'indigo', colorHex: '#6366F1', isDefault: true }
+                { id: 'study', name: '学习成长', color: 'blue', isDefault: true },
+                { id: 'experience', name: '体验突破', color: 'purple', isDefault: true },
+                { id: 'leisure', name: '休闲放松', color: 'green', isDefault: true },
+                { id: 'family', name: '家庭生活', color: 'yellow', isDefault: true },
+                { id: 'work', name: '工作职业', color: 'red', isDefault: true },
+                { id: 'social', name: '人际社群', color: 'indigo', isDefault: true }
             ];
         }
         
@@ -999,24 +1029,16 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
-        console.log('找到分类卡片容器，准备渲染');
-        
         // 清空现有内容
         categoryContainer.innerHTML = '';
         
         // 为每个分类创建卡片
-        validCategories.forEach((category, index) => {
-            console.log(`渲染分类 ${index + 1}/${validCategories.length}: ${category.name} (${category.id})`);
-            
-            // 确保颜色值存在
-            const colorHex = category.colorHex || category.color || '#3B82F6';
-            const colorName = category.color || 'blue';
-            
+        validCategories.forEach(category => {
             const cardHtml = `
                 <div class="bg-white rounded-lg shadow p-4" data-category="${category.id}">
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center">
-                            <div class="w-2 h-2 rounded-full mr-2" style="background-color: ${colorHex}"></div>
+                            <div class="w-2 h-2 bg-${category.color}-500 rounded-full mr-2"></div>
                             <h3 class="text-lg font-semibold text-gray-800">${category.name}</h3>
                             <span class="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full category-count">0 条</span>
                         </div>
@@ -1033,23 +1055,12 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             categoryContainer.insertAdjacentHTML('beforeend', cardHtml);
-            console.log(`分类 ${category.name} 卡片已添加到DOM`);
         });
         
         // 为新生成的添加按钮绑定事件
         bindCategoryAddButtons();
         
-        console.log(`已渲染 ${validCategories.length} 个分类卡片，DOM内容:`, categoryContainer.innerHTML.length > 0 ? '有内容' : '空');
-        
-        // 验证渲染结果
-        const renderedCards = categoryContainer.querySelectorAll('[data-category]');
-        console.log(`验证渲染结果: 期望 ${validCategories.length} 个卡片，实际 ${renderedCards.length} 个卡片`);
-        
-        if (renderedCards.length !== validCategories.length) {
-            console.error('分类卡片渲染数量不匹配！');
-        } else {
-            console.log('分类卡片渲染成功！');
-        }
+        console.log(`已渲染 ${validCategories.length} 个分类卡片`);
     }
 
     // 绑定分类添加按钮事件

@@ -144,15 +144,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 const planType = planTypeEl.value;
                 const planPriority = planPriorityEl.value;
                 
-                // 获取选中的标签
-                let selectedTags = [planType]; // 默认包含分类标签
-                if (window.planTagSelector) {
-                    const tagNames = window.planTagSelector.getSelectedTags().map(tag => tag.name);
-                    if (tagNames.length > 0) {
-                        selectedTags = [...selectedTags, ...tagNames];
-                    }
-                }
-                
                 // 检查是否是编辑模式
                 const isEditMode = this.dataset.mode === 'edit';
                 const eventId = isEditMode ? this.dataset.eventId : null;
@@ -169,7 +160,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     category: planType,
                     priority: planPriority,
                     status: isEditMode ? (document.getElementById('plan-status') ? document.getElementById('plan-status').value : 'pending') : 'pending',
-                    tags: selectedTags,
+                    tags: window.planTagSelector ? window.planTagSelector.getSelectedTagIds() : [planType],
                     updatedAt: new Date().toISOString()
                 };
                 
@@ -240,15 +231,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 
                 const recordType = recordTypeEl.value;
                 
-                // 获取选中的标签
-                let selectedTags = [recordType]; // 默认包含分类标签
-                if (window.recordTagSelector) {
-                    const tagNames = window.recordTagSelector.getSelectedTags().map(tag => tag.name);
-                    if (tagNames.length > 0) {
-                        selectedTags = [...selectedTags, ...tagNames];
-                    }
-                }
-                
                 // 检查是否是编辑模式
                 const isEditMode = this.dataset.mode === 'edit';
                 const eventId = isEditMode ? this.dataset.eventId : null;
@@ -265,7 +247,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     startTime: new Date(dateTimeStr).toISOString(),
                     isAllDay: false, // 由于现在包含具体时间，设置为false
                     category: recordType,
-                    tags: selectedTags,
+                    tags: window.recordTagSelector ? window.recordTagSelector.getSelectedTagIds() : [recordType], // 从标签选择器获取标签
                     updatedAt: new Date().toISOString()
                 };
                 

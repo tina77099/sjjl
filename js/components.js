@@ -142,6 +142,14 @@ document.addEventListener('DOMContentLoaded', function() {
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
                 </div>
 
+                <!-- 标签选择 -->
+                <div class="mb-6" style="display: block !important; visibility: visible !important;">
+                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                    </div>
+                </div>
+
                 <!-- 优先级 -->
                 <div class="mb-6">
                     <label class="block text-gray-700 font-medium mb-2">优先级</label>
@@ -240,6 +248,14 @@ document.addEventListener('DOMContentLoaded', function() {
                                 人际社群
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 标签选择 -->
+                <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                    <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
                     </div>
                 </div>
 
@@ -440,6 +456,14 @@ function loadComponentInline(componentName, targetSelector) {
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
                 </div>
 
+                <!-- 标签选择 -->
+                <div class="mb-6" style="display: block !important; visibility: visible !important;">
+                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                    </div>
+                </div>
+
                 <!-- 优先级 -->
                 <div class="mb-6">
                     <label class="block text-gray-700 font-medium mb-2">优先级</label>
@@ -538,6 +562,14 @@ function loadComponentInline(componentName, targetSelector) {
                                 人际社群
                             </label>
                         </div>
+                    </div>
+                </div>
+
+                <!-- 标签选择 -->
+                <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                    <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
                     </div>
                 </div>
 

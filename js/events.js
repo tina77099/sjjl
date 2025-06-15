@@ -826,6 +826,13 @@ function editEvent(eventId) {
                     priorityRadio.checked = true;
                 }
                 
+                // 设置标签选择器
+                if (window.planTagSelector && event.tags) {
+                    setTimeout(() => {
+                        window.planTagSelector.setSelectedTags(event.tags);
+                    }, 100);
+                }
+                
                 // 设置表单为编辑模式
                 const form = document.getElementById('new-plan-form');
                 form.dataset.mode = 'edit';
@@ -861,6 +868,13 @@ function editEvent(eventId) {
                 const typeRadio = document.getElementById(`rec-type-${event.category}`);
                 if (typeRadio) {
                     typeRadio.checked = true;
+                }
+                
+                // 设置标签选择器
+                if (window.recordTagSelector && event.tags) {
+                    setTimeout(() => {
+                        window.recordTagSelector.setSelectedTags(event.tags);
+                    }, 100);
                 }
                 
                 // 设置表单为编辑模式

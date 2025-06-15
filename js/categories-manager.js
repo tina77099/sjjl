@@ -10,8 +10,7 @@ class CategoriesManager {
             {
                 id: 'study',
                 name: '学习成长',
-                color: 'blue',
-                colorHex: '#3B82F6',
+                color: '#3B82F6',
                 applyTo: ['plan', 'event'],
                 isDefault: true,
                 createdAt: new Date().toISOString()
@@ -19,8 +18,7 @@ class CategoriesManager {
             {
                 id: 'experience',
                 name: '体验突破',
-                color: 'purple',
-                colorHex: '#8B5CF6',
+                color: '#10B981',
                 applyTo: ['plan', 'event'],
                 isDefault: true,
                 createdAt: new Date().toISOString()
@@ -28,8 +26,7 @@ class CategoriesManager {
             {
                 id: 'leisure',
                 name: '休闲放松',
-                color: 'green',
-                colorHex: '#10B981',
+                color: '#F59E0B',
                 applyTo: ['plan', 'event'],
                 isDefault: true,
                 createdAt: new Date().toISOString()
@@ -37,8 +34,7 @@ class CategoriesManager {
             {
                 id: 'family',
                 name: '家庭生活',
-                color: 'yellow',
-                colorHex: '#F59E0B',
+                color: '#EF4444',
                 applyTo: ['plan', 'event'],
                 isDefault: true,
                 createdAt: new Date().toISOString()
@@ -46,8 +42,7 @@ class CategoriesManager {
             {
                 id: 'work',
                 name: '工作职业',
-                color: 'red',
-                colorHex: '#EF4444',
+                color: '#8B5CF6',
                 applyTo: ['plan', 'event'],
                 isDefault: true,
                 createdAt: new Date().toISOString()
@@ -55,8 +50,7 @@ class CategoriesManager {
             {
                 id: 'social',
                 name: '人际社群',
-                color: 'indigo',
-                colorHex: '#6366F1',
+                color: '#EC4899',
                 applyTo: ['plan', 'event'],
                 isDefault: true,
                 createdAt: new Date().toISOString()
@@ -71,14 +65,6 @@ class CategoriesManager {
     init() {
         try {
             const categories = this.getCategories();
-            
-            // 检查并升级数据格式
-            if (this.upgradeDataFormat()) {
-                console.log('数据格式已升级，重新获取分类数据');
-                const upgradedCategories = this.getCategories();
-                console.log(`升级后分类数据: ${upgradedCategories.length} 个分类`);
-                return;
-            }
             
             // 检查数据完整性
             if (!this.validateCategoriesData(categories)) {
@@ -227,8 +213,7 @@ class CategoriesManager {
             const newCategory = {
                 id: categoryData.id || this.generateCategoryId(categoryData.name),
                 name: categoryData.name,
-                color: categoryData.color || 'blue',
-                colorHex: categoryData.colorHex || '#3B82F6',
+                color: categoryData.color || '#3B82F6',
                 applyTo: categoryData.applyTo || ['plan', 'event'],
                 isDefault: false,
                 createdAt: new Date().toISOString(),
@@ -494,45 +479,6 @@ class CategoriesManager {
             console.error('导入分类数据失败:', error);
             return { success: false, error: '数据格式错误或解析失败' };
         }
-    }
-
-    /**
-     * 强制重置为默认分类（用于格式升级）
-     */
-    forceResetToDefault() {
-        console.log('强制重置分类数据为新格式...');
-        try {
-            this.saveCategories(this.defaultCategories);
-            console.log('分类数据已重置为新格式');
-            return { success: true };
-        } catch (error) {
-            console.error('重置分类数据失败:', error);
-            return { success: false, error: error.message };
-        }
-    }
-
-    /**
-     * 检查并升级分类数据格式
-     */
-    upgradeDataFormat() {
-        const categories = this.getCategories();
-        let needsUpgrade = false;
-        
-        // 检查是否需要升级（缺少colorHex字段）
-        for (const category of categories) {
-            if (!category.colorHex && category.color) {
-                needsUpgrade = true;
-                break;
-            }
-        }
-        
-        if (needsUpgrade) {
-            console.log('检测到旧格式分类数据，正在升级...');
-            this.forceResetToDefault();
-            return true;
-        }
-        
-        return false;
     }
 }
 

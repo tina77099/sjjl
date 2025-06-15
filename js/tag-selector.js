@@ -1,22 +1,25 @@
 /**
  * 标签选择器组件
- * 支持多选、搜索、快速创建新标签
+ * 提供标签选择界面和交互功能
  */
+
 class TagSelector {
     constructor(containerId, options = {}) {
         this.containerId = containerId;
         this.container = document.getElementById(containerId);
         this.options = {
-            placeholder: '选择或输入标签...',
-            maxTags: 10,
-            allowCreate: true,
-            applyTo: 'both', // 'plan', 'event', 'both'
+            scope: options.scope || 'both', // 'plan', 'event', 'both'
+            maxSelection: options.maxSelection || null, // 最大选择数量
+            showSearch: options.showSearch !== false, // 是否显示搜索框
+            showCategories: options.showCategories !== false, // 是否按分类分组
+            allowCreate: options.allowCreate || false, // 是否允许创建新标签
             ...options
         };
-        
-        this.selectedTags = [];
-        this.availableTags = [];
-        this.isOpen = false;
+        this.selectedTags = new Set();
+        this.allTags = [];
+        this.filteredTags = [];
+        this.searchKeyword = '';
+        this.selectedCategory = 'all';
         
         this.init();
     }
@@ -26,566 +29,436 @@ class TagSelector {
      */
     init() {
         if (!this.container) {
-            console.error(`标签选择器容器 #${this.containerId} 不存在`);
+            console.error('标签选择器容器不存在:', this.containerId);
             return;
         }
 
-        this.loadAvailableTags();
+        this.loadTags();
         this.render();
         this.bindEvents();
     }
 
     /**
-     * 加载可用标签
+     * 加载标签数据
      */
-    loadAvailableTags() {
+    loadTags() {
         if (!window.tagsManager) {
-            console.warn('标签管理器未初始化');
-            this.availableTags = [];
+            console.error('标签管理器未初始化');
             return;
         }
 
-        const allTags = window.tagsManager.getTags();
-        
-        // 根据适用范围过滤标签
-        this.availableTags = allTags.filter(tag => {
-            if (this.options.applyTo === 'both') return true;
-            return tag.applyTo && tag.applyTo.includes(this.options.applyTo);
-        });
+        // 根据适用范围获取标签
+        if (this.options.scope === 'both') {
+            this.allTags = window.tagsManager.getTags();
+        } else {
+            this.allTags = window.tagsManager.getTagsByScope(this.options.scope);
+        }
+
+        this.filteredTags = [...this.allTags];
+        console.log('加载标签数据:', this.allTags.length, '个标签');
     }
 
     /**
      * 渲染组件
      */
     render() {
-        this.container.innerHTML = `
-            <div class="tag-selector-wrapper">
-                <div class="tag-selector-input-area">
-                    <div class="selected-tags-container">
-                        ${this.renderSelectedTags()}
-                    </div>
-                    <input type="text" 
-                           class="tag-selector-input" 
-                           placeholder="${this.selectedTags.length === 0 ? this.options.placeholder : ''}"
-                           autocomplete="off">
-                </div>
-                <div class="tag-selector-dropdown hidden">
-                    <div class="tag-selector-search">
-                        <input type="text" class="tag-search-input" placeholder="搜索标签...">
-                    </div>
-                    <div class="tag-selector-list">
-                        ${this.renderAvailableTags()}
-                    </div>
-                    ${this.options.allowCreate ? `
-                        <div class="tag-selector-create">
-                            <button type="button" class="create-tag-btn">
-                                <i class="fas fa-plus"></i> 创建新标签
-                            </button>
-                        </div>
-                    ` : ''}
+        const html = `
+            <div class="tag-selector">
+                ${this.renderHeader()}
+                ${this.renderFilters()}
+                ${this.renderTagList()}
+                ${this.renderSelectedTags()}
+            </div>
+        `;
+        
+        this.container.innerHTML = html;
+    }
+
+    /**
+     * 渲染头部
+     */
+    renderHeader() {
+        return `
+            <div class="tag-selector-header mb-3">
+                <div class="flex justify-between items-center">
+                    <label class="block text-gray-700 font-medium">选择标签</label>
+                    <span class="text-sm text-gray-500">
+                        已选择 <span class="selected-count">${this.selectedTags.size}</span> 个标签
+                        ${this.options.maxSelection ? `/ ${this.options.maxSelection}` : ''}
+                    </span>
                 </div>
             </div>
         `;
-
-        this.addStyles();
     }
 
     /**
-     * 渲染已选择的标签
+     * 渲染过滤器
      */
-    renderSelectedTags() {
-        return this.selectedTags.map(tag => `
-            <span class="selected-tag" data-tag-id="${tag.id}">
-                <span class="tag-color" style="background-color: ${tag.color}"></span>
-                <span class="tag-name">${tag.name}</span>
-                <button type="button" class="remove-tag-btn" data-tag-id="${tag.id}">
-                    <i class="fas fa-times"></i>
-                </button>
-            </span>
-        `).join('');
-    }
-
-    /**
-     * 渲染可用标签列表
-     */
-    renderAvailableTags(searchTerm = '') {
-        const filteredTags = this.availableTags.filter(tag => {
-            // 排除已选择的标签
-            if (this.selectedTags.some(selected => selected.id === tag.id)) {
-                return false;
-            }
-            // 搜索过滤
-            if (searchTerm) {
-                return tag.name.toLowerCase().includes(searchTerm.toLowerCase());
-            }
-            return true;
-        });
-
-        if (filteredTags.length === 0) {
-            return `<div class="no-tags-message">
-                ${searchTerm ? '未找到匹配的标签' : '暂无可用标签'}
-            </div>`;
+    renderFilters() {
+        if (!this.options.showSearch && !this.options.showCategories) {
+            return '';
         }
 
-        return filteredTags.map(tag => `
-            <div class="tag-option" data-tag-id="${tag.id}">
+        let html = '<div class="tag-selector-filters mb-3">';
+        
+        if (this.options.showSearch) {
+            html += `
+                <div class="mb-2">
+                    <input type="text" 
+                           class="tag-search-input w-full px-3 py-2 border rounded-lg text-sm" 
+                           placeholder="搜索标签..." 
+                           value="${this.searchKeyword}">
+                </div>
+            `;
+        }
+
+        if (this.options.showCategories && window.categoriesManager) {
+            const categories = window.categoriesManager.getCategories();
+            html += `
+                <div class="mb-2">
+                    <select class="tag-category-filter w-full px-3 py-2 border rounded-lg text-sm">
+                        <option value="all">所有分类</option>
+                        ${categories.map(cat => 
+                            `<option value="${cat.id}" ${this.selectedCategory === cat.id ? 'selected' : ''}>
+                                ${cat.displayName}
+                            </option>`
+                        ).join('')}
+                    </select>
+                </div>
+            `;
+        }
+
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * 渲染标签列表
+     */
+    renderTagList() {
+        if (this.filteredTags.length === 0) {
+            return `
+                <div class="tag-list-empty text-center py-8 text-gray-500">
+                    <i class="fas fa-tags text-2xl mb-2"></i>
+                    <p>暂无可用标签</p>
+                    ${this.options.allowCreate ? '<p class="text-sm">您可以在标签管理中创建新标签</p>' : ''}
+                </div>
+            `;
+        }
+
+        let html = '<div class="tag-list max-h-48 overflow-y-auto border rounded-lg p-3">';
+        
+        if (this.options.showCategories && window.categoriesManager) {
+            // 按分类分组显示
+            const categories = window.categoriesManager.getCategories();
+            const uncategorizedTags = this.filteredTags.filter(tag => !tag.categoryId);
+            
+            categories.forEach(category => {
+                const categoryTags = this.filteredTags.filter(tag => tag.categoryId === category.id);
+                if (categoryTags.length > 0) {
+                    html += this.renderCategoryGroup(category, categoryTags);
+                }
+            });
+            
+            if (uncategorizedTags.length > 0) {
+                html += this.renderCategoryGroup({ displayName: '未分类', id: 'uncategorized' }, uncategorizedTags);
+            }
+        } else {
+            // 直接显示所有标签
+            html += this.renderTagCards(this.filteredTags);
+        }
+        
+        html += '</div>';
+        return html;
+    }
+
+    /**
+     * 渲染分类组
+     */
+    renderCategoryGroup(category, tags) {
+        return `
+            <div class="tag-category-group mb-4">
+                <div class="category-header text-sm font-medium text-gray-600 mb-2 pb-1 border-b">
+                    ${category.displayName} (${tags.length})
+                </div>
+                <div class="category-tags">
+                    ${this.renderTagCards(tags)}
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * 渲染标签卡片
+     */
+    renderTagCards(tags) {
+        return `
+            <div class="flex flex-wrap gap-2">
+                ${tags.map(tag => this.renderTagCard(tag)).join('')}
+            </div>
+        `;
+    }
+
+    /**
+     * 渲染单个标签卡片
+     */
+    renderTagCard(tag) {
+        const isSelected = this.selectedTags.has(tag.id);
+        const isDisabled = this.options.maxSelection && 
+                          !isSelected && 
+                          this.selectedTags.size >= this.options.maxSelection;
+        
+        return `
+            <div class="tag-card ${isSelected ? 'selected' : ''} ${isDisabled ? 'disabled' : ''}" 
+                 data-tag-id="${tag.id}"
+                 style="--tag-color: ${tag.color}">
                 <span class="tag-color" style="background-color: ${tag.color}"></span>
                 <span class="tag-name">${tag.name}</span>
-                <span class="tag-usage">${tag.usageCount || 0}次使用</span>
+                ${isSelected ? '<i class="fas fa-check tag-check"></i>' : ''}
             </div>
-        `).join('');
+        `;
+    }
+
+    /**
+     * 渲染已选标签
+     */
+    renderSelectedTags() {
+        if (this.selectedTags.size === 0) {
+            return '';
+        }
+
+        const selectedTagsArray = Array.from(this.selectedTags).map(id => 
+            this.allTags.find(tag => tag.id === id)
+        ).filter(Boolean);
+
+        return `
+            <div class="selected-tags-section mt-3 pt-3 border-t">
+                <div class="text-sm font-medium text-gray-600 mb-2">已选择的标签：</div>
+                <div class="selected-tags-list flex flex-wrap gap-2">
+                    ${selectedTagsArray.map(tag => `
+                        <div class="selected-tag-item" data-tag-id="${tag.id}">
+                            <span class="tag-color" style="background-color: ${tag.color}"></span>
+                            <span class="tag-name">${tag.name}</span>
+                            <button type="button" class="remove-tag" title="移除标签">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
     }
 
     /**
      * 绑定事件
      */
     bindEvents() {
-        const wrapper = this.container.querySelector('.tag-selector-wrapper');
-        const input = this.container.querySelector('.tag-selector-input');
-        const dropdown = this.container.querySelector('.tag-selector-dropdown');
-        const searchInput = this.container.querySelector('.tag-search-input');
-
-        // 点击输入区域显示下拉框
-        wrapper.addEventListener('click', (e) => {
-            if (e.target.classList.contains('remove-tag-btn') || e.target.closest('.remove-tag-btn')) {
-                return;
-            }
-            this.showDropdown();
-        });
-
-        // 输入框获得焦点
-        input.addEventListener('focus', () => {
-            this.showDropdown();
-        });
-
-        // 搜索输入
-        searchInput.addEventListener('input', (e) => {
-            this.updateTagList(e.target.value);
-        });
-
-        // 标签选择
-        dropdown.addEventListener('click', (e) => {
-            const tagOption = e.target.closest('.tag-option');
-            if (tagOption) {
-                const tagId = tagOption.dataset.tagId;
-                this.selectTag(tagId);
-            }
-
-            // 创建新标签
-            if (e.target.closest('.create-tag-btn')) {
-                this.showCreateTagModal();
+        // 搜索输入事件
+        this.container.addEventListener('input', (e) => {
+            if (e.target.classList.contains('tag-search-input')) {
+                this.searchKeyword = e.target.value;
+                this.filterTags();
             }
         });
 
-        // 移除标签
-        wrapper.addEventListener('click', (e) => {
-            const removeBtn = e.target.closest('.remove-tag-btn');
+        // 分类筛选事件
+        this.container.addEventListener('change', (e) => {
+            if (e.target.classList.contains('tag-category-filter')) {
+                this.selectedCategory = e.target.value;
+                this.filterTags();
+            }
+        });
+
+        // 标签选择事件
+        this.container.addEventListener('click', (e) => {
+            const tagCard = e.target.closest('.tag-card');
+            if (tagCard && !tagCard.classList.contains('disabled')) {
+                const tagId = tagCard.dataset.tagId;
+                this.toggleTag(tagId);
+            }
+
+            // 移除已选标签事件
+            const removeBtn = e.target.closest('.remove-tag');
             if (removeBtn) {
-                const tagId = removeBtn.dataset.tagId;
+                const tagItem = removeBtn.closest('.selected-tag-item');
+                const tagId = tagItem.dataset.tagId;
                 this.removeTag(tagId);
             }
         });
-
-        // 点击外部关闭下拉框
-        document.addEventListener('click', (e) => {
-            if (!wrapper.contains(e.target)) {
-                this.hideDropdown();
-            }
-        });
-
-        // 键盘事件
-        input.addEventListener('keydown', (e) => {
-            if (e.key === 'Backspace' && input.value === '' && this.selectedTags.length > 0) {
-                // 删除最后一个标签
-                this.removeTag(this.selectedTags[this.selectedTags.length - 1].id);
-            }
-        });
     }
 
     /**
-     * 显示下拉框
+     * 过滤标签
      */
-    showDropdown() {
-        const dropdown = this.container.querySelector('.tag-selector-dropdown');
-        dropdown.classList.remove('hidden');
-        this.isOpen = true;
-        
-        // 聚焦搜索框
-        const searchInput = this.container.querySelector('.tag-search-input');
-        setTimeout(() => searchInput.focus(), 100);
-    }
+    filterTags() {
+        let filtered = [...this.allTags];
 
-    /**
-     * 隐藏下拉框
-     */
-    hideDropdown() {
-        const dropdown = this.container.querySelector('.tag-selector-dropdown');
-        dropdown.classList.add('hidden');
-        this.isOpen = false;
-        
-        // 清空搜索
-        const searchInput = this.container.querySelector('.tag-search-input');
-        searchInput.value = '';
-        this.updateTagList('');
-    }
-
-    /**
-     * 选择标签
-     */
-    selectTag(tagId) {
-        const tag = this.availableTags.find(t => t.id === tagId);
-        if (!tag) return;
-
-        if (this.selectedTags.length >= this.options.maxTags) {
-            this.showNotification(`最多只能选择${this.options.maxTags}个标签`, 'warning');
-            return;
+        // 关键词搜索
+        if (this.searchKeyword.trim()) {
+            const keyword = this.searchKeyword.toLowerCase();
+            filtered = filtered.filter(tag => 
+                tag.name.toLowerCase().includes(keyword) ||
+                (tag.description && tag.description.toLowerCase().includes(keyword))
+            );
         }
 
-        this.selectedTags.push(tag);
-        this.updateSelectedTagsDisplay();
+        // 分类过滤
+        if (this.selectedCategory !== 'all') {
+            if (this.selectedCategory === 'uncategorized') {
+                filtered = filtered.filter(tag => !tag.categoryId);
+            } else {
+                filtered = filtered.filter(tag => tag.categoryId === this.selectedCategory);
+            }
+        }
+
+        this.filteredTags = filtered;
         this.updateTagList();
-        
-        // 触发变更事件
+    }
+
+    /**
+     * 更新标签列表显示
+     */
+    updateTagList() {
+        const tagListContainer = this.container.querySelector('.tag-list');
+        if (tagListContainer) {
+            tagListContainer.outerHTML = this.renderTagList();
+        }
+    }
+
+    /**
+     * 切换标签选择状态
+     */
+    toggleTag(tagId) {
+        if (this.selectedTags.has(tagId)) {
+            this.removeTag(tagId);
+        } else {
+            this.addTag(tagId);
+        }
+    }
+
+    /**
+     * 添加标签
+     */
+    addTag(tagId) {
+        if (this.options.maxSelection && this.selectedTags.size >= this.options.maxSelection) {
+            console.warn('已达到最大选择数量限制');
+            return false;
+        }
+
+        this.selectedTags.add(tagId);
+        this.updateDisplay();
         this.triggerChange();
+        
+        // 更新标签使用次数
+        if (window.tagsManager) {
+            window.tagsManager.incrementTagUsage(tagId);
+        }
+        
+        return true;
     }
 
     /**
      * 移除标签
      */
     removeTag(tagId) {
-        this.selectedTags = this.selectedTags.filter(tag => tag.id !== tagId);
-        this.updateSelectedTagsDisplay();
+        this.selectedTags.delete(tagId);
+        this.updateDisplay();
+        this.triggerChange();
+        return true;
+    }
+
+    /**
+     * 更新显示
+     */
+    updateDisplay() {
+        // 更新计数
+        const countElement = this.container.querySelector('.selected-count');
+        if (countElement) {
+            countElement.textContent = this.selectedTags.size;
+        }
+
+        // 重新渲染标签列表和已选标签
         this.updateTagList();
         
-        // 触发变更事件
-        this.triggerChange();
-    }
-
-    /**
-     * 更新已选择标签的显示
-     */
-    updateSelectedTagsDisplay() {
-        const container = this.container.querySelector('.selected-tags-container');
-        container.innerHTML = this.renderSelectedTags();
-        
-        // 更新输入框占位符
-        const input = this.container.querySelector('.tag-selector-input');
-        input.placeholder = this.selectedTags.length === 0 ? this.options.placeholder : '';
-    }
-
-    /**
-     * 更新标签列表
-     */
-    updateTagList(searchTerm = '') {
-        const listContainer = this.container.querySelector('.tag-selector-list');
-        listContainer.innerHTML = this.renderAvailableTags(searchTerm);
-    }
-
-    /**
-     * 显示创建标签模态框
-     */
-    showCreateTagModal() {
-        // 简化版快速创建
-        const tagName = prompt('请输入新标签名称：');
-        if (!tagName || !tagName.trim()) return;
-
-        if (!window.tagsManager) {
-            this.showNotification('标签管理器未初始化', 'error');
-            return;
-        }
-
-        const result = window.tagsManager.createTag({
-            name: tagName.trim(),
-            applyTo: this.options.applyTo === 'both' ? ['plan', 'event'] : [this.options.applyTo]
-        });
-
-        if (result.success) {
-            this.loadAvailableTags();
-            this.selectTag(result.data.id);
-            this.showNotification('标签创建成功', 'success');
-        } else {
-            this.showNotification(result.error, 'error');
+        const selectedTagsContainer = this.container.querySelector('.selected-tags-section');
+        if (selectedTagsContainer) {
+            selectedTagsContainer.outerHTML = this.renderSelectedTags();
+        } else if (this.selectedTags.size > 0) {
+            // 如果之前没有已选标签区域，现在需要添加
+            this.container.querySelector('.tag-selector').insertAdjacentHTML('beforeend', this.renderSelectedTags());
         }
     }
 
     /**
-     * 触发变更事件
+     * 触发变化事件
      */
     triggerChange() {
         const event = new CustomEvent('tagSelectionChange', {
             detail: {
-                selectedTags: this.selectedTags,
-                tagIds: this.selectedTags.map(tag => tag.id),
-                tagNames: this.selectedTags.map(tag => tag.name)
+                selectedTags: this.getSelectedTags(),
+                selectedTagIds: Array.from(this.selectedTags)
             }
         });
         this.container.dispatchEvent(event);
     }
 
     /**
-     * 获取选中的标签
+     * 获取选中的标签对象
      */
     getSelectedTags() {
-        return this.selectedTags;
+        return Array.from(this.selectedTags).map(id => 
+            this.allTags.find(tag => tag.id === id)
+        ).filter(Boolean);
+    }
+
+    /**
+     * 获取选中的标签ID数组
+     */
+    getSelectedTagIds() {
+        return Array.from(this.selectedTags);
     }
 
     /**
      * 设置选中的标签
      */
     setSelectedTags(tagIds) {
-        this.selectedTags = [];
+        this.selectedTags.clear();
         if (Array.isArray(tagIds)) {
-            tagIds.forEach(tagId => {
-                const tag = this.availableTags.find(t => t.id === tagId);
-                if (tag) {
-                    this.selectedTags.push(tag);
+            tagIds.forEach(id => {
+                if (this.allTags.some(tag => tag.id === id)) {
+                    this.selectedTags.add(id);
                 }
             });
         }
-        this.updateSelectedTagsDisplay();
-        this.updateTagList();
+        this.updateDisplay();
     }
 
     /**
      * 清空选择
      */
-    clear() {
-        this.selectedTags = [];
-        this.updateSelectedTagsDisplay();
-        this.updateTagList();
+    clearSelection() {
+        this.selectedTags.clear();
+        this.updateDisplay();
         this.triggerChange();
     }
 
     /**
-     * 刷新可用标签
+     * 刷新标签数据
      */
     refresh() {
-        this.loadAvailableTags();
-        this.updateTagList();
+        this.loadTags();
+        this.filterTags();
     }
 
     /**
-     * 显示通知
+     * 销毁组件
      */
-    showNotification(message, type = 'info') {
-        // 简单的通知实现
-        const notification = document.createElement('div');
-        notification.className = `tag-selector-notification ${type}`;
-        notification.textContent = message;
-        notification.style.cssText = `
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 12px 16px;
-            border-radius: 4px;
-            color: white;
-            font-size: 14px;
-            z-index: 10000;
-            background-color: ${type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#3B82F6'};
-        `;
-        
-        document.body.appendChild(notification);
-        setTimeout(() => {
-            document.body.removeChild(notification);
-        }, 3000);
-    }
-
-    /**
-     * 添加样式
-     */
-    addStyles() {
-        if (document.getElementById('tag-selector-styles')) return;
-
-        const style = document.createElement('style');
-        style.id = 'tag-selector-styles';
-        style.textContent = `
-            .tag-selector-wrapper {
-                position: relative;
-                width: 100%;
-            }
-
-            .tag-selector-input-area {
-                min-height: 42px;
-                padding: 8px 12px;
-                border: 1px solid #d1d5db;
-                border-radius: 8px;
-                background: white;
-                cursor: text;
-                display: flex;
-                flex-wrap: wrap;
-                align-items: center;
-                gap: 6px;
-                transition: border-color 0.2s;
-            }
-
-            .tag-selector-input-area:hover {
-                border-color: #9ca3af;
-            }
-
-            .tag-selector-input-area:focus-within {
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-            .selected-tags-container {
-                display: flex;
-                flex-wrap: wrap;
-                gap: 6px;
-            }
-
-            .selected-tag {
-                display: inline-flex;
-                align-items: center;
-                gap: 6px;
-                padding: 4px 8px;
-                background: #f3f4f6;
-                border: 1px solid #e5e7eb;
-                border-radius: 16px;
-                font-size: 12px;
-                color: #374151;
-            }
-
-            .tag-color {
-                width: 8px;
-                height: 8px;
-                border-radius: 50%;
-                flex-shrink: 0;
-            }
-
-            .remove-tag-btn {
-                background: none;
-                border: none;
-                color: #6b7280;
-                cursor: pointer;
-                padding: 0;
-                width: 14px;
-                height: 14px;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                border-radius: 50%;
-                transition: all 0.2s;
-            }
-
-            .remove-tag-btn:hover {
-                background: #e5e7eb;
-                color: #374151;
-            }
-
-            .tag-selector-input {
-                border: none;
-                outline: none;
-                flex: 1;
-                min-width: 120px;
-                font-size: 14px;
-                color: #374151;
-            }
-
-            .tag-selector-dropdown {
-                position: absolute;
-                top: 100%;
-                left: 0;
-                right: 0;
-                background: white;
-                border: 1px solid #e5e7eb;
-                border-radius: 8px;
-                box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
-                z-index: 1000;
-                max-height: 300px;
-                overflow: hidden;
-                margin-top: 4px;
-            }
-
-            .tag-selector-search {
-                padding: 12px;
-                border-bottom: 1px solid #f3f4f6;
-            }
-
-            .tag-search-input {
-                width: 100%;
-                padding: 8px 12px;
-                border: 1px solid #d1d5db;
-                border-radius: 6px;
-                font-size: 14px;
-                outline: none;
-            }
-
-            .tag-search-input:focus {
-                border-color: #3b82f6;
-                box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-            }
-
-            .tag-selector-list {
-                max-height: 200px;
-                overflow-y: auto;
-            }
-
-            .tag-option {
-                display: flex;
-                align-items: center;
-                gap: 8px;
-                padding: 10px 12px;
-                cursor: pointer;
-                transition: background-color 0.2s;
-            }
-
-            .tag-option:hover {
-                background: #f9fafb;
-            }
-
-            .tag-option .tag-name {
-                flex: 1;
-                font-size: 14px;
-                color: #374151;
-            }
-
-            .tag-option .tag-usage {
-                font-size: 12px;
-                color: #9ca3af;
-            }
-
-            .tag-selector-create {
-                padding: 8px 12px;
-                border-top: 1px solid #f3f4f6;
-            }
-
-            .create-tag-btn {
-                width: 100%;
-                padding: 8px 12px;
-                background: #f9fafb;
-                border: 1px dashed #d1d5db;
-                border-radius: 6px;
-                color: #6b7280;
-                font-size: 14px;
-                cursor: pointer;
-                transition: all 0.2s;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                gap: 6px;
-            }
-
-            .create-tag-btn:hover {
-                background: #f3f4f6;
-                border-color: #9ca3af;
-                color: #374151;
-            }
-
-            .no-tags-message {
-                padding: 20px;
-                text-align: center;
-                color: #9ca3af;
-                font-size: 14px;
-            }
-
-            .hidden {
-                display: none !important;
-            }
-        `;
-        
-        document.head.appendChild(style);
+    destroy() {
+        if (this.container) {
+            this.container.innerHTML = '';
+        }
     }
 }
 
-// 全局导出
+// 全局工具函数
 window.TagSelector = TagSelector; 
