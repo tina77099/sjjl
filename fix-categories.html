@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>分类数据修复工具</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .container { max-width: 600px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 10px; background: #3B82F6; color: white; border: none; border-radius: 5px; cursor: pointer; }
+        button:hover { background: #2563EB; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #D1FAE5; color: #065F46; }
+        .error { background: #FEE2E2; color: #991B1B; }
+        .info { background: #DBEAFE; color: #1E40AF; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>分类数据修复工具</h1>
+        <p>此工具用于修复丢失的分类数据。</p>
+        
+        <button onclick="checkData()">检查当前数据</button>
+        <button onclick="resetData()">重置为默认分类</button>
+        <button onclick="clearData()">清空所有数据</button>
+        
+        <div id="result"></div>
+        
+        <h3>操作说明：</h3>
+        <ol>
+            <li>点击"检查当前数据"查看localStorage中的分类数据状态</li>
+            <li>如果数据为空或损坏，点击"重置为默认分类"恢复数据</li>
+            <li>修复完成后，返回标签管理页面查看效果</li>
+        </ol>
+    </div>
+
+    <script>
+        const defaultCategories = [
+            {
+                id: 'study',
+                name: '学习成长',
+                color: '#3B82F6',
+                applyTo: ['plan', 'event'],
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'experience',
+                name: '体验突破',
+                color: '#10B981',
+                applyTo: ['plan', 'event'],
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'leisure',
+                name: '休闲放松',
+                color: '#F59E0B',
+                applyTo: ['plan', 'event'],
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'family',
+                name: '家庭生活',
+                color: '#EF4444',
+                applyTo: ['plan', 'event'],
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'work',
+                name: '工作职业',
+                color: '#8B5CF6',
+                applyTo: ['plan', 'event'],
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            },
+            {
+                id: 'social',
+                name: '人际社群',
+                color: '#EC4899',
+                applyTo: ['plan', 'event'],
+                isDefault: true,
+                createdAt: new Date().toISOString()
+            }
+        ];
+
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="${type}">${message}</div>`;
+        }
+
+        function checkData() {
+            try {
+                const data = localStorage.getItem('eventRecorderCategories');
+                if (!data) {
+                    showResult('localStorage中没有找到分类数据 (eventRecorderCategories)', 'error');
+                    return;
+                }
+                
+                const categories = JSON.parse(data);
+                if (!Array.isArray(categories)) {
+                    showResult('分类数据格式错误，不是数组格式', 'error');
+                    return;
+                }
+                
+                if (categories.length === 0) {
+                    showResult('分类数据为空数组', 'error');
+                    return;
+                }
+                
+                showResult(`找到 ${categories.length} 个分类：<br><pre>${JSON.stringify(categories, null, 2)}</pre>`, 'success');
+            } catch (error) {
+                showResult(`检查数据时出错：${error.message}`, 'error');
+            }
+        }
+
+        function resetData() {
+            try {
+                localStorage.setItem('eventRecorderCategories', JSON.stringify(defaultCategories));
+                showResult(`成功重置为默认分类数据！共 ${defaultCategories.length} 个分类：<br>` + 
+                          defaultCategories.map(cat => `• ${cat.name} (${cat.id})`).join('<br>'), 'success');
+            } catch (error) {
+                showResult(`重置数据时出错：${error.message}`, 'error');
+            }
+        }
+
+        function clearData() {
+            if (confirm('确定要清空所有分类数据吗？此操作不可恢复！')) {
+                localStorage.removeItem('eventRecorderCategories');
+                showResult('已清空所有分类数据', 'info');
+            }
+        }
+
+        // 页面加载时自动检查数据
+        window.onload = function() {
+            checkData();
+        };
+    </script>
+</body>
+</html> 

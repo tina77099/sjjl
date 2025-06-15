@@ -755,8 +755,29 @@ document.addEventListener('DOMContentLoaded', function() {
     function updateCategoryRecords(weeklyRecords) {
         console.log(`更新本周分类记录，共 ${weeklyRecords.length} 条记录`);
         
-        // 在显示前再次检查和修复数据
-        const validCategories = ['study', 'experience', 'leisure', 'family', 'work', 'social'];
+        // 获取当前的分类系统
+        const categories = window.categoriesManager ? window.categoriesManager.getCategories() : [];
+        const validCategories = categories.map(cat => cat.id);
+        const categoryNames = {};
+        categories.forEach(cat => {
+            categoryNames[cat.id] = cat.name;
+        });
+        
+        // 如果没有分类管理器，使用默认分类
+        if (validCategories.length === 0) {
+            console.warn('分类管理器不可用，使用默认分类');
+            const defaultCategories = ['study', 'experience', 'leisure', 'family', 'work', 'social'];
+            const defaultNames = {
+                'study': '学习成长',
+                'experience': '体验突破',
+                'leisure': '休闲放松',
+                'family': '家庭生活',
+                'work': '工作职业',
+                'social': '人际社群'
+            };
+            validCategories.push(...defaultCategories);
+            Object.assign(categoryNames, defaultNames);
+        }
         
         // 确保weeklyRecords是数组
         if (!Array.isArray(weeklyRecords)) {
@@ -790,43 +811,40 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 在显示前确保每个记录都有正确的分类和标签
         uniqueRecords.forEach(record => {
-            // 确保分类有效
-            if (!validCategories.includes(record.category)) {
-                record.category = 'study'; // 默认设置为学习成长
-                console.log(`显示前修复: "${record.title || '(无标题)'}" - 设置默认分类为 study`);
-            }
-            
-            // 确保标签数组只包含分类值
-            if (!record.tags || !Array.isArray(record.tags)) {
-                record.tags = [record.category];
-                console.log(`显示前修复: "${record.title || '(无标题)'}" - 创建标签数组`);
-            } else if (record.tags.length !== 1 || record.tags[0] !== record.category) {
-                record.tags = [record.category];
-                console.log(`显示前修复: "${record.title || '(无标题)'}" - 重置标签为 [${record.category}]`);
+            // 使用动态分类修复器修复记录
+            if (window.dynamicCategoriesUpdater) {
+                const fixedRecords = window.dynamicCategoriesUpdater.fixRecordCategories([record]);
+                if (fixedRecords.length > 0) {
+                    Object.assign(record, fixedRecords[0]);
+                }
+            } else {
+                // 确保分类有效
+                if (!validCategories.includes(record.category)) {
+                    record.category = validCategories[0] || 'study'; // 使用第一个有效分类或默认
+                    console.log(`显示前修复: "${record.title || '(无标题)'}" - 设置默认分类为 ${record.category}`);
+                }
+                
+                // 确保标签数组只包含分类值
+                if (!record.tags || !Array.isArray(record.tags)) {
+                    record.tags = [record.category];
+                    console.log(`显示前修复: "${record.title || '(无标题)'}" - 创建标签数组`);
+                } else if (record.tags.length !== 1 || record.tags[0] !== record.category) {
+                    record.tags = [record.category];
+                    console.log(`显示前修复: "${record.title || '(无标题)'}" - 重置标签为 [${record.category}]`);
+                }
             }
         });
         
-        // 定义所有支持的分类
-        const allCategories = ['study', 'experience', 'leisure', 'family', 'work', 'social'];
-        const categoryNames = {
-            'study': '学习成长',
-            'experience': '体验突破',
-            'leisure': '休闲放松',
-            'family': '家庭生活',
-            'work': '工作职业',
-            'social': '人际社群'
-        };
-        
         // 严格按分类分组记录 - 每个记录只能属于一个分类
         const recordsByCategory = {};
-        allCategories.forEach(category => {
+        validCategories.forEach(category => {
             // 筛选出严格属于当前分类的记录
             recordsByCategory[category] = uniqueRecords.filter(record => record.category === category);
             console.log(`分类 ${category} 筛选后记录数量: ${recordsByCategory[category].length}`);
         });
         
         // 处理每个分类的容器
-        allCategories.forEach(category => {
+        validCategories.forEach(category => {
             const categoryTitle = categoryNames[category];
             console.log(`处理分类 ${categoryTitle} 的内容`);
             
