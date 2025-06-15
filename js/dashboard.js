@@ -590,8 +590,16 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log(`已清除 ${categoryContainers.length} 个分类容器的内容`);
     }
     
-    // 立即初始化仪表盘
-    initializeDashboard();
+    // 延迟初始化，确保分类管理器已经准备好
+    setTimeout(() => {
+        if (window.categoriesManager) {
+            console.log('分类管理器已准备好，开始初始化仪表盘');
+            initializeDashboard();
+        } else {
+            console.warn('分类管理器未准备好，使用默认初始化');
+            initializeDashboard();
+        }
+    }, 500);
     
     // 防抖函数 - 避免短时间内多次触发同一个函数
     function debounce(func, wait) {
