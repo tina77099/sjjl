@@ -121,13 +121,6 @@
                                 <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
                             </div>
                             <div class="relative">
-                                <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="filterTags">
-                                    <option value="all">全部分类</option>
-                                    <!-- 分类选项将通过JavaScript动态加载 -->
-                                </select>
-                                <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
-                            </div>
-                            <div class="relative">
                                 <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="sortTags">
                                     <option value="name-asc">名称 (A→Z)</option>
                                     <option value="name-desc">名称 (Z→A)</option>
@@ -151,9 +144,7 @@
                                 <thead class="bg-gray-50">
                                     <tr>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标签名称</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
-                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">颜色</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">使用次数</th>
                                         <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建日期</th>
                                         <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
@@ -244,16 +235,6 @@
                             <input type="text" id="tagNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" required>
                         </div>
                         <div class="mb-4">
-                            <label for="tagDescription" class="block text-sm font-medium text-gray-700 mb-1">描述 (可选)</label>
-                            <textarea id="tagDescription" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" rows="2"></textarea>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">所属分类</label>
-                            <select id="tagCategorySelect" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
-                                <!-- 分类选项将通过JavaScript动态加载 -->
-                            </select>
-                        </div>
-                        <div class="mb-4">
                             <label class="block text-sm font-medium text-gray-700 mb-1">适用范围</label>
                             <div class="flex space-x-4">
                                 <div class="flex items-center">
@@ -264,25 +245,6 @@
                                     <input type="checkbox" id="applyToEvent" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
                                     <label for="applyToEvent" class="ml-2 block text-sm text-gray-700">事件</label>
                                 </div>
-                            </div>
-                        </div>
-                        <div class="mb-4">
-                            <label class="block text-sm font-medium text-gray-700 mb-1">标签颜色</label>
-                            <div class="flex items-center mb-2">
-                                <div id="tagColorPreview" class="h-6 w-6 rounded-full mr-2" style="background-color: #3B82F6"></div>
-                                <input type="text" id="tagColorInput" class="w-32 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" value="#3B82F6">
-                            </div>
-                            <div class="grid grid-cols-6 gap-2">
-                                <div class="color-option h-8 w-8 rounded-full bg-red-500 cursor-pointer" data-color="#EF4444"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-orange-500 cursor-pointer" data-color="#F97316"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-yellow-500 cursor-pointer" data-color="#F59E0B"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-green-500 cursor-pointer" data-color="#10B981"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-blue-500 cursor-pointer ring-2 ring-offset-2 ring-indigo-500" data-color="#3B82F6"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-indigo-500 cursor-pointer" data-color="#6366F1"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-purple-500 cursor-pointer" data-color="#8B5CF6"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-pink-500 cursor-pointer" data-color="#EC4899"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-gray-500 cursor-pointer" data-color="#6B7280"></div>
-                                <div class="color-option h-8 w-8 rounded-full bg-gray-800 cursor-pointer" data-color="#1F2937"></div>
                             </div>
                         </div>
                         <div class="flex justify-end space-x-3 pt-4 border-t">

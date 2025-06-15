@@ -31,7 +31,6 @@ class TagsPageManager {
         // 标签管理事件
         document.getElementById('addTagBtn').addEventListener('click', () => this.showTagModal());
         document.getElementById('tagSearchInput').addEventListener('input', (e) => this.searchTags(e.target.value));
-        document.getElementById('filterTags').addEventListener('change', (e) => this.filterTags(e.target.value));
         document.getElementById('sortTags').addEventListener('change', (e) => this.sortTags(e.target.value));
 
         // 分类管理事件
@@ -48,30 +47,19 @@ class TagsPageManager {
             btn.addEventListener('click', () => this.closeModals());
         });
 
-        // 颜色选择器事件
-        this.bindColorPickerEvents();
+        // 颜色选择器事件（仅用于分类）
+        this.bindCategoryColorPickerEvents();
 
         // 监听分类更新事件
         window.addEventListener('categoriesUpdated', () => {
             this.loadCategories();
-            this.updateCategorySelectors();
         });
     }
 
     /**
-     * 绑定颜色选择器事件
+     * 绑定分类颜色选择器事件
      */
-    bindColorPickerEvents() {
-        // 标签颜色选择器
-        document.querySelectorAll('#tagModal .color-option').forEach(option => {
-            option.addEventListener('click', (e) => {
-                const color = e.target.dataset.color;
-                document.getElementById('tagColorInput').value = color;
-                document.getElementById('tagColorPreview').style.backgroundColor = color;
-                this.updateColorSelection(e.target, '#tagModal');
-            });
-        });
-
+    bindCategoryColorPickerEvents() {
         // 分类颜色选择器
         document.querySelectorAll('#categoryModal .color-option').forEach(option => {
             option.addEventListener('click', (e) => {
@@ -83,11 +71,6 @@ class TagsPageManager {
         });
 
         // 颜色输入框事件
-        document.getElementById('tagColorInput').addEventListener('input', (e) => {
-            const color = e.target.value;
-            document.getElementById('tagColorPreview').style.backgroundColor = color;
-        });
-
         document.getElementById('categoryColorInput').addEventListener('input', (e) => {
             const color = e.target.value;
             document.getElementById('categoryColorPreview').style.backgroundColor = color;
@@ -139,7 +122,6 @@ class TagsPageManager {
             console.log('开始加载标签和分类数据...');
             this.loadTags();
             this.loadCategories();
-            this.updateCategorySelectors();
             console.log('数据加载完成');
         } catch (error) {
             console.error('加载数据时出错:', error);
@@ -190,7 +172,7 @@ class TagsPageManager {
         if (tags.length === 0) {
             tbody.innerHTML = `
                 <tr>
-                    <td colspan="7" class="px-6 py-8 text-center text-gray-500">
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
                         <i class="fas fa-tags text-4xl mb-2"></i>
                         <p>暂无标签数据</p>
                         <p class="text-sm">点击"新建标签"开始创建</p>
@@ -201,7 +183,6 @@ class TagsPageManager {
         }
 
         tags.forEach(tag => {
-            const categoryName = this.getCategoryNameById(tag.categoryId) || '未分类';
             const applyToText = tag.applyTo ? tag.applyTo.map(scope => scope === 'plan' ? '计划' : '事件').join(', ') : '';
             const createdDate = tag.createdAt ? new Date(tag.createdAt).toLocaleDateString('zh-CN') : '-';
             
@@ -217,11 +198,7 @@ class TagsPageManager {
                         </div>
                     </div>
                 </td>
-                <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${categoryName}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${applyToText}</td>
-                <td class="px-6 py-4 whitespace-nowrap">
-                    <div class="h-4 w-4 rounded-full" style="background-color: ${tag.color}"></div>
-                </td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${tag.usageCount || 0}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${createdDate}</td>
                 <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -305,55 +282,10 @@ class TagsPageManager {
     }
 
     /**
-     * 更新分类选择器
-     */
-    updateCategorySelectors() {
-        const categories = window.categoriesManager.getCategories();
-        
-        // 更新标签过滤器
-        const filterSelect = document.getElementById('filterTags');
-        const currentFilter = filterSelect.value;
-        filterSelect.innerHTML = '<option value="all">全部分类</option>';
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            filterSelect.appendChild(option);
-        });
-        filterSelect.value = currentFilter;
-
-        // 更新标签分类选择器
-        const categorySelect = document.getElementById('tagCategorySelect');
-        const currentCategory = categorySelect.value;
-        categorySelect.innerHTML = '';
-        categories.forEach(category => {
-            const option = document.createElement('option');
-            option.value = category.id;
-            option.textContent = category.name;
-            categorySelect.appendChild(option);
-        });
-        if (currentCategory && categories.some(cat => cat.id === currentCategory)) {
-            categorySelect.value = currentCategory;
-        }
-    }
-
-    /**
      * 搜索标签
      */
     searchTags(keyword) {
-        const filterCategory = document.getElementById('filterTags').value;
-        const filters = filterCategory !== 'all' ? { categoryId: filterCategory } : {};
-        const tags = window.tagsManager.searchTags(keyword, filters);
-        this.renderTagsTable(tags);
-    }
-
-    /**
-     * 过滤标签
-     */
-    filterTags(categoryId) {
-        const keyword = document.getElementById('tagSearchInput').value;
-        const filters = categoryId !== 'all' ? { categoryId } : {};
-        const tags = window.tagsManager.searchTags(keyword, filters);
+        const tags = window.tagsManager.searchTags(keyword);
         this.renderTagsTable(tags);
     }
 
@@ -363,10 +295,8 @@ class TagsPageManager {
     sortTags(sortBy) {
         const [field, order] = sortBy.split('-');
         const keyword = document.getElementById('tagSearchInput').value;
-        const filterCategory = document.getElementById('filterTags').value;
-        const filters = filterCategory !== 'all' ? { categoryId: filterCategory } : {};
         
-        let tags = window.tagsManager.searchTags(keyword, filters);
+        let tags = window.tagsManager.searchTags(keyword);
         tags = window.tagsManager.sortTags(tags, field, order);
         this.renderTagsTable(tags);
     }
@@ -403,32 +333,14 @@ class TagsPageManager {
             
             title.textContent = '编辑标签';
             document.getElementById('tagNameInput').value = tag.name;
-            document.getElementById('tagDescription').value = tag.description || '';
-            document.getElementById('tagCategorySelect').value = tag.categoryId || '';
-            document.getElementById('tagColorInput').value = tag.color;
-            document.getElementById('tagColorPreview').style.backgroundColor = tag.color;
             document.getElementById('applyToPlan').checked = tag.applyTo && tag.applyTo.includes('plan');
             document.getElementById('applyToEvent').checked = tag.applyTo && tag.applyTo.includes('event');
-            
-            // 更新颜色选择状态
-            const colorOption = modal.querySelector(`[data-color="${tag.color}"]`);
-            if (colorOption) {
-                this.updateColorSelection(colorOption, '#tagModal');
-            }
         } else {
             // 新建模式
             title.textContent = '新建标签';
             form.reset();
-            document.getElementById('tagColorInput').value = '#3B82F6';
-            document.getElementById('tagColorPreview').style.backgroundColor = '#3B82F6';
             document.getElementById('applyToPlan').checked = true;
             document.getElementById('applyToEvent').checked = true;
-            
-            // 重置颜色选择状态
-            const defaultColorOption = modal.querySelector('[data-color="#3B82F6"]');
-            if (defaultColorOption) {
-                this.updateColorSelection(defaultColorOption, '#tagModal');
-            }
         }
         
         modal.classList.remove('hidden');
@@ -492,9 +404,9 @@ class TagsPageManager {
         
         const formData = {
             name: document.getElementById('tagNameInput').value.trim(),
-            description: document.getElementById('tagDescription').value.trim(),
-            categoryId: document.getElementById('tagCategorySelect').value,
-            color: document.getElementById('tagColorInput').value,
+            // 设置默认值
+            description: '',
+            color: '#3B82F6',
             applyTo: []
         };
         
@@ -555,7 +467,6 @@ class TagsPageManager {
             this.showNotification(this.currentEditingId ? '分类更新成功' : '分类创建成功', 'success');
             this.closeModals();
             this.loadCategories();
-            this.updateCategorySelectors();
             
             // 触发分类更新事件
             window.dynamicCategoriesUpdater.triggerUpdate();
@@ -620,7 +531,6 @@ class TagsPageManager {
             if (result.success) {
                 this.showNotification('分类删除成功', 'success');
                 this.loadCategories();
-                this.updateCategorySelectors();
                 
                 // 通知其他模块更新
                 if (window.dynamicCategories) {
