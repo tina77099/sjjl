@@ -485,11 +485,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 registerEventListeners();
             }
             
+            // 确保分类管理器已初始化
+            if (!window.categoriesManager) {
+                console.log('分类管理器未初始化，正在创建...');
+                window.categoriesManager = new CategoriesManager();
+            }
+            
+            // 等待分类管理器完全初始化
+            const categories = window.categoriesManager.getCategories();
+            console.log(`分类管理器状态: ${categories.length} 个分类`);
+            
             // 先修复可能存在的数据问题
             fixPlanData();
             fixRecordData();
             
-            // 渲染动态分类卡片
+            // 渲染动态分类卡片 - 确保在分类管理器初始化后执行
+            console.log('准备渲染分类卡片...');
             renderCategoryCards();
             
             // 清除现有分类记录容器内容，确保不会残留旧数据
@@ -965,18 +976,19 @@ document.addEventListener('DOMContentLoaded', function() {
         
         // 获取分类数据
         const categories = window.categoriesManager ? window.categoriesManager.getCategories() : [];
+        console.log('获取到的分类数据:', categories);
         
         // 如果没有分类管理器，使用默认分类
         let validCategories = categories;
         if (validCategories.length === 0) {
             console.warn('分类管理器不可用，使用默认分类');
             validCategories = [
-                { id: 'study', name: '学习成长', color: 'blue', isDefault: true },
-                { id: 'experience', name: '体验突破', color: 'purple', isDefault: true },
-                { id: 'leisure', name: '休闲放松', color: 'green', isDefault: true },
-                { id: 'family', name: '家庭生活', color: 'yellow', isDefault: true },
-                { id: 'work', name: '工作职业', color: 'red', isDefault: true },
-                { id: 'social', name: '人际社群', color: 'indigo', isDefault: true }
+                { id: 'study', name: '学习成长', color: 'blue', colorHex: '#3B82F6', isDefault: true },
+                { id: 'experience', name: '体验突破', color: 'purple', colorHex: '#8B5CF6', isDefault: true },
+                { id: 'leisure', name: '休闲放松', color: 'green', colorHex: '#10B981', isDefault: true },
+                { id: 'family', name: '家庭生活', color: 'yellow', colorHex: '#F59E0B', isDefault: true },
+                { id: 'work', name: '工作职业', color: 'red', colorHex: '#EF4444', isDefault: true },
+                { id: 'social', name: '人际社群', color: 'indigo', colorHex: '#6366F1', isDefault: true }
             ];
         }
         
@@ -987,16 +999,24 @@ document.addEventListener('DOMContentLoaded', function() {
             return;
         }
         
+        console.log('找到分类卡片容器，准备渲染');
+        
         // 清空现有内容
         categoryContainer.innerHTML = '';
         
         // 为每个分类创建卡片
-        validCategories.forEach(category => {
+        validCategories.forEach((category, index) => {
+            console.log(`渲染分类 ${index + 1}/${validCategories.length}: ${category.name} (${category.id})`);
+            
+            // 确保颜色值存在
+            const colorHex = category.colorHex || category.color || '#3B82F6';
+            const colorName = category.color || 'blue';
+            
             const cardHtml = `
                 <div class="bg-white rounded-lg shadow p-4" data-category="${category.id}">
                     <div class="flex items-center justify-between mb-2">
                         <div class="flex items-center">
-                            <div class="w-2 h-2 bg-${category.color}-500 rounded-full mr-2"></div>
+                            <div class="w-2 h-2 rounded-full mr-2" style="background-color: ${colorHex}"></div>
                             <h3 class="text-lg font-semibold text-gray-800">${category.name}</h3>
                             <span class="ml-2 text-xs bg-purple-100 text-purple-800 px-2 py-0.5 rounded-full category-count">0 条</span>
                         </div>
@@ -1013,12 +1033,23 @@ document.addEventListener('DOMContentLoaded', function() {
             `;
             
             categoryContainer.insertAdjacentHTML('beforeend', cardHtml);
+            console.log(`分类 ${category.name} 卡片已添加到DOM`);
         });
         
         // 为新生成的添加按钮绑定事件
         bindCategoryAddButtons();
         
-        console.log(`已渲染 ${validCategories.length} 个分类卡片`);
+        console.log(`已渲染 ${validCategories.length} 个分类卡片，DOM内容:`, categoryContainer.innerHTML.length > 0 ? '有内容' : '空');
+        
+        // 验证渲染结果
+        const renderedCards = categoryContainer.querySelectorAll('[data-category]');
+        console.log(`验证渲染结果: 期望 ${validCategories.length} 个卡片，实际 ${renderedCards.length} 个卡片`);
+        
+        if (renderedCards.length !== validCategories.length) {
+            console.error('分类卡片渲染数量不匹配！');
+        } else {
+            console.log('分类卡片渲染成功！');
+        }
     }
 
     // 绑定分类添加按钮事件
