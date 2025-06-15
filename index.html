@@ -794,11 +794,31 @@
     <!-- 引入组件和公共JS文件 -->
     <script src="js/components.js"></script>
     <script src="js/common.js"></script>
+    <script src="js/categories-manager.js"></script>
+    <script src="js/dynamic_categories.js"></script>
     <script src="js/dashboard.js"></script>
     <script>
         // 移动端侧边栏切换
         document.addEventListener('DOMContentLoaded', function() {
             console.log('页面主脚本已加载');
+            
+            // 初始化分类管理器和动态更新器
+            if (!window.categoriesManager) {
+                window.categoriesManager = new CategoriesManager();
+                console.log('分类管理器已初始化');
+            }
+            if (!window.dynamicCategoriesUpdater) {
+                window.dynamicCategoriesUpdater = new DynamicCategoriesUpdater();
+                console.log('动态分类更新器已初始化');
+            }
+            
+            // 延迟更新分类选择器，确保DOM完全加载
+            setTimeout(() => {
+                if (window.dynamicCategoriesUpdater) {
+                    window.dynamicCategoriesUpdater.updateAllSelectors();
+                    console.log('已更新所有分类选择器');
+                }
+            }, 300);
             
             // 初始化页面功能
             
