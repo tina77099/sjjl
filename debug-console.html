@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>控制台调试 - 标签选择器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">控制台调试 - 标签选择器</h1>
+        
+        <!-- 实时控制台输出 -->
+        <div class="bg-black text-green-400 p-4 rounded-lg mb-8 font-mono text-sm h-96 overflow-y-auto" id="console-output">
+            <div class="text-yellow-400">[控制台] 等待日志输出...</div>
+        </div>
+        
+        <!-- 测试按钮 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">测试控制</h2>
+            <div class="space-x-4 mb-4">
+                <button id="btn-clear-console" class="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded">
+                    清空控制台
+                </button>
+                <button id="btn-test-managers" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    测试管理器
+                </button>
+                <button id="btn-test-tag-selector" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    测试标签选择器
+                </button>
+                <button id="btn-simulate-events" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                    模拟events.html
+                </button>
+            </div>
+        </div>
+        
+        <!-- 模拟events.html的标签选择器容器 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">标签选择器测试区域</h2>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">计划标签选择器</label>
+                <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px]">
+                    <p class="text-gray-500 text-center text-sm">计划标签选择器将在这里显示</p>
+                </div>
+            </div>
+            <div class="mb-4">
+                <label class="block text-gray-700 font-medium mb-2">事件标签选择器</label>
+                <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[60px]">
+                    <p class="text-gray-500 text-center text-sm">事件标签选择器将在这里显示</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入所有必要的JavaScript文件，按照events.html的顺序 -->
+    <script src="js/components.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/events.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+
+    <script>
+        // 重写console方法来捕获所有日志
+        const consoleOutput = document.getElementById('console-output');
+        const originalConsole = {
+            log: console.log,
+            error: console.error,
+            warn: console.warn,
+            info: console.info
+        };
+        
+        function addToConsole(message, type = 'log') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                log: 'text-green-400',
+                error: 'text-red-400',
+                warn: 'text-yellow-400',
+                info: 'text-blue-400'
+            };
+            
+            const div = document.createElement('div');
+            div.className = colors[type] || colors.log;
+            div.innerHTML = `<span class="text-gray-400">[${timestamp}]</span> ${message}`;
+            consoleOutput.appendChild(div);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+        
+        // 重写console方法
+        console.log = function(...args) {
+            originalConsole.log.apply(console, args);
+            addToConsole(args.join(' '), 'log');
+        };
+        
+        console.error = function(...args) {
+            originalConsole.error.apply(console, args);
+            addToConsole(args.join(' '), 'error');
+        };
+        
+        console.warn = function(...args) {
+            originalConsole.warn.apply(console, args);
+            addToConsole(args.join(' '), 'warn');
+        };
+        
+        console.info = function(...args) {
+            originalConsole.info.apply(console, args);
+            addToConsole(args.join(' '), 'info');
+        };
+        
+        // 捕获未处理的错误
+        window.addEventListener('error', function(e) {
+            console.error(`未处理的错误: ${e.message} (${e.filename}:${e.lineno})`);
+        });
+        
+        // 按钮事件
+        document.getElementById('btn-clear-console').addEventListener('click', function() {
+            consoleOutput.innerHTML = '<div class="text-yellow-400">[控制台] 已清空</div>';
+        });
+        
+        document.getElementById('btn-test-managers').addEventListener('click', function() {
+            console.log('=== 测试管理器 ===');
+            console.log(`CategoriesManager: ${typeof CategoriesManager !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}`);
+            console.log(`TagsManager: ${typeof TagsManager !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}`);
+            console.log(`TagSelector: ${typeof TagSelector !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}`);
+            
+            if (typeof CategoriesManager !== 'undefined' && typeof TagsManager !== 'undefined') {
+                try {
+                    window.categoriesManager = new CategoriesManager();
+                    window.tagsManager = new TagsManager();
+                    console.log('✅ 管理器初始化成功');
+                    
+                    const categories = window.categoriesManager.getCategories();
+                    const tags = window.tagsManager.getTags();
+                    console.log(`分类数量: ${categories.length}`);
+                    console.log(`标签数量: ${tags.length}`);
+                    
+                    if (tags.length > 0) {
+                        console.log('标签列表:', tags.map(t => t.name).join(', '));
+                    }
+                } catch (error) {
+                    console.error(`❌ 管理器初始化失败: ${error.message}`);
+                }
+            }
+        });
+        
+        document.getElementById('btn-test-tag-selector').addEventListener('click', function() {
+            console.log('=== 测试标签选择器 ===');
+            
+            if (typeof TagSelector === 'undefined') {
+                console.error('❌ TagSelector类未定义');
+                return;
+            }
+            
+            if (!window.tagsManager) {
+                console.error('❌ TagsManager未初始化');
+                return;
+            }
+            
+            try {
+                // 测试事件标签选择器
+                if (document.getElementById('record-tag-selector')) {
+                    window.testRecordTagSelector = new TagSelector('record-tag-selector', {
+                        scope: 'event',
+                        showSearch: true,
+                        showCategories: true,
+                        maxSelection: 5
+                    });
+                    console.log('✅ 事件标签选择器创建成功');
+                } else {
+                    console.error('❌ 找不到record-tag-selector容器');
+                }
+                
+                // 测试计划标签选择器
+                if (document.getElementById('plan-tag-selector')) {
+                    window.testPlanTagSelector = new TagSelector('plan-tag-selector', {
+                        scope: 'plan',
+                        showSearch: true,
+                        showCategories: true,
+                        maxSelection: 5
+                    });
+                    console.log('✅ 计划标签选择器创建成功');
+                } else {
+                    console.error('❌ 找不到plan-tag-selector容器');
+                }
+            } catch (error) {
+                console.error(`❌ 标签选择器创建失败: ${error.message}`);
+                console.error('错误堆栈:', error.stack);
+            }
+        });
+        
+        document.getElementById('btn-simulate-events').addEventListener('click', function() {
+            console.log('=== 模拟events.html初始化过程 ===');
+            
+            // 模拟events.html的初始化过程
+            setTimeout(() => {
+                console.log('开始模拟events.html的DOMContentLoaded事件...');
+                
+                // 初始化管理器
+                if (!window.categoriesManager) {
+                    window.categoriesManager = new CategoriesManager();
+                }
+                if (!window.tagsManager) {
+                    window.tagsManager = new TagsManager();
+                }
+                console.log('管理器初始化完成');
+                
+                // 模拟标签选择器初始化
+                let retryCount = 0;
+                const maxRetries = 5;
+                
+                function tryInitializeTagSelectors() {
+                    retryCount++;
+                    console.log(`尝试初始化标签选择器 (第${retryCount}次)`);
+                    
+                    const hasTagsManager = window.tagsManager && typeof window.tagsManager.getTags === 'function';
+                    const hasTagSelector = typeof TagSelector !== 'undefined';
+                    const hasContainers = document.getElementById('plan-tag-selector') && document.getElementById('record-tag-selector');
+                    
+                    console.log('初始化条件检查:', {
+                        hasTagsManager,
+                        hasTagSelector,
+                        hasContainers,
+                        tagsCount: hasTagsManager ? window.tagsManager.getTags().length : 0
+                    });
+                    
+                    if (hasTagsManager && hasTagSelector && hasContainers) {
+                        try {
+                            // 初始化计划标签选择器
+                            if (document.getElementById('plan-tag-selector')) {
+                                window.planTagSelector = new TagSelector('plan-tag-selector', {
+                                    scope: 'plan',
+                                    showSearch: true,
+                                    showCategories: true,
+                                    maxSelection: 5
+                                });
+                                console.log('✅ 计划标签选择器初始化成功');
+                            }
+
+                            // 初始化事件标签选择器
+                            if (document.getElementById('record-tag-selector')) {
+                                window.recordTagSelector = new TagSelector('record-tag-selector', {
+                                    scope: 'event',
+                                    showSearch: true,
+                                    showCategories: true,
+                                    maxSelection: 5
+                                });
+                                console.log('✅ 事件标签选择器初始化成功');
+                            }
+                            return true;
+                        } catch (error) {
+                            console.error(`❌ 标签选择器初始化失败: ${error.message}`);
+                            console.error('错误堆栈:', error.stack);
+                            return false;
+                        }
+                    } else if (retryCount < maxRetries) {
+                        console.log(`条件不满足，${1000 * retryCount}ms后重试...`);
+                        setTimeout(tryInitializeTagSelectors, 1000 * retryCount);
+                        return false;
+                    } else {
+                        console.error('❌ 标签选择器初始化失败，已达到最大重试次数');
+                        return false;
+                    }
+                }
+                
+                // 延迟启动初始化，模拟events.html的1500ms延迟
+                setTimeout(tryInitializeTagSelectors, 1500);
+                
+            }, 100);
+        });
+        
+        // 页面加载完成后自动开始测试
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('调试页面加载完成');
+            console.log('开始自动测试...');
+            
+            // 自动运行测试
+            setTimeout(() => {
+                document.getElementById('btn-test-managers').click();
+            }, 500);
+            
+            setTimeout(() => {
+                document.getElementById('btn-simulate-events').click();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 

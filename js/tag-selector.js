@@ -62,6 +62,13 @@ class TagSelector {
      * 渲染组件
      */
     render() {
+        // 如果同时关闭搜索和分类功能，使用简化版本
+        if (!this.options.showSearch && !this.options.showCategories) {
+            this.renderSimple();
+            return;
+        }
+        
+        // 使用完整版本
         const html = `
             <div class="tag-selector">
                 ${this.renderHeader()}
@@ -72,6 +79,91 @@ class TagSelector {
         `;
         
         this.container.innerHTML = html;
+    }
+
+    /**
+     * 渲染简化版本
+     */
+    renderSimple() {
+        const html = `
+            <div class="tag-selector">
+                ${this.renderSimpleHeader()}
+                ${this.renderSimpleTagList()}
+            </div>
+        `;
+        
+        this.container.innerHTML = html;
+    }
+
+    /**
+     * 渲染简化版头部
+     */
+    renderSimpleHeader() {
+        return `
+            <div class="tag-selector-header mb-3">
+                <div class="flex justify-between items-center">
+                    <span class="text-sm text-gray-500">
+                        已选择 <span class="selected-count">${this.selectedTags.size}</span> 个标签
+                        ${this.options.maxSelection ? `/ ${this.options.maxSelection}` : ''}
+                    </span>
+                </div>
+            </div>
+        `;
+    }
+
+    /**
+     * 渲染简化版标签列表
+     */
+    renderSimpleTagList() {
+        if (this.filteredTags.length === 0) {
+            return `
+                <div class="tag-list-empty text-center py-8 text-gray-500">
+                    <i class="fas fa-tags text-2xl mb-2"></i>
+                    <p>暂无可用标签</p>
+                </div>
+            `;
+        }
+
+        return `
+            <div class="tag-list grid grid-cols-6 gap-3">
+                ${this.filteredTags.map(tag => this.renderCheckboxTagCard(tag)).join('')}
+            </div>
+        `;
+    }
+
+    /**
+     * 渲染checkbox样式的标签卡片（类似计划类型）
+     */
+    renderCheckboxTagCard(tag) {
+        const isSelected = this.selectedTags.has(tag.id);
+        const isDisabled = this.options.maxSelection && 
+                          !isSelected && 
+                          this.selectedTags.size >= this.options.maxSelection;
+        
+        return `
+            <div class="flex items-center px-3 py-2 border rounded-lg hover:bg-blue-50 cursor-pointer tag-option ${isDisabled ? 'opacity-50' : ''}" 
+                 data-tag-id="${tag.id}">
+                <input type="checkbox" 
+                       id="tag-${tag.id}" 
+                       class="mr-2" 
+                       ${isSelected ? 'checked' : ''} 
+                       ${isDisabled ? 'disabled' : ''}>
+                <label for="tag-${tag.id}" class="cursor-pointer flex-1 text-lg">
+                    ${tag.name}
+                </label>
+            </div>
+        `;
+    }
+
+    /**
+     * 渲染标签按钮
+     */
+    renderTagButtons(tags) {
+        return `
+            <div class="flex flex-wrap gap-2">
+                ${tags.map(tag => this.renderTagCard(tag)).join('')}
+            </div>
+        `;
     }
 
     /**
@@ -261,23 +353,49 @@ class TagSelector {
             }
         });
 
-        // 分类筛选事件
+        // 分类筛选和checkbox变化事件
         this.container.addEventListener('change', (e) => {
             if (e.target.classList.contains('tag-category-filter')) {
                 this.selectedCategory = e.target.value;
                 this.filterTags();
             }
+            
+            // 处理checkbox变化事件（简化版本）
+            if (e.target.type === 'checkbox' && e.target.id && e.target.id.startsWith('tag-')) {
+                const tagOption = e.target.closest('.tag-option');
+                if (tagOption) {
+                    const tagId = tagOption.dataset.tagId;
+                    this.toggleTag(tagId);
+                }
+            }
         });
 
         // 标签选择事件
         this.container.addEventListener('click', (e) => {
+            // 处理简化版本的tag-option点击
+            const tagOption = e.target.closest('.tag-option');
+            if (tagOption && !tagOption.classList.contains('disabled')) {
+                // 如果点击的不是checkbox本身，模拟checkbox点击
+                if (e.target.type !== 'checkbox') {
+                    const checkbox = tagOption.querySelector('input[type="checkbox"]');
+                    if (checkbox && !checkbox.disabled) {
+                        checkbox.checked = !checkbox.checked;
+                        const tagId = tagOption.dataset.tagId;
+                        this.toggleTag(tagId);
+                    }
+                }
+                return;
+            }
+
+            // 处理完整版本的tag-card点击
             const tagCard = e.target.closest('.tag-card');
             if (tagCard && !tagCard.classList.contains('disabled')) {
                 const tagId = tagCard.dataset.tagId;
                 this.toggleTag(tagId);
+                return;
             }
 
-            // 移除已选标签事件
+            // 移除已选标签事件（仅完整版本）
             const removeBtn = e.target.closest('.remove-tag');
             if (removeBtn) {
                 const tagItem = removeBtn.closest('.selected-tag-item');
@@ -321,7 +439,12 @@ class TagSelector {
     updateTagList() {
         const tagListContainer = this.container.querySelector('.tag-list');
         if (tagListContainer) {
-            tagListContainer.outerHTML = this.renderTagList();
+            // 根据当前模式选择正确的渲染方法
+            if (!this.options.showSearch && !this.options.showCategories) {
+                tagListContainer.outerHTML = this.renderSimpleTagList();
+            } else {
+                tagListContainer.outerHTML = this.renderTagList();
+            }
         }
     }
 
@@ -377,15 +500,18 @@ class TagSelector {
             countElement.textContent = this.selectedTags.size;
         }
 
-        // 重新渲染标签列表和已选标签
+        // 重新渲染标签列表
         this.updateTagList();
         
-        const selectedTagsContainer = this.container.querySelector('.selected-tags-section');
-        if (selectedTagsContainer) {
-            selectedTagsContainer.outerHTML = this.renderSelectedTags();
-        } else if (this.selectedTags.size > 0) {
-            // 如果之前没有已选标签区域，现在需要添加
-            this.container.querySelector('.tag-selector').insertAdjacentHTML('beforeend', this.renderSelectedTags());
+        // 只有在完整版本（非简化版本）中才显示已选择标签区域
+        if (this.options.showSearch || this.options.showCategories) {
+            const selectedTagsContainer = this.container.querySelector('.selected-tags-section');
+            if (selectedTagsContainer) {
+                selectedTagsContainer.outerHTML = this.renderSelectedTags();
+            } else if (this.selectedTags.size > 0) {
+                // 如果之前没有已选标签区域，现在需要添加
+                this.container.querySelector('.tag-selector').insertAdjacentHTML('beforeend', this.renderSelectedTags());
+            }
         }
     }
 

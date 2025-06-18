@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事件列表 - 简化版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 font-sans">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">事件列表 - 简化版（测试标签选择器）</h1>
+        
+        <!-- 测试按钮 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <div class="flex space-x-4">
+                <button id="btn-new-record" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center">
+                    <i class="fas fa-bookmark mr-2"></i>记录事项
+                </button>
+                <button id="btn-new-plan" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                    <i class="fas fa-calendar-plus mr-2"></i>新建计划
+                </button>
+            </div>
+        </div>
+        
+        <!-- 弹出窗口 - 记录事项 -->
+        <div id="modal-new-record" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+                <div class="flex justify-between items-center p-6 border-b">
+                    <h2 class="text-2xl font-bold text-gray-800">记录事项</h2>
+                    <button id="close-record-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="new-record-form">
+                        <!-- 事项标题 -->
+                        <div class="mb-4">
+                            <label for="record-title" class="block text-gray-700 font-medium mb-2">事项标题</label>
+                            <input type="text" id="record-title" name="title" 
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                                placeholder="输入事项名称" required>
+                        </div>
+
+                        <!-- 标签选择 -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                            <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]">
+                                <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                            </div>
+                        </div>
+
+                        <!-- 记录描述 -->
+                        <div class="mb-4">
+                            <label for="record-desc" class="block text-gray-700 font-medium mb-2">记录详情描述</label>
+                            <textarea id="record-desc" name="description" rows="3" 
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                                placeholder="输入记录的详细描述"></textarea>
+                        </div>
+                        
+                        <!-- 按钮 -->
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                取消
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                                保存记录
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- 弹出窗口 - 新建计划 -->
+        <div id="modal-new-plan" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+            <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+                <div class="flex justify-between items-center p-6 border-b">
+                    <h2 class="text-2xl font-bold text-gray-800">新建计划</h2>
+                    <button id="close-plan-modal" class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="p-6">
+                    <form id="new-plan-form">
+                        <!-- 计划标题 -->
+                        <div class="mb-4">
+                            <label for="plan-title" class="block text-gray-700 font-medium mb-2">计划标题</label>
+                            <input type="text" id="plan-title" name="title" 
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
+                                placeholder="输入计划名称" required>
+                        </div>
+
+                        <!-- 标签选择 -->
+                        <div class="mb-4">
+                            <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                            <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]">
+                                <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                            </div>
+                        </div>
+
+                        <!-- 计划描述 -->
+                        <div class="mb-4">
+                            <label for="plan-desc" class="block text-gray-700 font-medium mb-2">计划详情描述</label>
+                            <textarea id="plan-desc" name="description" rows="3" 
+                                class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
+                                placeholder="输入计划的详细描述"></textarea>
+                        </div>
+                        
+                        <!-- 按钮 -->
+                        <div class="flex justify-end space-x-3">
+                            <button type="button" id="cancel-plan-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                                取消
+                            </button>
+                            <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                                保存计划
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 只引入必要的JavaScript文件，不包含dashboard.js -->
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+
+    <!-- 标签选择器样式 -->
+    <style>
+        .tag-selector {
+            font-family: inherit;
+        }
+
+        .tag-card {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            border: 1px solid #e5e7eb;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: white;
+            position: relative;
+        }
+
+        .tag-card:hover {
+            border-color: var(--tag-color, #3b82f6);
+            background-color: rgba(59, 130, 246, 0.05);
+        }
+
+        .tag-card.selected {
+            border-color: var(--tag-color, #3b82f6);
+            background-color: var(--tag-color, #3b82f6);
+            color: white;
+        }
+
+        .tag-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .tag-card.disabled:hover {
+            border-color: #e5e7eb;
+            background-color: white;
+        }
+
+        .tag-color {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 6px;
+            flex-shrink: 0;
+        }
+
+        .tag-card.selected .tag-color {
+            background-color: white !important;
+        }
+
+        .tag-name {
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .tag-check {
+            margin-left: 6px;
+            font-size: 12px;
+        }
+
+        .selected-tag-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        .selected-tag-item .tag-color {
+            width: 6px;
+            height: 6px;
+            margin-right: 4px;
+        }
+
+        .selected-tag-item .tag-name {
+            font-size: 13px;
+            font-weight: normal;
+        }
+
+        .remove-tag {
+            margin-left: 6px;
+            padding: 0;
+            border: none;
+            background: none;
+            color: #6b7280;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .remove-tag:hover {
+            color: #ef4444;
+        }
+
+        .category-header {
+            font-size: 12px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .tag-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .tag-list::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 3px;
+        }
+
+        .tag-list::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+
+        .tag-list::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+
+    <script>
+        console.log('简化版events.html开始加载...');
+        
+        // 初始化标签选择器
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('DOMContentLoaded事件触发');
+            
+            // 初始化管理器
+            console.log('开始初始化管理器...');
+            try {
+                window.categoriesManager = new CategoriesManager();
+                window.tagsManager = new TagsManager();
+                console.log('✅ 管理器初始化成功');
+                
+                const categories = window.categoriesManager.getCategories();
+                const tags = window.tagsManager.getTags();
+                console.log(`分类数量: ${categories.length}, 标签数量: ${tags.length}`);
+                
+                if (tags.length === 0) {
+                    console.warn('⚠️ 没有找到标签数据，请先创建标签');
+                }
+            } catch (error) {
+                console.error('❌ 管理器初始化失败:', error);
+                return;
+            }
+
+            // 标签选择器初始化函数
+            function initializeTagSelectors() {
+                console.log('开始初始化标签选择器...');
+                
+                try {
+                    // 初始化计划标签选择器
+                    if (document.getElementById('plan-tag-selector')) {
+                        window.planTagSelector = new TagSelector('plan-tag-selector', {
+                            scope: 'plan',
+                            showSearch: true,
+                            showCategories: true,
+                            maxSelection: 5
+                        });
+                        console.log('✅ 计划标签选择器初始化成功');
+                    }
+
+                    // 初始化事件标签选择器
+                    if (document.getElementById('record-tag-selector')) {
+                        window.recordTagSelector = new TagSelector('record-tag-selector', {
+                            scope: 'event',
+                            showSearch: true,
+                            showCategories: true,
+                            maxSelection: 5
+                        });
+                        console.log('✅ 事件标签选择器初始化成功');
+                    }
+                } catch (error) {
+                    console.error('❌ 标签选择器初始化失败:', error);
+                    console.error('错误堆栈:', error.stack);
+                }
+            }
+
+            // 检查必要条件并初始化
+            const hasTagsManager = window.tagsManager && typeof window.tagsManager.getTags === 'function';
+            const hasTagSelector = typeof TagSelector !== 'undefined';
+            const hasContainers = document.getElementById('plan-tag-selector') && document.getElementById('record-tag-selector');
+            
+            console.log('初始化条件检查:', {
+                hasTagsManager,
+                hasTagSelector,
+                hasContainers,
+                tagsCount: hasTagsManager ? window.tagsManager.getTags().length : 0
+            });
+            
+            if (hasTagsManager && hasTagSelector && hasContainers) {
+                // 延迟一点时间确保DOM完全准备好
+                setTimeout(initializeTagSelectors, 100);
+            } else {
+                console.error('❌ 初始化条件不满足');
+            }
+
+            // 弹出窗口功能
+            const planModal = document.getElementById('modal-new-plan');
+            const recordModal = document.getElementById('modal-new-record');
+            
+            // 打开弹出窗口
+            document.getElementById('btn-new-plan').addEventListener('click', function() {
+                console.log('打开计划弹窗');
+                planModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // 确保标签选择器在弹窗打开时正常工作
+                setTimeout(() => {
+                    if (!window.planTagSelector && document.getElementById('plan-tag-selector')) {
+                        console.log('弹窗打开时重新初始化计划标签选择器');
+                        try {
+                            window.planTagSelector = new TagSelector('plan-tag-selector', {
+                                scope: 'plan',
+                                showSearch: true,
+                                showCategories: true,
+                                maxSelection: 5
+                            });
+                            console.log('✅ 弹窗中计划标签选择器初始化成功');
+                        } catch (error) {
+                            console.error('❌ 弹窗中计划标签选择器初始化失败:', error);
+                        }
+                    }
+                }, 100);
+            });
+            
+            document.getElementById('btn-new-record').addEventListener('click', function() {
+                console.log('打开记录弹窗');
+                recordModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+                
+                // 确保标签选择器在弹窗打开时正常工作
+                setTimeout(() => {
+                    if (!window.recordTagSelector && document.getElementById('record-tag-selector')) {
+                        console.log('弹窗打开时重新初始化事件标签选择器');
+                        try {
+                            window.recordTagSelector = new TagSelector('record-tag-selector', {
+                                scope: 'event',
+                                showSearch: true,
+                                showCategories: true,
+                                maxSelection: 5
+                            });
+                            console.log('✅ 弹窗中事件标签选择器初始化成功');
+                        } catch (error) {
+                            console.error('❌ 弹窗中事件标签选择器初始化失败:', error);
+                        }
+                    }
+                }, 100);
+            });
+            
+            // 关闭弹出窗口
+            document.getElementById('close-plan-modal').addEventListener('click', function() {
+                planModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('cancel-plan-btn').addEventListener('click', function() {
+                planModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('close-record-modal').addEventListener('click', function() {
+                recordModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('cancel-record-btn').addEventListener('click', function() {
+                recordModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            // 点击模态窗口外部关闭
+            planModal.addEventListener('click', function(e) {
+                if (e.target === planModal) {
+                    planModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            recordModal.addEventListener('click', function(e) {
+                if (e.target === recordModal) {
+                    recordModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            console.log('简化版events.html初始化完成');
+        });
+    </script>
+</body>
+</html> 

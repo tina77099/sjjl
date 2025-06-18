@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标签选择器测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* 标签选择器样式 */
+        .tag-selector {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .tag-card {
+            display: inline-flex;
+            align-items: center;
+            padding: 6px 12px;
+            margin: 2px;
+            border: 2px solid #e5e7eb;
+            border-radius: 20px;
+            background: white;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-size: 14px;
+        }
+
+        .tag-card:hover {
+            border-color: #8b5cf6;
+            background: #f3f4f6;
+            transform: translateY(-1px);
+        }
+
+        .tag-card.selected {
+            border-color: #8b5cf6;
+            background: #8b5cf6;
+            color: white;
+        }
+
+        .tag-card.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .tag-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 6px;
+            border: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .tag-check {
+            margin-left: 6px;
+            font-size: 12px;
+        }
+
+        .selected-tag-item {
+            display: inline-flex;
+            align-items: center;
+            padding: 4px 8px;
+            margin: 2px;
+            background: #f3f4f6;
+            border: 1px solid #d1d5db;
+            border-radius: 16px;
+            font-size: 12px;
+        }
+
+        .selected-tag-item .remove-tag {
+            margin-left: 6px;
+            padding: 2px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #6b7280;
+            font-size: 10px;
+        }
+
+        .selected-tag-item .remove-tag:hover {
+            color: #ef4444;
+        }
+    </style>
+</head>
+<body class="bg-gray-100">
+    <div class="container mx-auto p-8">
+        <h1 class="text-3xl font-bold mb-8 text-center">标签选择器测试</h1>
+        
+        <div class="max-w-2xl mx-auto bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">测试标签选择器</h2>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                <div id="test-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[200px]">
+                    <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                </div>
+            </div>
+            
+            <div class="mb-4">
+                <button id="get-selected" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                    获取已选标签
+                </button>
+                <button id="clear-selection" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700 ml-2">
+                    清空选择
+                </button>
+            </div>
+            
+            <div id="result" class="p-4 bg-gray-50 rounded-lg">
+                <h3 class="font-medium mb-2">结果：</h3>
+                <pre id="result-content" class="text-sm text-gray-600">等待操作...</pre>
+            </div>
+        </div>
+        
+        <div class="max-w-2xl mx-auto mt-8 bg-white rounded-lg shadow-lg p-6">
+            <h2 class="text-xl font-semibold mb-4">调试信息</h2>
+            <div id="debug-info" class="space-y-2 text-sm">
+                <div>正在加载调试信息...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 加载必要的JavaScript文件 -->
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面加载完成，开始初始化...');
+            
+            // 初始化管理器
+            window.categoriesManager = new CategoriesManager();
+            window.tagsManager = new TagsManager();
+            
+            // 调试信息显示
+            function updateDebugInfo() {
+                const debugDiv = document.getElementById('debug-info');
+                const categories = window.categoriesManager.getCategories();
+                const tags = window.tagsManager.getTags();
+                
+                debugDiv.innerHTML = `
+                    <div><strong>分类管理器:</strong> ${window.categoriesManager ? '✅ 已加载' : '❌ 未加载'}</div>
+                    <div><strong>标签管理器:</strong> ${window.tagsManager ? '✅ 已加载' : '❌ 未加载'}</div>
+                    <div><strong>TagSelector类:</strong> ${typeof TagSelector !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}</div>
+                    <div><strong>分类数量:</strong> ${categories.length}</div>
+                    <div><strong>标签数量:</strong> ${tags.length}</div>
+                    <div><strong>标签列表:</strong> ${tags.map(t => t.name).join(', ')}</div>
+                `;
+            }
+            
+            updateDebugInfo();
+            
+            // 初始化标签选择器
+            let tagSelector = null;
+            
+            function initTagSelector() {
+                try {
+                    console.log('开始初始化标签选择器...');
+                    tagSelector = new TagSelector('test-tag-selector', {
+                        scope: 'both',
+                        showSearch: true,
+                        showCategories: true,
+                        maxSelection: 10
+                    });
+                    console.log('✅ 标签选择器初始化成功');
+                    
+                    // 监听标签选择变化
+                    document.getElementById('test-tag-selector').addEventListener('tagSelectionChange', function(e) {
+                        console.log('标签选择发生变化:', e.detail);
+                        document.getElementById('result-content').textContent = JSON.stringify(e.detail, null, 2);
+                    });
+                    
+                } catch (error) {
+                    console.error('❌ 标签选择器初始化失败:', error);
+                    document.getElementById('test-tag-selector').innerHTML = `
+                        <div class="text-red-600 text-center">
+                            <i class="fas fa-exclamation-triangle text-2xl mb-2"></i>
+                            <p>标签选择器初始化失败</p>
+                            <p class="text-sm">${error.message}</p>
+                        </div>
+                    `;
+                }
+            }
+            
+            // 延迟初始化，确保所有依赖都已加载
+            setTimeout(initTagSelector, 500);
+            
+            // 按钮事件
+            document.getElementById('get-selected').addEventListener('click', function() {
+                if (tagSelector) {
+                    const selected = tagSelector.getSelectedTags();
+                    document.getElementById('result-content').textContent = JSON.stringify(selected, null, 2);
+                    console.log('已选标签:', selected);
+                } else {
+                    alert('标签选择器未初始化');
+                }
+            });
+            
+            document.getElementById('clear-selection').addEventListener('click', function() {
+                if (tagSelector) {
+                    tagSelector.clearSelection();
+                    document.getElementById('result-content').textContent = '已清空选择';
+                    console.log('已清空标签选择');
+                } else {
+                    alert('标签选择器未初始化');
+                }
+            });
+        });
+    </script>
+</body>
+</html> 

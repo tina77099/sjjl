@@ -127,6 +127,14 @@ document.addEventListener('DOMContentLoaded', function() {
                     </div>
                 </div>
 
+                <!-- 标签选择 -->
+                <div class="mb-6" style="display: block !important; visibility: visible !important;">
+                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                    </div>
+                </div>
+
                 <!-- 计划描述 -->
                 <div class="mb-4">
                     <label for="plan-desc" class="block text-gray-700 font-medium mb-2">计划详情描述</label>
@@ -140,14 +148,6 @@ document.addEventListener('DOMContentLoaded', function() {
                     <label for="plan-due-date" class="block text-gray-700 font-medium mb-2">截止日期</label>
                     <input type="date" id="plan-due-date" name="due-date" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
-                </div>
-
-                <!-- 标签选择 -->
-                <div class="mb-6" style="display: block !important; visibility: visible !important;">
-                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
-                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
-                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
-                    </div>
                 </div>
 
                 <!-- 优先级 -->
@@ -441,6 +441,14 @@ function loadComponentInline(componentName, targetSelector) {
                     </div>
                 </div>
 
+                <!-- 标签选择 -->
+                <div class="mb-6" style="display: block !important; visibility: visible !important;">
+                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                    </div>
+                </div>
+
                 <!-- 计划描述 -->
                 <div class="mb-4">
                     <label for="plan-desc" class="block text-gray-700 font-medium mb-2">计划详情描述</label>
@@ -454,14 +462,6 @@ function loadComponentInline(componentName, targetSelector) {
                     <label for="plan-due-date" class="block text-gray-700 font-medium mb-2">截止日期</label>
                     <input type="date" id="plan-due-date" name="due-date" 
                         class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
-                </div>
-
-                <!-- 标签选择 -->
-                <div class="mb-6" style="display: block !important; visibility: visible !important;">
-                    <label class="block text-gray-700 font-medium mb-2">选择标签</label>
-                    <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
-                        <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
-                    </div>
                 </div>
 
                 <!-- 优先级 -->
@@ -677,4 +677,245 @@ function showFailedIndicator(targetElement, componentName) {
             failIndicator.remove();
         }, 500);
     }, 3000);
+}
+
+/**
+ * 标签选择器自动初始化管理器
+ */
+class TagSelectorAutoInitializer {
+    constructor() {
+        this.initializeEventListeners();
+        this.planTagSelector = null;
+        this.recordTagSelector = null;
+    }
+
+    /**
+     * 初始化事件监听器
+     */
+    initializeEventListeners() {
+        // 监听组件加载完成事件
+        document.addEventListener('component-loaded', (e) => {
+            this.handleComponentLoaded(e.detail.componentName);
+        });
+
+        // 监听弹框显示事件
+        document.addEventListener('click', (e) => {
+            if (e.target.id === 'btn-new-plan' || e.target.closest('#btn-new-plan')) {
+                setTimeout(() => this.initializePlanTagSelector(), 100);
+            }
+            if (e.target.id === 'btn-new-record' || e.target.closest('#btn-new-record')) {
+                setTimeout(() => this.initializeRecordTagSelector(), 100);
+            }
+        });
+
+        // 监听弹框打开事件（通过MutationObserver）
+        this.observeModalChanges();
+    }
+
+    /**
+     * 处理组件加载完成事件
+     */
+    handleComponentLoaded(componentName) {
+        console.log(`组件加载完成: ${componentName}`);
+        
+        // 延迟初始化，确保DOM完全渲染
+        setTimeout(() => {
+            if (componentName === 'header-with-modals' || componentName === 'modals') {
+                this.tryInitializeTagSelectors();
+            }
+        }, 200);
+    }
+
+    /**
+     * 监听弹框变化
+     */
+    observeModalChanges() {
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                    const target = mutation.target;
+                    
+                    // 检查计划弹框是否显示
+                    if (target.id === 'modal-new-plan' && !target.classList.contains('hidden')) {
+                        this.initializePlanTagSelector();
+                    }
+                    
+                    // 检查记录弹框是否显示
+                    if (target.id === 'modal-new-record' && !target.classList.contains('hidden')) {
+                        this.initializeRecordTagSelector();
+                    }
+                }
+            });
+        });
+
+        // 观察现有的弹框
+        const planModal = document.getElementById('modal-new-plan');
+        const recordModal = document.getElementById('modal-new-record');
+        
+        if (planModal) observer.observe(planModal, { attributes: true });
+        if (recordModal) observer.observe(recordModal, { attributes: true });
+        
+        // 观察整个文档，以防弹框是动态添加的
+        observer.observe(document.body, { 
+            childList: true, 
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['class', 'id']
+        });
+    }
+
+    /**
+     * 尝试初始化所有标签选择器
+     */
+    tryInitializeTagSelectors() {
+        this.initializePlanTagSelector();
+        this.initializeRecordTagSelector();
+    }
+
+    /**
+     * 初始化计划标签选择器
+     */
+    initializePlanTagSelector() {
+        const container = document.getElementById('plan-tag-selector');
+        if (!container) {
+            console.log('⏳ plan-tag-selector 容器未找到，稍后重试...');
+            return;
+        }
+
+        // 检查是否已经初始化
+        if (this.planTagSelector && container.querySelector('.tag-selector')) {
+            console.log('✅ 计划标签选择器已存在，跳过初始化');
+            return;
+        }
+
+        // 检查依赖
+        if (!this.checkDependencies()) {
+            console.log('⏳ 标签选择器依赖未就绪，稍后重试...');
+            setTimeout(() => this.initializePlanTagSelector(), 500);
+            return;
+        }
+
+        try {
+            console.log('🚀 开始初始化计划标签选择器...');
+            
+            this.planTagSelector = new TagSelector('plan-tag-selector', {
+                scope: 'plan',
+                showSearch: false,
+                showCategories: false,
+                maxSelection: 5
+            });
+            
+            console.log('✅ 计划标签选择器初始化成功');
+            
+            // 添加到全局，方便其他代码访问
+            window.planTagSelector = this.planTagSelector;
+            
+        } catch (error) {
+            console.error('❌ 计划标签选择器初始化失败:', error);
+            this.showFallbackMessage('plan-tag-selector', '标签选择器初始化失败，请刷新页面重试');
+        }
+    }
+
+    /**
+     * 初始化记录标签选择器
+     */
+    initializeRecordTagSelector() {
+        const container = document.getElementById('record-tag-selector');
+        if (!container) {
+            console.log('⏳ record-tag-selector 容器未找到，稍后重试...');
+            return;
+        }
+
+        // 检查是否已经初始化
+        if (this.recordTagSelector && container.querySelector('.tag-selector')) {
+            console.log('✅ 记录标签选择器已存在，跳过初始化');
+            return;
+        }
+
+        // 检查依赖
+        if (!this.checkDependencies()) {
+            console.log('⏳ 标签选择器依赖未就绪，稍后重试...');
+            setTimeout(() => this.initializeRecordTagSelector(), 500);
+            return;
+        }
+
+        try {
+            console.log('🚀 开始初始化记录标签选择器...');
+            
+            this.recordTagSelector = new TagSelector('record-tag-selector', {
+                scope: 'event',
+                showSearch: false,
+                showCategories: false,
+                maxSelection: 5
+            });
+            
+            console.log('✅ 记录标签选择器初始化成功');
+            
+            // 添加到全局，方便其他代码访问
+            window.recordTagSelector = this.recordTagSelector;
+            
+        } catch (error) {
+            console.error('❌ 记录标签选择器初始化失败:', error);
+            this.showFallbackMessage('record-tag-selector', '标签选择器初始化失败，请刷新页面重试');
+        }
+    }
+
+    /**
+     * 检查必要的依赖是否已加载
+     */
+    checkDependencies() {
+        const hasTagSelector = typeof TagSelector !== 'undefined';
+        const hasTagsManager = window.tagsManager && typeof window.tagsManager.getTags === 'function';
+        
+        if (!hasTagSelector) {
+            console.log('❌ TagSelector 类未加载');
+            return false;
+        }
+        
+        if (!hasTagsManager) {
+            console.log('❌ TagsManager 未初始化');
+            // 尝试初始化 TagsManager
+            if (typeof TagsManager !== 'undefined') {
+                window.tagsManager = new TagsManager();
+                console.log('✅ TagsManager 自动初始化成功');
+                return true;
+            }
+            return false;
+        }
+        
+        return true;
+    }
+
+    /**
+     * 显示降级消息
+     */
+    showFallbackMessage(containerId, message) {
+        const container = document.getElementById(containerId);
+        if (container) {
+            container.innerHTML = `
+                <div class="text-center py-4 text-gray-500">
+                    <i class="fas fa-exclamation-triangle text-yellow-500 mb-2"></i>
+                    <p class="text-sm">${message}</p>
+                    <button onclick="location.reload()" class="mt-2 px-3 py-1 bg-blue-500 text-white text-xs rounded hover:bg-blue-600">
+                        刷新页面
+                    </button>
+                </div>
+            `;
+        }
+    }
+}
+
+// 自动启动标签选择器初始化管理器
+document.addEventListener('DOMContentLoaded', () => {
+    console.log('🎯 启动标签选择器自动初始化管理器...');
+    window.tagSelectorAutoInitializer = new TagSelectorAutoInitializer();
+});
+
+// 兼容性：如果页面已经加载完成，立即启动
+if (document.readyState === 'loading') {
+    // DOM还在加载中，等待DOMContentLoaded事件
+} else {
+    // DOM已经加载完成，立即启动
+    console.log('🎯 页面已加载，立即启动标签选择器自动初始化管理器...');
+    window.tagSelectorAutoInitializer = new TagSelectorAutoInitializer();
 } 

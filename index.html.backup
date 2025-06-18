@@ -467,14 +467,6 @@
                             placeholder="输入计划的详细描述"></textarea>
                     </div>
 
-                    <!-- 标签选择 -->
-                    <div class="mb-4" style="display: block !important; visibility: visible !important;">
-                        <label class="block text-gray-700 font-medium mb-2">选择标签</label>
-                        <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
-                            <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
-                        </div>
-                    </div>
-
                     <!-- 截止日期 -->
                     <div class="mb-4">
                         <label for="plan-due-date" class="block text-gray-700 font-medium mb-2">截止日期</label>
@@ -583,14 +575,6 @@
                         </div>
                     </div>
 
-                    <!-- 标签选择 -->
-                    <div class="mb-4" style="display: block !important; visibility: visible !important;">
-                        <label class="block text-gray-700 font-medium mb-2">选择标签</label>
-                        <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
-                            <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
-                        </div>
-                    </div>
-
                     <!-- 完成日期和时间 -->
                     <div class="mb-4">
                         <label class="block text-gray-700 font-medium mb-2">完成日期和时间</label>
@@ -629,7 +613,6 @@
 
     <!-- 引入组件和公共JS文件 -->
     <script src="js/components.js"></script>
-    <script src="js/storage-manager.js"></script>
     <script src="js/tags-manager.js"></script>
     <script src="js/tag-selector.js"></script>
     <script src="js/common.js"></script>

@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标签选择器修复测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body class="bg-gray-100 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">标签选择器修复测试</h1>
+        
+        <!-- 测试结果显示区域 -->
+        <div id="test-results" class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">测试结果</h2>
+            <div id="test-output" class="space-y-2 text-sm font-mono"></div>
+        </div>
+        
+        <!-- 标签选择器测试区域 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">标签选择器测试</h2>
+            <div id="test-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]">
+                <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+            </div>
+        </div>
+        
+        <!-- 控制按钮 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">测试控制</h2>
+            <div class="space-x-4">
+                <button id="btn-test-init" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    测试初始化
+                </button>
+                <button id="btn-clear-storage" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                    清空存储
+                </button>
+                <button id="btn-create-test-data" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    创建测试数据
+                </button>
+                <button id="btn-open-events" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded">
+                    打开事件页面
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+
+    <script>
+        let testOutput = document.getElementById('test-output');
+        
+        function log(message, type = 'info') {
+            const timestamp = new Date().toLocaleTimeString();
+            const colors = {
+                info: 'text-blue-600',
+                success: 'text-green-600',
+                error: 'text-red-600',
+                warning: 'text-yellow-600'
+            };
+            
+            const div = document.createElement('div');
+            div.className = colors[type] || colors.info;
+            div.textContent = `[${timestamp}] ${message}`;
+            testOutput.appendChild(div);
+            testOutput.scrollTop = testOutput.scrollHeight;
+            
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+        
+        function clearLog() {
+            testOutput.innerHTML = '';
+        }
+        
+        // 测试初始化
+        document.getElementById('btn-test-init').addEventListener('click', function() {
+            clearLog();
+            log('开始测试初始化...');
+            
+            // 检查管理器
+            log(`CategoriesManager: ${typeof CategoriesManager !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}`, 
+                typeof CategoriesManager !== 'undefined' ? 'success' : 'error');
+            log(`TagsManager: ${typeof TagsManager !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}`, 
+                typeof TagsManager !== 'undefined' ? 'success' : 'error');
+            log(`TagSelector: ${typeof TagSelector !== 'undefined' ? '✅ 已加载' : '❌ 未加载'}`, 
+                typeof TagSelector !== 'undefined' ? 'success' : 'error');
+            
+            // 初始化管理器
+            if (typeof CategoriesManager !== 'undefined' && typeof TagsManager !== 'undefined') {
+                try {
+                    window.categoriesManager = new CategoriesManager();
+                    window.tagsManager = new TagsManager();
+                    log('✅ 管理器初始化成功', 'success');
+                    
+                    // 检查数据
+                    const categories = window.categoriesManager.getCategories();
+                    const tags = window.tagsManager.getTags();
+                    log(`分类数量: ${categories.length}`, 'info');
+                    log(`标签数量: ${tags.length}`, 'info');
+                    
+                    // 尝试创建标签选择器
+                    if (typeof TagSelector !== 'undefined') {
+                        try {
+                            window.testTagSelector = new TagSelector('test-tag-selector', {
+                                scope: 'test',
+                                showSearch: true,
+                                showCategories: true,
+                                maxSelection: 5
+                            });
+                            log('✅ 标签选择器创建成功', 'success');
+                        } catch (error) {
+                            log(`❌ 标签选择器创建失败: ${error.message}`, 'error');
+                        }
+                    }
+                    
+                } catch (error) {
+                    log(`❌ 管理器初始化失败: ${error.message}`, 'error');
+                }
+            }
+        });
+        
+        // 清空存储
+        document.getElementById('btn-clear-storage').addEventListener('click', function() {
+            localStorage.clear();
+            log('✅ localStorage已清空', 'success');
+        });
+        
+        // 创建测试数据
+        document.getElementById('btn-create-test-data').addEventListener('click', function() {
+            try {
+                // 创建测试分类
+                const testCategories = [
+                    { id: 'study', name: '学习成长', color: 'blue', isDefault: true },
+                    { id: 'work', name: '工作职业', color: 'red', isDefault: true },
+                    { id: 'health', name: '健康生活', color: 'green', isDefault: true }
+                ];
+                localStorage.setItem('categories', JSON.stringify(testCategories));
+                
+                // 创建测试标签
+                const testTags = [
+                    { id: 'tag1', name: '重要', color: 'red', category: 'work' },
+                    { id: 'tag2', name: '紧急', color: 'orange', category: 'work' },
+                    { id: 'tag3', name: '学习', color: 'blue', category: 'study' },
+                    { id: 'tag4', name: '健身', color: 'green', category: 'health' }
+                ];
+                localStorage.setItem('tags', JSON.stringify(testTags));
+                
+                log('✅ 测试数据创建成功', 'success');
+                log(`创建了 ${testCategories.length} 个分类和 ${testTags.length} 个标签`, 'info');
+            } catch (error) {
+                log(`❌ 创建测试数据失败: ${error.message}`, 'error');
+            }
+        });
+        
+        // 打开事件页面
+        document.getElementById('btn-open-events').addEventListener('click', function() {
+            window.open('events.html', '_blank');
+        });
+        
+        // 页面加载完成后自动运行测试
+        document.addEventListener('DOMContentLoaded', function() {
+            log('页面加载完成，开始自动测试...', 'info');
+            setTimeout(() => {
+                document.getElementById('btn-test-init').click();
+            }, 500);
+        });
+    </script>
+</body>
+</html> 
