@@ -1,0 +1,933 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>事件记录 - 你的数字生活助手</title>
+    <!-- 防缓存标签 -->
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 苹果风格滚动条 */
+        .apple-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .apple-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .apple-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.1);
+            border-radius: 8px;
+            border: 2px solid transparent;
+        }
+        .apple-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: rgba(0, 0, 0, 0.2);
+        }
+        .apple-scrollbar {
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 0, 0, 0.1) transparent;
+        }
+        /* 滚动容器在不滚动时隐藏滚动条 */
+        .apple-scrollbar:not(:hover)::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 0, 0, 0.05);
+        }
+        
+        /* 自定义单选框样式 - 勾选样式 */
+        input[type="radio"] {
+            appearance: none;
+            -webkit-appearance: none;
+            width: 24px;
+            height: 24px;
+            border: 2px solid #e2e8f0;
+            border-radius: 50%;
+            outline: none;
+            position: relative;
+            margin-right: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background-color: white;
+        }
+        
+        input[type="radio"]:checked {
+            border-color: #4f46e5;
+            background-color: #4f46e5;
+        }
+        
+        input[type="radio"]:checked:before {
+            content: '';
+            position: absolute;
+            top: 40%;
+            left: 50%;
+            width: 6px;
+            height: 10px;
+            border-right: 2px solid white;
+            border-bottom: 2px solid white;
+            transform: translate(-50%, -50%) rotate(45deg);
+            transition: transform 0.2s ease;
+        }
+        
+        /* 为不同分类设置不同颜色 */
+        input[name="record-type"][value="study"]:checked,
+        input[name="plan-type"][value="study"]:checked {
+            border-color: #3b82f6; /* 蓝色 */
+            background-color: #3b82f6;
+        }
+        
+        input[name="record-type"][value="experience"]:checked,
+        input[name="plan-type"][value="experience"]:checked {
+            border-color: #8b5cf6; /* 紫色 */
+            background-color: #8b5cf6;
+        }
+        
+        input[name="record-type"][value="leisure"]:checked,
+        input[name="plan-type"][value="leisure"]:checked {
+            border-color: #10b981; /* 绿色 */
+            background-color: #10b981;
+        }
+        
+        input[name="record-type"][value="family"]:checked,
+        input[name="plan-type"][value="family"]:checked {
+            border-color: #f59e0b; /* 黄色 */
+            background-color: #f59e0b;
+        }
+        
+        input[name="record-type"][value="work"]:checked,
+        input[name="plan-type"][value="work"]:checked {
+            border-color: #ef4444; /* 红色 */
+            background-color: #ef4444;
+        }
+        
+        input[name="record-type"][value="social"]:checked,
+        input[name="plan-type"][value="social"]:checked {
+            border-color: #6366f1; /* 靛蓝色 */
+            background-color: #6366f1;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- 侧边栏 -->
+    <div class="flex h-screen overflow-hidden">
+        <div class="w-64 bg-white shadow-md hidden md:block">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-indigo-600">事件记录</h1>
+                <p class="text-gray-500 text-sm">记录生活，追踪成长</p>
+            </div>
+            
+        
+            
+            <nav class="mt-6">
+                <ul>
+                    <li class="px-6 py-3 bg-indigo-50 text-indigo-600 font-medium">
+                        <a href="index.html" class="flex items-center">
+                            <i class="fas fa-home mr-3"></i>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="calendar.html" class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-3"></i>
+                            <span>日历视图</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="events.html" class="flex items-center">
+                            <i class="fas fa-list mr-3"></i>
+                            <span>事件列表</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="statistics.html" class="flex items-center">
+                            <i class="fas fa-chart-pie mr-3"></i>
+                            <span>统计分析</span>
+                        </a>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="weekly_report.html" class="flex items-center">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            <span>一周一悟</span>
+                        </a>
+                    </li>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="tags.html" class="flex items-center">
+                            <i class="fas fa-tag mr-3"></i>
+                            <span>标签管理</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="settings.html" class="flex items-center">
+                            <i class="fas fa-cog mr-3"></i>
+                            <span>设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-auto">
+            <!-- 顶部导航栏 - 替换为组件容器 -->
+            <div id="header-container">
+                <!-- 备用头部组件，在加载失败时显示 -->
+            <header class="bg-white shadow-sm">
+                <div class="flex items-center justify-between p-4">
+                    <button class="md:hidden text-gray-600">
+                        <i class="fas fa-bars text-xl"></i>
+                    </button>
+                    <div class="flex items-center">
+                        <div class="relative">
+                            <input type="text" placeholder="搜索事件..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-64">
+                            <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                        </div>
+                        <div class="ml-4 flex space-x-2">
+                                <button id="btn-new-plan" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                                <i class="fas fa-calendar-plus mr-2"></i>新建计划
+                            </button>
+                                <button id="btn-new-record" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center">
+                                <i class="fas fa-bookmark mr-2"></i>记录事项
+                            </button>
+                        </div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <!-- 用户头像和下拉菜单 -->
+                        <div class="relative" id="user-menu-container">
+                            <!-- 用户头像按钮 -->
+                            <button id="user-menu-button" class="flex items-center space-x-2 text-sm rounded-full focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500" aria-expanded="false" aria-haspopup="true">
+                                <span data-user-display class="text-sm text-gray-700 hidden md:block"></span>
+                                <div data-user-avatar class="h-8 w-8 rounded-full flex items-center justify-center text-sm font-medium transition-colors cursor-pointer bg-gray-200">
+                                    <i class="fas fa-user-circle text-gray-400"></i>
+                                </div>
+                            </button>
+                            
+                            <!-- 下拉菜单 -->
+                            <div id="user-dropdown" class="hidden absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-50">
+                                <div class="py-1">
+                                    <a href="settings.html" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-user mr-3"></i>
+                                        个人资料
+                                    </a>
+                                    <a href="settings.html" class="flex items-center px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">
+                                        <i class="fas fa-cog mr-3"></i>
+                                        设置
+                                    </a>
+                                    <div class="border-t border-gray-100"></div>
+                                    <button id="dropdown-logout" class="w-full text-left flex items-center px-4 py-2 text-sm text-red-600 hover:bg-gray-100">
+                                        <i class="fas fa-sign-out-alt mr-3"></i>
+                                        退出登录
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 未登录时显示登录/注册链接 -->
+                        <div id="auth-links" class="flex items-center space-x-2">
+                            <a href="auth/login.html" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">登录</a>
+                            <span class="text-gray-300">|</span>
+                            <a href="auth/register.html" class="text-indigo-600 hover:text-indigo-800 text-sm font-medium">注册</a>
+                        </div>
+                    </div>
+                    </div>
+                </header>
+                </div>
+
+            <!-- 仪表盘内容 -->
+            <main class="p-6">
+                <!-- 本周概览 - 正常样式不压缩 -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-3">
+                        <h2 class="text-xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-chart-bar text-indigo-600 mr-2"></i>
+                            本周概览
+                            <span class="ml-2 text-sm bg-indigo-100 text-indigo-800 px-2 py-0.5 rounded-full">数据统计</span>
+                        </h2>
+                        <button class="text-indigo-600 hover:text-indigo-800 flex items-center text-sm font-medium">
+                            <i class="fas fa-sync-alt mr-1"></i> 刷新数据
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <!-- 本周待办 -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-blue-100 p-2 mr-3">
+                                    <i class="fas fa-list-ul text-blue-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-gray-500 text-sm">本周待办</h3>
+                                    <div class="text-lg font-bold">15 项</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-blue-600 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <div>已完成</div>
+                                    <div>9/15 (60%)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 本周完成 -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-green-100 p-2 mr-3">
+                                    <i class="fas fa-check-circle text-green-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-gray-500 text-sm">本周完成</h3>
+                                    <div class="text-lg font-bold">12 项</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-green-600 h-2 rounded-full" style="width: 75%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <div>完成率</div>
+                                    <div>75%</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- 效率趋势 -->
+                        <div class="bg-white rounded-lg shadow p-4">
+                            <div class="flex items-center">
+                                <div class="rounded-full bg-purple-100 p-2 mr-3">
+                                    <i class="fas fa-chart-line text-purple-600"></i>
+                                </div>
+                                <div>
+                                    <h3 class="text-gray-500 text-sm">效率趋势</h3>
+                                    <div class="text-lg font-bold">↑ 15%</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <div class="w-full bg-gray-200 rounded-full h-2">
+                                    <div class="bg-purple-600 h-2 rounded-full" style="width: 60%"></div>
+                                </div>
+                                <div class="flex justify-between text-xs text-gray-500 mt-1">
+                                    <div>上周</div>
+                                    <div>本周</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 本周分类记录系统 -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-bookmark text-purple-600 mr-3"></i>
+                            本周分类记录
+                            <span class="ml-2 text-sm bg-purple-100 text-purple-800 px-2 py-1 rounded-full">已完成事项</span>
+                        </h2>
+                        <button id="btn-add-record" class="text-purple-600 hover:text-purple-800 flex items-center text-sm font-medium cursor-pointer">
+                            <i class="fas fa-plus-circle mr-1"></i> 添加记录
+                        </button>
+                    </div>
+
+                    <!-- 动态分类卡片容器 -->
+                    <div id="category-cards-container" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                        <!-- 分类卡片将在这里动态生成 -->
+                    </div>
+                </div>
+                
+                <!-- 本周计划区域 -->
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-2xl font-bold text-gray-800 flex items-center">
+                            <i class="fas fa-calendar-week text-blue-600 mr-3"></i>
+                            本周计划
+                            <span class="ml-2 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">待完成任务</span>
+                        </h2>
+                        <button id="btn-add-plan" class="text-blue-600 hover:text-blue-800 flex items-center text-sm font-medium cursor-pointer">
+                            <i class="fas fa-plus-circle mr-1"></i> 添加计划
+                        </button>
+                    </div>
+                
+                    <!-- 计划列表 -->
+                    <div class="bg-white rounded-lg shadow mb-6 overflow-hidden">
+                        <div class="p-4 bg-blue-50 border-b border-blue-100 flex justify-between items-center">
+                            <h3 class="font-medium text-blue-800">我的计划列表</h3>
+                            <span class="text-sm text-blue-600">9/17 已完成</span>
+                        </div>
+                        <div class="p-4 space-y-3">
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded task-checkbox" checked data-status="completed">
+                                <div class="ml-3 flex-1">
+                                    <p class="text-gray-800 font-medium">完成项目周报</p>
+                                    <div class="flex items-center">
+                                        <p class="text-sm text-gray-500 mr-2">截止日期：2023-10-15</p>
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-700 text-xs rounded-full flex items-center">
+                                            <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>工作职业
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full task-status">已完成</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded task-checkbox" data-status="in-progress">
+                                <div class="ml-3 flex-1">
+                                    <p class="text-gray-800 font-medium">预约团队会议</p>
+                                    <div class="flex items-center">
+                                        <p class="text-sm text-gray-500 mr-2">截止日期：2023-10-16</p>
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-700 text-xs rounded-full flex items-center">
+                                            <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>工作职业
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-yellow-100 text-yellow-800 text-xs rounded-full task-status">进行中</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded task-checkbox" data-status="pending">
+                                <div class="ml-3 flex-1">
+                                    <p class="text-gray-800 font-medium">更新产品文档</p>
+                                    <div class="flex items-center">
+                                        <p class="text-sm text-gray-500 mr-2">截止日期：2023-10-17</p>
+                                        <span class="px-2 py-0.5 bg-red-50 text-red-700 text-xs rounded-full flex items-center">
+                                            <span class="w-2 h-2 bg-red-500 rounded-full mr-1"></span>工作职业
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status">待处理</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded task-checkbox" data-status="pending">
+                                <div class="ml-3 flex-1">
+                                    <p class="text-gray-800 font-medium">阅读《思考快与慢》</p>
+                                    <div class="flex items-center">
+                                        <p class="text-sm text-gray-500 mr-2">截止日期：2023-10-19</p>
+                                        <span class="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded-full flex items-center">
+                                            <span class="w-2 h-2 bg-blue-500 rounded-full mr-1"></span>学习成长
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status">待处理</span>
+                            </div>
+                            <div class="flex items-center p-3 bg-gray-50 rounded-lg">
+                                <input type="checkbox" class="h-5 w-5 text-blue-600 rounded task-checkbox" data-status="pending">
+                                <div class="ml-3 flex-1">
+                                    <p class="text-gray-800 font-medium">参加周末家庭聚餐</p>
+                                    <div class="flex items-center">
+                                        <p class="text-sm text-gray-500 mr-2">截止日期：2023-10-21</p>
+                                        <span class="px-2 py-0.5 bg-yellow-50 text-yellow-700 text-xs rounded-full flex items-center">
+                                            <span class="w-2 h-2 bg-yellow-500 rounded-full mr-1"></span>家庭生活
+                                        </span>
+                                    </div>
+                                </div>
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status">待处理</span>
+                            </div>
+                        </div>
+                        <div class="p-3 bg-gray-50 border-t border-gray-100 text-center">
+                            <a href="events.html?type=plan" class="text-blue-600 hover:text-blue-800 text-sm font-medium">查看所有计划 →</a>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 弹出窗口 - 新建计划 -->
+    <div id="modal-new-plan" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">新建计划</h2>
+                <button id="close-plan-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="new-plan-form">
+                    <!-- 计划标题 -->
+                    <div class="mb-4">
+                        <label for="plan-title" class="block text-gray-700 font-medium mb-2">计划标题</label>
+                        <input type="text" id="plan-title" name="title" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
+                            placeholder="输入计划名称" required>
+                    </div>
+
+                    <!-- 计划类型 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">计划类型</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-work" class="mr-2" value="work" checked>
+                                <label for="type-work" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                    工作职业
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-study" class="mr-2" value="study">
+                                <label for="type-study" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                    学习成长
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-exp" class="mr-2" value="experience">
+                                <label for="type-exp" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                    体验突破
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-leisure" class="mr-2" value="leisure">
+                                <label for="type-leisure" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                    休闲放松
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-family" class="mr-2" value="family">
+                                <label for="type-family" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                                    家庭生活
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-social" class="mr-2" value="social">
+                                <label for="type-social" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                                    人际社群
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 计划描述 -->
+                    <div class="mb-4">
+                        <label for="plan-desc" class="block text-gray-700 font-medium mb-2">计划详情描述</label>
+                        <textarea id="plan-desc" name="description" rows="3" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
+                            placeholder="输入计划的详细描述"></textarea>
+                    </div>
+
+                    <!-- 标签选择 -->
+                    <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                        <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                        <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                            <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                        </div>
+                    </div>
+
+                    <!-- 截止日期 -->
+                    <div class="mb-4">
+                        <label for="plan-due-date" class="block text-gray-700 font-medium mb-2">截止日期</label>
+                        <input type="date" id="plan-due-date" name="due-date" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
+                    </div>
+
+                    <!-- 优先级 -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-medium mb-2">优先级</label>
+                        <div class="flex space-x-4">
+                            <div class="flex items-center">
+                                <input type="radio" name="priority" id="priority-low" class="mr-2" value="low">
+                                <label for="priority-low" class="text-green-600">低</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="priority" id="priority-medium" class="mr-2" value="medium" checked>
+                                <label for="priority-medium" class="text-yellow-600">中</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="priority" id="priority-high" class="mr-2" value="high">
+                                <label for="priority-high" class="text-red-600">高</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 按钮 -->
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-plan-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            保存计划
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹出窗口 - 记录事项 -->
+    <div id="modal-new-record" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">记录事项</h2>
+                <button id="close-record-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="new-record-form">
+                    <!-- 事项标题 -->
+                    <div class="mb-4">
+                        <label for="record-title" class="block text-gray-700 font-medium mb-2">事项标题</label>
+                        <input type="text" id="record-title" name="title" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                            placeholder="输入事项名称" required>
+                    </div>
+
+                    <!-- 事项分类 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">事项分类</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-study" class="mr-2" value="study" checked>
+                                <label for="rec-type-study" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                    学习成长
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-exp" class="mr-2" value="experience">
+                                <label for="rec-type-exp" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                    体验突破
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-leisure" class="mr-2" value="leisure">
+                                <label for="rec-type-leisure" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                    休闲放松
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-family" class="mr-2" value="family">
+                                <label for="rec-type-family" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                                    家庭生活
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-work" class="mr-2" value="work">
+                                <label for="rec-type-work" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                    工作职业
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-social" class="mr-2" value="social">
+                                <label for="rec-type-social" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                                    人际社群
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 标签选择 -->
+                    <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                        <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                        <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                            <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                        </div>
+                    </div>
+
+                    <!-- 完成日期和时间 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">完成日期和时间</label>
+                        <div class="flex space-x-2">
+                            <input type="date" id="record-date" name="completion-date" 
+                                class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                            <input type="time" id="record-time" name="completion-time" 
+                                class="w-32 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                        </div>
+                    </div>
+
+                    <!-- 事项详情 -->
+                    <div class="mb-4">
+                        <label for="record-desc" class="block text-gray-700 font-medium mb-2">事项详情</label>
+                        <textarea id="record-desc" name="description" rows="3" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                            placeholder="输入事项的详细描述或感想"></textarea>
+                    </div>
+                    
+                    <!-- 按钮 -->
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="delete-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hidden">
+                            删除
+                        </button>
+                        <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit" id="submit-record-btn" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                            保存记录
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入组件和公共JS文件 -->
+    <script src="js/auth-system.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script src="js/components.js"></script>
+    <script src="js/storage-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/categories-manager.js"></script>
+    <script src="js/dynamic_categories.js"></script>
+    <script src="js/dashboard.js"></script>
+    <script>
+        // 移动端侧边栏切换
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('页面主脚本已加载');
+            
+            // 初始化分类管理器和动态更新器
+            if (!window.categoriesManager) {
+                window.categoriesManager = new CategoriesManager();
+                console.log('分类管理器已初始化');
+            }
+            if (!window.dynamicCategoriesUpdater) {
+                window.dynamicCategoriesUpdater = new DynamicCategoriesUpdater();
+                console.log('动态分类更新器已初始化');
+            }
+            
+            // 延迟更新分类选择器，确保DOM完全加载
+            setTimeout(() => {
+                if (window.dynamicCategoriesUpdater) {
+                    window.dynamicCategoriesUpdater.updateAllSelectors();
+                    console.log('已更新所有分类选择器');
+                }
+            }, 300);
+            
+            // 初始化页面功能
+            
+            const menuBtn = document.querySelector('button.md\\:hidden');
+            const sidebar = document.querySelector('.w-64');
+            
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('hidden');
+            });
+            
+            // 弹出窗口功能
+            const planModal = document.getElementById('modal-new-plan');
+            const recordModal = document.getElementById('modal-new-record');
+            
+            // 打开弹出窗口
+            document.getElementById('btn-new-plan').addEventListener('click', function() {
+                planModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // 防止背景滚动
+            });
+            
+            document.getElementById('btn-new-record').addEventListener('click', function() {
+                recordModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // 关闭弹出窗口
+            document.getElementById('close-plan-modal').addEventListener('click', function() {
+                planModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('cancel-plan-btn').addEventListener('click', function() {
+                planModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('close-record-modal').addEventListener('click', function() {
+                recordModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('cancel-record-btn').addEventListener('click', function() {
+                recordModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            // 点击模态窗口外部关闭
+            planModal.addEventListener('click', function(e) {
+                if (e.target === planModal) {
+                    planModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            recordModal.addEventListener('click', function(e) {
+                if (e.target === recordModal) {
+                    recordModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // 设置今天的日期
+            const today = new Date();
+            const formattedDate = today.toISOString().substring(0, 10);
+            document.getElementById('plan-due-date').value = formattedDate;
+            document.getElementById('record-date').value = formattedDate;
+            
+            // 单选按钮组交互
+            document.querySelectorAll('.radio-group').forEach(group => {
+                const options = group.querySelectorAll('.radio-option');
+                
+                options.forEach(option => {
+                    option.addEventListener('click', function() {
+                        const radio = this.querySelector('input[type="radio"]');
+                        radio.checked = true;
+                    });
+                });
+            });
+            
+            // 使用common.js中的表单处理 - 删除重复的表单提交处理代码
+            // 确保表单处理程序初始化
+            if (typeof initializeFormHandlers === 'function') {
+                initializeFormHandlers();
+                console.log('已初始化表单处理程序');
+            } else {
+                console.error('未找到initializeFormHandlers函数');
+            }
+
+            // 绑定添加记录和添加计划按钮
+            document.getElementById('btn-add-record').addEventListener('click', function() {
+                recordModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+
+            document.getElementById('btn-add-plan').addEventListener('click', function() {
+                planModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+
+            // 分类卡片上的添加按钮
+            document.querySelectorAll('.category-add-btn').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const type = this.dataset.type;
+                    recordModal.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                    
+                    // 根据分类选择对应的单选按钮
+                    document.querySelector(`input[name="record-type"][value="${type}"]`).checked = true;
+                });
+            });
+            
+            // 任务复选框交互
+            const taskCheckboxes = document.querySelectorAll('.task-checkbox');
+            let completedCount = 9; // 初始已完成数量
+            const totalTasks = 17; // 总任务数量
+            const completedCountDisplay = document.querySelector('.p-4.bg-blue-50 span');
+            
+            // 更新计数显示
+            function updateTaskCount() {
+                completedCountDisplay.textContent = `${completedCount}/${totalTasks} 已完成`;
+            }
+            
+            taskCheckboxes.forEach(checkbox => {
+                checkbox.addEventListener('change', function() {
+                    const taskItem = this.closest('.flex.items-center.p-3');
+                    const statusLabel = taskItem.querySelector('.task-status');
+                    
+                    if (this.checked) {
+                        // 任务被标记为完成
+                        statusLabel.textContent = '已完成';
+                        statusLabel.className = 'px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full task-status';
+                        this.dataset.status = 'completed';
+                        completedCount++;
+                    } else {
+                        // 任务被标记为未完成
+                        statusLabel.textContent = '待处理';
+                        statusLabel.className = 'px-2 py-1 bg-blue-100 text-blue-800 text-xs rounded-full task-status';
+                        this.dataset.status = 'pending';
+                        completedCount--;
+                    }
+                    
+                    // 更新总计数
+                    updateTaskCount();
+                    
+                    // 添加一个小动画效果
+                    taskItem.classList.add('bg-blue-50');
+                    setTimeout(() => {
+                        taskItem.classList.remove('bg-blue-50');
+                    }, 300);
+                });
+            });
+
+            // 添加头像更新监听器
+            setupAvatarUpdateListeners();
+        });
+
+        // 设置头像更新监听器
+        function setupAvatarUpdateListeners() {
+            console.log('🎧 设置头像更新监听器');
+            
+            // 监听localStorage变化
+            window.addEventListener('storage', function(e) {
+                if (e.key === 'user_avatar') {
+                    console.log('📦 localStorage头像变化检测到');
+                    updatePageAvatar();
+                }
+            });
+            
+            // 监听自定义事件
+            window.addEventListener('avatarUpdated', function(e) {
+                console.log('📡 接收到avatarUpdated事件:', e.detail);
+                updatePageAvatar();
+            });
+            
+            // 监听BroadcastChannel
+            if (typeof BroadcastChannel !== 'undefined') {
+                const channel = new BroadcastChannel('avatar_update');
+                channel.addEventListener('message', function(e) {
+                    if (e.data.type === 'AVATAR_UPDATED') {
+                        console.log('📻 BroadcastChannel接收到头像更新通知:', e.data);
+                        updatePageAvatar();
+                    }
+                });
+                console.log('�� BroadcastChannel监听器已启动');
+            }
+        }
+
+        // 更新页面头像
+        function updatePageAvatar() {
+            console.log('🔄 开始更新页面头像');
+            const savedAvatar = localStorage.getItem('user_avatar');
+            
+            // 更新所有头像元素
+            const avatarSelectors = ['[data-user-avatar]', '.user-avatar', '#user-avatar-display'];
+            let updateCount = 0;
+            
+            avatarSelectors.forEach(selector => {
+                const elements = document.querySelectorAll(selector);
+                console.log(`🔍 页面找到 ${elements.length} 个头像元素使用选择器: ${selector}`);
+                
+                elements.forEach((element, index) => {
+                    if (savedAvatar) {
+                        element.innerHTML = `<img src="${savedAvatar}" alt="用户头像" class="w-full h-full rounded-full object-cover">`;
+                        updateCount++;
+                        console.log(`✅ 页面更新头像元素 ${selector}[${index}]`);
+                    } else {
+                        element.innerHTML = '<i class="fas fa-user-circle"></i>';
+                        updateCount++;
+                        console.log(`🔄 页面重置头像元素 ${selector}[${index}] 为默认图标`);
+                    }
+                });
+            });
+            
+            console.log(`📊 页面总共更新了 ${updateCount} 个头像元素`);
+            
+            // 通过authGuard更新（如果可用）
+            if (window.authGuard && typeof window.authGuard.getCurrentUser === 'function') {
+                try {
+                    const user = window.authGuard.getCurrentUser();
+                    if (user) {
+                        window.authGuard.updateUserDisplay(user);
+                        console.log('✅ 页面通过authGuard更新头像成功');
+                    }
+                } catch (error) {
+                    console.error('❌ 页面authGuard更新失败:', error);
+                }
+            }
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,1380 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>日历视图 - 事件记录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* 自定义滚动条样式 */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #c5c5c5;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a0a0a0;
+        }
+        
+        /* 事件悬停效果 */
+        [data-event-id] {
+            transition: transform 0.15s ease-in-out, box-shadow 0.15s ease-in-out;
+        }
+        [data-event-id]:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* 提示框动画 */
+        #event-tooltip {
+            position: absolute;
+            z-index: 100;
+            display: none;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        /* 完成的计划样式 */
+        [data-event-status="completed"] {
+            text-decoration: none;
+            position: relative;
+        }
+        [data-event-status="completed"]::after {
+            content: "✓";
+            position: absolute;
+            right: 4px;
+            font-size: 10px;
+            color: #059669;
+        }
+        
+        /* 表单元素样式 */
+        .form-checkbox {
+            appearance: none;
+            padding: 0;
+            print-color-adjust: exact;
+            display: inline-block;
+            vertical-align: middle;
+            background-origin: border-box;
+            user-select: none;
+            flex-shrink: 0;
+            height: 1rem;
+            width: 1rem;
+            border-radius: 0.25rem;
+            border: 1px solid #d1d5db;
+        }
+        .form-checkbox:checked {
+            background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='white' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M12.207 4.793a1 1 0 010 1.414l-5 5a1 1 0 01-1.414 0l-2-2a1 1 0 011.414-1.414L6.5 9.086l4.293-4.293a1 1 0 011.414 0z'/%3e%3c/svg%3e");
+            border-color: transparent;
+            background-color: currentColor;
+            background-size: 100% 100%;
+            background-position: center;
+            background-repeat: no-repeat;
+        }
+        
+        /* 日历格子样式 */
+        #calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 1px;
+            background-color: #e5e7eb;
+        }
+        
+        #calendar-grid > div {
+            background-color: white;
+            min-height: 100px;
+            height: auto;
+            overflow: visible;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        /* 事件文本样式 - 允许多行显示 */
+        [data-event-id] {
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.4;
+            margin-bottom: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        /* 事件描述样式 */
+        [data-event-id] div {
+            margin-top: 4px;
+            padding-left: 4px;
+            border-left: 2px solid rgba(0,0,0,0.1);
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- 侧边栏 -->
+    <div class="flex h-screen overflow-hidden">
+        <div class="w-64 bg-white shadow-md hidden md:block">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-indigo-600">事件记录</h1>
+                <p class="text-gray-500 text-sm">记录生活，追踪成长</p>
+            </div>
+            <nav class="mt-6">
+                <ul>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="index.html" class="flex items-center">
+                            <i class="fas fa-home mr-3"></i>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 bg-indigo-50 text-indigo-600 font-medium">
+                        <a href="calendar.html" class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-3"></i>
+                            <span>日历视图</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="events.html" class="flex items-center">
+                            <i class="fas fa-list mr-3"></i>
+                            <span>事件列表</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="statistics.html" class="flex items-center">
+                            <i class="fas fa-chart-pie mr-3"></i>
+                            <span>统计分析</span>
+                        </a>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="weekly_report.html" class="flex items-center">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            <span>一周一悟</span>
+                        </a>
+                    </li>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="tags.html" class="flex items-center">
+                            <i class="fas fa-tag mr-3"></i>
+                            <span>标签管理</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="settings.html" class="flex items-center">
+                            <i class="fas fa-cog mr-3"></i>
+                            <span>设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-auto">
+            <!-- 顶部导航栏 - 替换为组件容器 -->
+            <div id="header-container">
+                <!-- 备用头部组件，在加载失败时显示 -->
+                <header class="bg-white shadow-sm">
+                    <div class="flex items-center justify-between p-4">
+                        <button class="md:hidden text-gray-600">
+                            <i class="fas fa-bars text-xl"></i>
+                        </button>
+                        <div class="flex items-center">
+                            <div class="relative">
+                                <input type="text" placeholder="搜索事件..." class="pl-10 pr-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300 w-64">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <div class="ml-4 flex space-x-2">
+                                <button id="btn-new-plan" class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center">
+                                    <i class="fas fa-calendar-plus mr-2"></i>新建计划
+                                </button>
+                                <button id="btn-new-record" class="bg-purple-600 text-white px-4 py-2 rounded-lg hover:bg-purple-700 transition-colors inline-flex items-center">
+                                    <i class="fas fa-bookmark mr-2"></i>记录事项
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex items-center">
+                            <a href="settings.html#profile-section" class="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 font-medium hover:bg-indigo-300 transition-colors cursor-pointer" title="个人设置">
+                                <i class="fas fa-user-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                </header>
+            </div>
+
+            <!-- 日历视图内容 -->
+            <main class="p-6">
+                <div class="flex justify-between items-center mb-6">
+                    <h2 class="text-2xl font-bold text-gray-800">日历视图</h2>
+                    <div class="flex items-center">
+                        <button class="px-3 py-1 border rounded-l-lg bg-white">
+                            <i class="fas fa-chevron-left"></i>
+                        </button>
+                        <button class="px-4 py-1 border-t border-b bg-white font-medium" id="month-year-selector">
+                            2023年10月
+                        </button>
+                        <button class="px-3 py-1 border rounded-r-lg bg-white">
+                            <i class="fas fa-chevron-right"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 月视图日历 -->
+                <div class="bg-white rounded-lg shadow">
+                    <!-- 星期标题 -->
+                    <div class="grid grid-cols-7 gap-px bg-gray-200">
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周日</div>
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周一</div>
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周二</div>
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周三</div>
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周四</div>
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周五</div>
+                        <div class="bg-white p-2 text-center text-gray-500 font-medium">周六</div>
+                    </div>
+                    
+                    <!-- 日历格子 - 将由JavaScript动态生成 -->
+                    <div class="grid grid-cols-7 gap-px bg-gray-200" id="calendar-grid"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- 新建事件弹窗 -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden" id="newEventModal">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4">
+            <div class="p-6 border-b">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800">新建事件</h3>
+                    <button class="text-gray-500 hover:text-gray-700">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <form>
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2" for="eventTitle">
+                            事件标题
+                        </label>
+                        <input type="text" id="eventTitle" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="输入事件标题">
+                    </div>
+                    
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2" for="startDate">
+                                开始时间
+                            </label>
+                            <input type="datetime-local" id="startDate" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-sm font-medium mb-2" for="endDate">
+                                结束时间
+                            </label>
+                            <input type="datetime-local" id="endDate" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2" for="eventCategory">
+                            事件分类
+                        </label>
+                        <select id="eventCategory" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                            <option value="work">工作</option>
+                            <option value="project">项目</option>
+                            <option value="study">学习</option>
+                            <option value="health">健康</option>
+                            <option value="life">生活</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2" for="eventLocation">
+                            地点
+                        </label>
+                        <input type="text" id="eventLocation" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="输入事件地点">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2" for="eventTags">
+                            标签
+                        </label>
+                        <input type="text" id="eventTags" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="输入标签，用逗号分隔">
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="block text-gray-700 text-sm font-medium mb-2" for="eventDescription">
+                            事件描述
+                        </label>
+                        <textarea id="eventDescription" rows="3" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" placeholder="输入事件描述"></textarea>
+                    </div>
+                    
+                    <div class="flex items-center mb-4">
+                        <input type="checkbox" id="setReminder" class="h-4 w-4 text-indigo-600 rounded">
+                        <label for="setReminder" class="ml-2 text-gray-700 text-sm">
+                            设置提醒
+                        </label>
+                    </div>
+                    
+                    <div class="flex justify-end">
+                        <button type="button" class="px-4 py-2 text-gray-700 mr-2">
+                            取消
+                        </button>
+                        <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                            保存
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 年月选择器弹窗 -->
+    <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden z-20" id="monthYearModal">
+        <div class="bg-white rounded-lg w-full max-w-md mx-4">
+            <div class="p-4 border-b">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xl font-bold text-gray-800">选择年月</h3>
+                    <button class="text-gray-500 hover:text-gray-700" id="close-month-year-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-medium mb-2" for="yearSelect">
+                        年份
+                    </label>
+                    <select id="yearSelect" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                        <!-- 年份选项将由JavaScript动态生成 -->
+                    </select>
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-medium mb-2" for="monthSelect">
+                        月份
+                    </label>
+                    <div class="grid grid-cols-4 gap-2" id="monthSelect">
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="0">1月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="1">2月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="2">3月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="3">4月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="4">5月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="5">6月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="6">7月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="7">8月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="8">9月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="9">10月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="10">11月</button>
+                        <button class="month-btn py-2 border rounded-lg hover:bg-indigo-50" data-month="11">12月</button>
+                    </div>
+                </div>
+                <div class="flex justify-end">
+                    <button id="today-btn" class="px-4 py-2 text-indigo-600 hover:bg-indigo-50 rounded-lg mr-2">
+                        回到今天
+                    </button>
+                    <button id="apply-year-month" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                        确定
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 引入组件和公共JS文件 -->
+    <script src="js/components.js"></script>
+    <script src="js/storage-manager.js"></script>
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+    <script src="js/common.js"></script>
+
+    <!-- 弹出窗口 - 新建计划 -->
+    <div id="modal-new-plan" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">新建计划</h2>
+                <button id="close-plan-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="new-plan-form">
+                    <!-- 计划标题 -->
+                    <div class="mb-4">
+                        <label for="plan-title" class="block text-gray-700 font-medium mb-2">计划标题</label>
+                        <input type="text" id="plan-title" name="title" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
+                            placeholder="输入计划名称" required>
+                    </div>
+
+                    <!-- 计划类型 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">计划类型</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-work" class="mr-2" value="work" checked>
+                                <label for="type-work" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                    工作职业
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-study" class="mr-2" value="study">
+                                <label for="type-study" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                    学习成长
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-exp" class="mr-2" value="experience">
+                                <label for="type-exp" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                    体验突破
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-leisure" class="mr-2" value="leisure">
+                                <label for="type-leisure" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                    休闲放松
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-family" class="mr-2" value="family">
+                                <label for="type-family" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                                    家庭生活
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-blue-50 cursor-pointer plan-type-option">
+                                <input type="radio" name="plan-type" id="type-social" class="mr-2" value="social">
+                                <label for="type-social" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                                    人际社群
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 计划描述 -->
+                    <div class="mb-4">
+                        <label for="plan-desc" class="block text-gray-700 font-medium mb-2">计划详情描述</label>
+                        <textarea id="plan-desc" name="description" rows="3" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" 
+                            placeholder="输入计划的详细描述"></textarea>
+                    </div>
+
+                    <!-- 标签选择 -->
+                    <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                        <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                        <div id="plan-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                            <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                        </div>
+                    </div>
+
+                    <!-- 截止日期 -->
+                    <div class="mb-4">
+                        <label for="plan-due-date" class="block text-gray-700 font-medium mb-2">截止日期</label>
+                        <input type="date" id="plan-due-date" name="due-date" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-300" required>
+                    </div>
+
+                    <!-- 优先级 -->
+                    <div class="mb-6">
+                        <label class="block text-gray-700 font-medium mb-2">优先级</label>
+                        <div class="flex space-x-4">
+                            <div class="flex items-center">
+                                <input type="radio" name="priority" id="priority-low" class="mr-2" value="low">
+                                <label for="priority-low" class="text-green-600">低</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="priority" id="priority-medium" class="mr-2" value="medium" checked>
+                                <label for="priority-medium" class="text-yellow-600">中</label>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="radio" name="priority" id="priority-high" class="mr-2" value="high">
+                                <label for="priority-high" class="text-red-600">高</label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- 按钮 -->
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="cancel-plan-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit" class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            保存计划
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 弹出窗口 - 记录事项 -->
+    <div id="modal-new-record" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-lg shadow-lg max-w-2xl w-full max-h-[90vh] overflow-auto">
+            <div class="flex justify-between items-center p-6 border-b">
+                <h2 class="text-2xl font-bold text-gray-800">记录事项</h2>
+                <button id="close-record-modal" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <form id="new-record-form">
+                    <!-- 事项标题 -->
+                    <div class="mb-4">
+                        <label for="record-title" class="block text-gray-700 font-medium mb-2">事项标题</label>
+                        <input type="text" id="record-title" name="title" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                            placeholder="输入事项名称" required>
+                    </div>
+
+                    <!-- 事项分类 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">事项分类</label>
+                        <div class="grid grid-cols-3 gap-3">
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-study" class="mr-2" value="study" checked>
+                                <label for="rec-type-study" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-blue-500 rounded-full mr-2"></span>
+                                    学习成长
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-exp" class="mr-2" value="experience">
+                                <label for="rec-type-exp" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-purple-500 rounded-full mr-2"></span>
+                                    体验突破
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-leisure" class="mr-2" value="leisure">
+                                <label for="rec-type-leisure" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-green-500 rounded-full mr-2"></span>
+                                    休闲放松
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-family" class="mr-2" value="family">
+                                <label for="rec-type-family" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-yellow-500 rounded-full mr-2"></span>
+                                    家庭生活
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-work" class="mr-2" value="work">
+                                <label for="rec-type-work" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-red-500 rounded-full mr-2"></span>
+                                    工作职业
+                                </label>
+                            </div>
+                            <div class="flex items-center p-3 border rounded-lg hover:bg-purple-50 cursor-pointer record-type-option">
+                                <input type="radio" name="record-type" id="rec-type-social" class="mr-2" value="social">
+                                <label for="rec-type-social" class="flex items-center cursor-pointer">
+                                    <span class="w-3 h-3 bg-indigo-500 rounded-full mr-2"></span>
+                                    人际社群
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 标签选择 -->
+                    <div class="mb-4" style="display: block !important; visibility: visible !important;">
+                        <label class="block text-gray-700 font-medium mb-2">选择标签</label>
+                        <div id="record-tag-selector" class="border-2 border-dashed border-gray-300 rounded-lg p-4 min-h-[100px]" style="display: block !important; visibility: visible !important;">
+                            <p class="text-gray-500 text-center">标签选择器将在这里显示</p>
+                        </div>
+                    </div>
+
+                    <!-- 完成日期和时间 -->
+                    <div class="mb-4">
+                        <label class="block text-gray-700 font-medium mb-2">完成日期和时间</label>
+                        <div class="flex space-x-2">
+                            <input type="date" id="record-date" name="completion-date" 
+                                class="flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                            <input type="time" id="record-time" name="completion-time" 
+                                class="w-32 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" required>
+                        </div>
+                    </div>
+
+                    <!-- 事项详情 -->
+                    <div class="mb-4">
+                        <label for="record-desc" class="block text-gray-700 font-medium mb-2">事项详情</label>
+                        <textarea id="record-desc" name="description" rows="3" 
+                            class="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-300" 
+                            placeholder="输入事项的详细描述或感想"></textarea>
+                    </div>
+                    
+                    <!-- 按钮 -->
+                    <div class="flex justify-end space-x-3">
+                        <button type="button" id="delete-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 hidden">
+                            删除
+                        </button>
+                        <button type="button" id="cancel-record-btn" class="px-6 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">
+                            取消
+                        </button>
+                        <button type="submit" id="submit-record-btn" class="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700">
+                            保存记录
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 简单的交互逻辑
+        document.addEventListener('DOMContentLoaded', function() {
+            const newEventBtn = document.querySelector('button.bg-indigo-600');
+            const newEventModal = document.getElementById('newEventModal');
+            const closeModalBtn = newEventModal.querySelector('button.text-gray-500');
+            const cancelBtn = newEventModal.querySelector('button[type="button"]');
+            
+            newEventBtn.addEventListener('click', function() {
+                newEventModal.classList.remove('hidden');
+            });
+            
+            closeModalBtn.addEventListener('click', function() {
+                newEventModal.classList.add('hidden');
+            });
+            
+            cancelBtn.addEventListener('click', function() {
+                newEventModal.classList.add('hidden');
+            });
+            
+            // 移动端侧边栏切换
+            const menuBtn = document.querySelector('button.md\\:hidden');
+            const sidebar = document.querySelector('.w-64');
+            
+            menuBtn.addEventListener('click', function() {
+                sidebar.classList.toggle('hidden');
+            });
+
+            // 弹出窗口功能
+            const planModal = document.getElementById('modal-new-plan');
+            const recordModal = document.getElementById('modal-new-record');
+            
+            // 打开弹出窗口
+            document.getElementById('btn-new-plan').addEventListener('click', function() {
+                planModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden'; // 防止背景滚动
+            });
+            
+            document.getElementById('btn-new-record').addEventListener('click', function() {
+                recordModal.classList.remove('hidden');
+                document.body.style.overflow = 'hidden';
+            });
+            
+            // 关闭弹出窗口
+            document.getElementById('close-plan-modal').addEventListener('click', function() {
+                planModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('cancel-plan-btn').addEventListener('click', function() {
+                planModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('close-record-modal').addEventListener('click', function() {
+                recordModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            document.getElementById('cancel-record-btn').addEventListener('click', function() {
+                recordModal.classList.add('hidden');
+                document.body.style.overflow = '';
+            });
+            
+            // 点击模态窗口外部关闭
+            planModal.addEventListener('click', function(e) {
+                if (e.target === planModal) {
+                    planModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            recordModal.addEventListener('click', function(e) {
+                if (e.target === recordModal) {
+                    recordModal.classList.add('hidden');
+                    document.body.style.overflow = '';
+                }
+            });
+            
+            // 设置今天的日期
+            const today = new Date();
+            const formattedDate = today.toISOString().substring(0, 10);
+            document.getElementById('plan-due-date').value = formattedDate;
+            document.getElementById('record-date').value = formattedDate;
+            
+            // 确保表单处理程序初始化
+            if (typeof initializeFormHandlers === 'function') {
+                initializeFormHandlers();
+                console.log('已初始化表单处理程序');
+            } else {
+                console.error('未找到initializeFormHandlers函数');
+            }
+            
+            // 事件悬停显示详情
+            // ... existing code ...
+        });
+
+        // 日历视图功能 - 加载计划和记录数据
+        document.addEventListener('DOMContentLoaded', function() {
+            // 当前日期和视图状态
+            let currentDate = new Date();
+            let currentView = 'month'; // 默认视图为月视图
+            
+            // 初始化年月选择器
+            const monthYearSelector = document.getElementById('month-year-selector');
+            const monthYearModal = document.getElementById('monthYearModal');
+            const closeMonthYearModalBtn = document.getElementById('close-month-year-modal');
+            const yearSelect = document.getElementById('yearSelect');
+            const monthBtns = document.querySelectorAll('.month-btn');
+            const applyYearMonthBtn = document.getElementById('apply-year-month');
+            const todayBtn = document.getElementById('today-btn');
+            
+            // 生成年份选项（当前年份的前10年到后10年）
+            const currentYear = new Date().getFullYear();
+            for (let i = currentYear - 10; i <= currentYear + 10; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i + '年';
+                if (i === currentDate.getFullYear()) {
+                    option.selected = true;
+                }
+                yearSelect.appendChild(option);
+            }
+            
+            // 打开年月选择器
+            monthYearSelector.addEventListener('click', function() {
+                // 高亮当前选中的月份
+                monthBtns.forEach(btn => {
+                    const month = parseInt(btn.getAttribute('data-month'));
+                    if (month === currentDate.getMonth()) {
+                        btn.classList.add('bg-indigo-100', 'text-indigo-800', 'font-medium');
+                    } else {
+                        btn.classList.remove('bg-indigo-100', 'text-indigo-800', 'font-medium');
+                    }
+                });
+                
+                // 设置当前年份
+                yearSelect.value = currentDate.getFullYear();
+                
+                // 显示弹窗
+                monthYearModal.classList.remove('hidden');
+            });
+            
+            // 关闭年月选择器
+            closeMonthYearModalBtn.addEventListener('click', function() {
+                monthYearModal.classList.add('hidden');
+            });
+            
+            // 点击弹窗外部关闭
+            monthYearModal.addEventListener('click', function(e) {
+                if (e.target === monthYearModal) {
+                    monthYearModal.classList.add('hidden');
+                }
+            });
+            
+            // 月份按钮点击事件
+            monthBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    // 移除所有月份按钮的高亮
+                    monthBtns.forEach(b => {
+                        b.classList.remove('bg-indigo-100', 'text-indigo-800', 'font-medium');
+                    });
+                    
+                    // 高亮当前选中的月份
+                    this.classList.add('bg-indigo-100', 'text-indigo-800', 'font-medium');
+                });
+            });
+            
+            // 应用所选年月
+            applyYearMonthBtn.addEventListener('click', function() {
+                const selectedYear = parseInt(yearSelect.value);
+                let selectedMonth = -1;
+                
+                // 获取选中的月份
+                monthBtns.forEach(btn => {
+                    if (btn.classList.contains('bg-indigo-100')) {
+                        selectedMonth = parseInt(btn.getAttribute('data-month'));
+                    }
+                });
+                
+                // 如果没有选中月份，使用当前月份
+                if (selectedMonth === -1) {
+                    selectedMonth = currentDate.getMonth();
+                }
+                
+                // 更新当前日期
+                currentDate = new Date(selectedYear, selectedMonth, 1);
+                
+                // 刷新日历
+                renderCalendar(currentDate, currentView);
+                
+                // 关闭弹窗
+                monthYearModal.classList.add('hidden');
+            });
+            
+            // 回到今天
+            todayBtn.addEventListener('click', function() {
+                currentDate = new Date();
+                renderCalendar(currentDate, currentView);
+                monthYearModal.classList.add('hidden');
+            });
+            
+            // 初始化日历
+            renderCalendar(currentDate, currentView);
+            
+            // 监听月份导航按钮
+            const prevMonthBtn = document.querySelector('.px-3.py-1.border.rounded-l-lg');
+            const nextMonthBtn = document.querySelector('.px-3.py-1.border.rounded-r-lg');
+            
+            prevMonthBtn.addEventListener('click', function() {
+                currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() - 1, 1);
+                renderCalendar(currentDate, currentView);
+            });
+            
+            nextMonthBtn.addEventListener('click', function() {
+                currentDate = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 1);
+                renderCalendar(currentDate, currentView);
+            });
+            
+            // 渲染日历视图
+            function renderCalendar(date, view) {
+                // 更新显示的月份和年份
+                const monthYearDisplay = document.querySelector('.px-4.py-1.border-t.border-b');
+                const monthNames = ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+                monthYearDisplay.textContent = `${date.getFullYear()}年${monthNames[date.getMonth()]}`;
+                
+                // 直接渲染月视图，不再判断视图类型
+                renderMonthView(date);
+            }
+            
+            // 渲染月视图
+            function renderMonthView(date) {
+                // 获取当前月份的第一天
+                const firstDay = new Date(date.getFullYear(), date.getMonth(), 1);
+                
+                // 获取当前月份的最后一天
+                const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+                
+                // 计算日历起始日期 (上个月的日期)
+                const startDate = new Date(firstDay);
+                startDate.setDate(startDate.getDate() - firstDay.getDay());
+                
+                // 计算日历结束日期 (下个月的日期)
+                const endDate = new Date(lastDay);
+                const daysToAdd = 6 - lastDay.getDay();
+                endDate.setDate(endDate.getDate() + daysToAdd);
+                
+                // 清除现有的日历格子
+                const calendarGrid = document.getElementById('calendar-grid');
+                calendarGrid.innerHTML = '';
+                
+                // 从 localStorage 获取所有事件数据
+                const allEvents = getEvents();
+                console.log("所有事件数据:", allEvents); // 调试用
+                
+                // 填充日历格子
+                let currentDateIterator = new Date(startDate);
+                while (currentDateIterator <= endDate) {
+                    const cell = document.createElement('div');
+                    cell.className = 'bg-white p-3';  // 增加内边距
+                    
+                    // 日期显示
+                    const dateDiv = document.createElement('div');
+                    
+                    // 检查是否为当前月份的日期
+                    const isCurrentMonth = currentDateIterator.getMonth() === date.getMonth();
+                    
+                    // 检查是否为今天
+                    const isToday = isSameDay(currentDateIterator, new Date());
+                    
+                    if (isCurrentMonth) {
+                        dateDiv.className = isToday ? 'text-indigo-800 font-medium mb-2' : 'text-gray-800 font-medium mb-2';  // 增加底部间距
+                        // 高亮今天
+                        if (isToday) {
+                            cell.className += ' bg-indigo-50';
+                        }
+                    } else {
+                        dateDiv.className = 'text-gray-400 text-sm mb-2';  // 增加底部间距
+                    }
+                    
+                    dateDiv.textContent = currentDateIterator.getDate();
+                    cell.appendChild(dateDiv);
+                    
+                    // 查找该日期的事件
+                    const dateEvents = getEventsForDate(allEvents, currentDateIterator);
+                    console.log(`${currentDateIterator.toDateString()} 的事件:`, dateEvents); // 调试用
+                    
+                    // 如果有事件，则创建事件容器
+                    if (dateEvents.length > 0) {
+                        const eventsContainer = document.createElement('div');
+                        eventsContainer.className = 'mt-2 space-y-2';  // 增加事件之间的间距
+                        
+                        // 显示所有事件，不再限制数量
+                        dateEvents.forEach(event => {
+                            const eventDiv = document.createElement('div');
+                            
+                            // 根据事件类型设置不同的样式
+                            if (event.eventType === 'plan' && event.status === 'completed') {
+                                // 完成的计划
+                                eventDiv.className = 'bg-green-100 text-green-800 text-xs p-2 rounded flex items-start';  // 增加内边距，改为 items-start
+                                eventDiv.innerHTML = `<i class="fas fa-check-circle mr-2 mt-0.5"></i>`;  // 增加图标右侧间距，添加顶部间距
+                            } else if (event.eventType === 'plan') {
+                                // 未完成的计划
+                                eventDiv.className = 'bg-blue-100 text-blue-800 text-xs p-2 rounded flex items-start';  // 增加内边距，改为 items-start
+                                eventDiv.innerHTML = `<i class="fas fa-calendar-check mr-2 mt-0.5"></i>`;  // 增加图标右侧间距，添加顶部间距
+                            } else { // record
+                                // 记录的事件
+                                eventDiv.className = 'bg-purple-100 text-purple-800 text-xs p-2 rounded flex items-start';  // 增加内边距，改为 items-start
+                                eventDiv.innerHTML = `<i class="fas fa-bookmark mr-2 mt-0.5"></i>`;  // 增加图标右侧间距，添加顶部间距
+                            }
+                            
+                            // 拼接事件时间和标题
+                            let eventText = '';
+                            if (event.isAllDay) {
+                                eventText = `全天 ${event.title}`;
+                            } else if (event.startTime) {
+                                const timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                });
+                                eventText = `${timeStr} ${event.title}`;
+                            } else {
+                                eventText = event.title;
+                            }
+                            
+                            // 为完成的计划添加"已完成"标记
+                            if (event.eventType === 'plan' && event.status === 'completed') {
+                                eventText = `${eventText}`;
+                            }
+                            
+                            // 显示完整的事件内容
+                            const eventTextSpan = document.createElement('span');
+                            eventTextSpan.className = 'flex-1';
+                            eventTextSpan.textContent = eventText;
+                            eventDiv.appendChild(eventTextSpan);
+                            
+                            
+                            // 设置鼠标悬停效果
+                            eventDiv.style.cursor = 'pointer';
+                            eventDiv.setAttribute('data-event-id', event.id);
+                            eventDiv.setAttribute('data-event-type', event.eventType);
+                            eventDiv.setAttribute('data-event-status', event.status || '');
+                            
+                            // 直接添加所有事件到容器，不进行筛选
+                            eventsContainer.appendChild(eventDiv);
+                        });
+                        
+                        cell.appendChild(eventsContainer);
+                    }
+                    
+                    calendarGrid.appendChild(cell);
+                    
+                    // 移至下一天
+                    currentDateIterator.setDate(currentDateIterator.getDate() + 1);
+                }
+            }
+            
+            // 检查是否是同一天
+            function isSameDay(date1, date2) {
+                return date1.getFullYear() === date2.getFullYear() &&
+                       date1.getMonth() === date2.getMonth() &&
+                       date1.getDate() === date2.getDate();
+            }
+            
+            // 获取指定日期的所有事件
+            function getEventsForDate(events, date) {
+                return events.filter(event => {
+                    const eventDate = new Date(event.startTime || event.endTime || event.createdAt);
+                    return isSameDay(eventDate, date);
+                });
+            }
+            
+            // 从 localStorage 获取所有事件
+            function getEvents() {
+                let events = JSON.parse(localStorage.getItem('events') || '[]');
+                
+                // 添加默认日期信息，如果没有指定时间
+                events = events.map(event => {
+                    if (!event.createdAt) {
+                        event.createdAt = new Date().toISOString();
+                    }
+                    return event;
+                });
+                
+                return events;
+            }
+            
+            // 获取计划类型事件
+            function getPlans() {
+                const events = getEvents();
+                return events.filter(event => event.eventType === 'plan');
+            }
+            
+            // 获取记录类型事件
+            function getRecords() {
+                const events = getEvents();
+                return events.filter(event => event.eventType === 'record');
+            }
+            
+            // 删除事件
+            function deleteEvent(eventId) {
+                const events = getEvents();
+                const updatedEvents = events.filter(event => event.id !== eventId);
+                localStorage.setItem('events', JSON.stringify(updatedEvents));
+            }
+            
+            // 标记计划为完成
+            function completeEvent(eventId) {
+                const events = getEvents();
+                const eventIndex = events.findIndex(event => event.id === eventId);
+                
+                if (eventIndex !== -1 && events[eventIndex].eventType === 'plan') {
+                    events[eventIndex].status = 'completed';
+                    events[eventIndex].updatedAt = new Date().toISOString();
+                    localStorage.setItem('events', JSON.stringify(events));
+                }
+            }
+
+            // 事件点击显示详情
+            document.addEventListener('click', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const eventElement = e.target.closest('[data-event-id]');
+                    const eventId = eventElement.getAttribute('data-event-id');
+                    
+                    // 查找事件详情
+                    const event = getEvents().find(event => event.id === eventId);
+                    if (event) {
+                        // 创建详情弹窗
+                        let detailModal = document.getElementById('event-detail-modal');
+                        if (!detailModal) {
+                            detailModal = document.createElement('div');
+                            detailModal.id = 'event-detail-modal';
+                            detailModal.className = 'fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-30 hidden';
+                            document.body.appendChild(detailModal);
+                        }
+                        
+                        // 设置弹窗标题和图标
+                        let statusText = '';
+                        let iconClass = '';
+                        let bgColorClass = '';
+                        let buttonClass = '';
+                        
+                        if (event.eventType === 'record') {
+                            statusText = '记录的事件';
+                            iconClass = 'fas fa-bookmark text-purple-600';
+                            bgColorClass = 'bg-purple-50';
+                            buttonClass = 'bg-purple-600 hover:bg-purple-700';
+                        } else if (event.eventType === 'plan' && event.status === 'completed') {
+                            statusText = '已完成计划';
+                            iconClass = 'fas fa-check-circle text-green-600';
+                            bgColorClass = 'bg-green-50';
+                            buttonClass = 'bg-green-600 hover:bg-green-700';
+                        } else {
+                            statusText = '计划';
+                            iconClass = 'fas fa-calendar-check text-blue-600';
+                            bgColorClass = 'bg-blue-50';
+                            buttonClass = 'bg-blue-600 hover:bg-blue-700';
+                        }
+                        
+                        // 格式化时间
+                        let timeStr = '';
+                        if (event.isAllDay) {
+                            timeStr = '全天';
+                        } else if (event.startTime && event.endTime) {
+                            const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            timeStr = `${start} - ${end}`;
+                        } else if (event.startTime) {
+                            timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        // 创建日期
+                        let createdStr = '';
+                        if (event.createdAt) {
+                            const createdDate = new Date(event.createdAt);
+                            createdStr = createdDate.toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        // 完成时间（如果有）
+                        let completedStr = '';
+                        if (event.eventType === 'plan' && event.status === 'completed' && event.updatedAt) {
+                            const completedDate = new Date(event.updatedAt);
+                            completedStr = completedDate.toLocaleString('zh-CN', {
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        // 操作按钮
+                        let actionButtons = '';
+                        if (event.eventType === 'plan' && event.status !== 'completed') {
+                            actionButtons = `
+                                <button class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors complete-btn" data-id="${event.id}">
+                                    <i class="fas fa-check mr-2"></i>标记为完成
+                                </button>
+                            `;
+                        }
+                        
+                        detailModal.innerHTML = `
+                            <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4 overflow-hidden">
+                                <div class="p-6 ${bgColorClass} border-b flex items-center justify-between">
+                                    <div class="flex items-center">
+                                        <i class="${iconClass} text-xl mr-3"></i>
+                                        <h3 class="text-xl font-bold text-gray-800">${event.title}</h3>
+                                    </div>
+                                    <button class="text-gray-500 hover:text-gray-700 close-modal">
+                                        <i class="fas fa-times"></i>
+                                    </button>
+                                </div>
+                                <div class="p-6">
+                                    <div class="mb-4">
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-tag text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">类型:</span>
+                                            <span class="ml-2">${statusText}</span>
+                                        </div>
+                                        
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-clock text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">时间:</span>
+                                            <span class="ml-2">${timeStr}</span>
+                                        </div>
+                                        
+                                        ${event.location ? `
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-map-marker-alt text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">地点:</span>
+                                            <span class="ml-2">${event.location}</span>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        ${event.category ? `
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-folder text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">分类:</span>
+                                            <span class="ml-2">${event.category}</span>
+                                        </div>
+                                        ` : ''}
+                                        
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-calendar-plus text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">创建于:</span>
+                                            <span class="ml-2">${createdStr}</span>
+                                        </div>
+                                        
+                                        ${completedStr ? `
+                                        <div class="flex items-center mb-2">
+                                            <i class="fas fa-calendar-check text-gray-400 w-5"></i>
+                                            <span class="text-gray-700 font-medium ml-2">完成于:</span>
+                                            <span class="ml-2">${completedStr}</span>
+                                        </div>
+                                        ` : ''}
+                                    </div>
+                                    
+                                    ${event.description ? `
+                                    <div class="mb-6">
+                                        <h4 class="text-gray-700 font-medium mb-2">描述</h4>
+                                        <p class="text-gray-600 bg-gray-50 p-3 rounded">${event.description}</p>
+                                    </div>
+                                    ` : ''}
+                                    
+                                    <div class="flex justify-between mt-6">
+                                        <div class="flex space-x-2">
+                                            <button class="px-3 py-2 border rounded hover:bg-gray-50 edit-btn" data-id="${event.id}">
+                                                <i class="fas fa-edit mr-1"></i>编辑
+                                            </button>
+                                            <button class="px-3 py-2 border rounded hover:bg-gray-50 delete-btn" data-id="${event.id}">
+                                                <i class="fas fa-trash mr-1"></i>删除
+                                            </button>
+                                        </div>
+                                        ${actionButtons}
+                                    </div>
+                                </div>
+                            </div>
+                        `;
+                        
+                        detailModal.classList.remove('hidden');
+                        
+                        // 绑定关闭按钮事件
+                        const closeBtn = detailModal.querySelector('.close-modal');
+                        closeBtn.addEventListener('click', function() {
+                            detailModal.classList.add('hidden');
+                        });
+                        
+                        // 点击空白区域关闭
+                        detailModal.addEventListener('click', function(e) {
+                            if (e.target === detailModal) {
+                                detailModal.classList.add('hidden');
+                            }
+                        });
+                        
+                        // 按ESC键关闭
+                        document.addEventListener('keydown', function(e) {
+                            if (e.key === 'Escape' && !detailModal.classList.contains('hidden')) {
+                                detailModal.classList.add('hidden');
+                            }
+                        });
+                        
+                        // 编辑按钮事件
+                        const editBtn = detailModal.querySelector('.edit-btn');
+                        editBtn.addEventListener('click', function() {
+                            alert('编辑功能正在开发中');
+                            detailModal.classList.add('hidden');
+                        });
+                        
+                        // 删除按钮事件
+                        const deleteBtn = detailModal.querySelector('.delete-btn');
+                        deleteBtn.addEventListener('click', function() {
+                            if (confirm('确定要删除这个事件吗？')) {
+                                deleteEvent(eventId);
+                                renderCalendar(currentDate, currentView);
+                                detailModal.classList.add('hidden');
+                            }
+                        });
+                        
+                        // 完成按钮事件（如果存在）
+                        const completeBtn = detailModal.querySelector('.complete-btn');
+                        if (completeBtn) {
+                            completeBtn.addEventListener('click', function() {
+                                completeEvent(eventId);
+                                renderCalendar(currentDate, currentView);
+                                detailModal.classList.add('hidden');
+                            });
+                        }
+                    }
+                }
+            });
+
+            // 事件悬停显示详情
+            document.addEventListener('mouseover', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const eventElement = e.target.closest('[data-event-id]');
+                    const eventId = eventElement.getAttribute('data-event-id');
+                    
+                    // 查找事件详情
+                    const event = getEvents().find(event => event.id === eventId);
+                    if (event) {
+                        // 创建或获取悬浮提示框
+                        let tooltip = document.getElementById('event-tooltip');
+                        if (!tooltip) {
+                            tooltip = document.createElement('div');
+                            tooltip.id = 'event-tooltip';
+                            tooltip.className = 'absolute z-50 bg-white p-3 rounded-lg shadow-lg border text-sm max-w-xs';
+                            document.body.appendChild(tooltip);
+                        }
+                        
+                        // 设置提示框内容
+                        let statusText = '';
+                        let iconClass = '';
+                        let bgColorClass = '';
+                        
+                        if (event.eventType === 'record') {
+                            statusText = '记录的事件';
+                            iconClass = 'fas fa-bookmark text-purple-600';
+                            bgColorClass = 'bg-purple-50 border-purple-200';
+                        } else if (event.eventType === 'plan' && event.status === 'completed') {
+                            statusText = '已完成计划';
+                            iconClass = 'fas fa-check-circle text-green-600';
+                            bgColorClass = 'bg-green-50 border-green-200';
+                        } else {
+                            statusText = '计划';
+                            iconClass = 'fas fa-calendar-check text-blue-600';
+                            bgColorClass = 'bg-blue-50 border-blue-200';
+                        }
+                        
+                        // 格式化时间
+                        let timeStr = '';
+                        if (event.isAllDay) {
+                            timeStr = '全天';
+                        } else if (event.startTime && event.endTime) {
+                            const start = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            const end = new Date(event.endTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                            timeStr = `${start} - ${end}`;
+                        } else if (event.startTime) {
+                            timeStr = new Date(event.startTime).toLocaleTimeString('zh-CN', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+                        }
+                        
+                        tooltip.className = `absolute z-50 p-3 rounded-lg shadow-lg border text-sm max-w-xs ${bgColorClass}`;
+                        tooltip.innerHTML = `
+                            <div class="flex items-center font-medium text-gray-800 border-b pb-1 mb-2">
+                                <i class="${iconClass} mr-1"></i>
+                                ${statusText}: ${event.title}
+                            </div>
+                            <div>
+                                <span class="font-medium">时间:</span> ${timeStr}
+                            </div>
+                            ${event.location ? `
+                            <div class="mt-1">
+                                <span class="font-medium">地点:</span> ${event.location}
+                            </div>
+                            ` : ''}
+                            ${event.category ? `
+                            <div class="mt-1">
+                                <span class="font-medium">分类:</span> ${event.category}
+                            </div>
+                            ` : ''}
+                            <div class="mt-2 text-xs text-gray-500 italic">点击查看详情</div>
+                        `;
+                        
+                        // 定位提示框
+                        const rect = eventElement.getBoundingClientRect();
+                        tooltip.style.left = `${rect.left + window.scrollX + rect.width / 2}px`;
+                        tooltip.style.top = `${rect.bottom + window.scrollY + 10}px`;
+                        tooltip.style.display = 'block';
+                        
+                        // 添加可见性类以触发动画
+                        setTimeout(() => {
+                            tooltip.classList.add('visible');
+                        }, 10);
+                    }
+                }
+            });
+
+            document.addEventListener('mouseout', function(e) {
+                if (e.target.closest('[data-event-id]')) {
+                    const tooltip = document.getElementById('event-tooltip');
+                    if (tooltip) {
+                        tooltip.classList.remove('visible');
+                        
+                        // 在动画完成后隐藏
+                        setTimeout(() => {
+                            tooltip.style.display = 'none';
+                        }, 200);
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>

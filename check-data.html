@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据状态检查</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 p-8">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">localStorage数据状态检查</h1>
+        
+        <div class="bg-white rounded-lg shadow p-6 mb-8">
+            <h2 class="text-xl font-semibold mb-4">数据状态</h2>
+            <div id="data-status" class="space-y-4"></div>
+        </div>
+        
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">操作</h2>
+            <div class="space-x-4">
+                <button id="btn-refresh" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded">
+                    刷新数据
+                </button>
+                <button id="btn-clear-all" class="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded">
+                    清空所有数据
+                </button>
+                <button id="btn-create-test" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded">
+                    创建测试数据
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function checkData() {
+            const dataStatus = document.getElementById('data-status');
+            dataStatus.innerHTML = '';
+            
+            // 检查各种数据
+            const keys = ['categories', 'tags', 'events'];
+            
+            keys.forEach(key => {
+                const data = localStorage.getItem(key);
+                const div = document.createElement('div');
+                div.className = 'p-4 border rounded-lg';
+                
+                if (data) {
+                    try {
+                        const parsed = JSON.parse(data);
+                        div.innerHTML = `
+                            <h3 class="font-semibold text-green-600">${key} ✅</h3>
+                            <p class="text-sm text-gray-600">数量: ${Array.isArray(parsed) ? parsed.length : '1'}</p>
+                            <pre class="text-xs bg-gray-100 p-2 rounded mt-2 overflow-auto max-h-32">${JSON.stringify(parsed, null, 2)}</pre>
+                        `;
+                    } catch (error) {
+                        div.innerHTML = `
+                            <h3 class="font-semibold text-red-600">${key} ❌</h3>
+                            <p class="text-sm text-red-600">JSON解析错误: ${error.message}</p>
+                            <pre class="text-xs bg-red-100 p-2 rounded mt-2">${data}</pre>
+                        `;
+                    }
+                } else {
+                    div.innerHTML = `
+                        <h3 class="font-semibold text-yellow-600">${key} ⚠️</h3>
+                        <p class="text-sm text-gray-600">数据不存在</p>
+                    `;
+                }
+                
+                dataStatus.appendChild(div);
+            });
+        }
+        
+        function createTestData() {
+            // 创建测试分类
+            const testCategories = [
+                { id: 'study', name: '学习成长', color: 'blue', isDefault: true },
+                { id: 'experience', name: '体验突破', color: 'purple', isDefault: true },
+                { id: 'leisure', name: '休闲放松', color: 'green', isDefault: true },
+                { id: 'family', name: '家庭生活', color: 'yellow', isDefault: true },
+                { id: 'work', name: '工作职业', color: 'red', isDefault: true },
+                { id: 'social', name: '人际社群', color: 'indigo', isDefault: true }
+            ];
+            localStorage.setItem('categories', JSON.stringify(testCategories));
+            
+            // 创建测试标签
+            const testTags = [
+                { id: 'tag1', name: '重要', color: 'red', category: 'work' },
+                { id: 'tag2', name: '紧急', color: 'orange', category: 'work' },
+                { id: 'tag3', name: '学习', color: 'blue', category: 'study' },
+                { id: 'tag4', name: '健身', color: 'green', category: 'leisure' },
+                { id: 'tag5', name: '家人', color: 'yellow', category: 'family' },
+                { id: 'tag6', name: '朋友', color: 'indigo', category: 'social' },
+                { id: 'tag7', name: '成长', color: 'purple', category: 'experience' },
+                { id: 'tag8', name: '娱乐', color: 'pink', category: 'leisure' }
+            ];
+            localStorage.setItem('tags', JSON.stringify(testTags));
+            
+            alert('测试数据创建成功！');
+            checkData();
+        }
+        
+        // 事件监听
+        document.getElementById('btn-refresh').addEventListener('click', checkData);
+        document.getElementById('btn-clear-all').addEventListener('click', function() {
+            if (confirm('确定要清空所有localStorage数据吗？')) {
+                localStorage.clear();
+                checkData();
+            }
+        });
+        document.getElementById('btn-create-test').addEventListener('click', createTestData);
+        
+        // 页面加载时检查数据
+        document.addEventListener('DOMContentLoaded', checkData);
+    </script>
+</body>
+</html> 

@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标签管理 - 事件记录</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .apple-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .apple-scrollbar::-webkit-scrollbar-thumb {
+            background-color: rgba(156, 163, 175, 0.5);
+            border-radius: 4px;
+        }
+        .apple-scrollbar::-webkit-scrollbar-track {
+            background-color: rgba(229, 231, 235, 0.3);
+            border-radius: 4px;
+        }
+        .tab-active {
+            color: #4f46e5;
+            border-bottom: 2px solid #4f46e5;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans">
+    <!-- 侧边栏 -->
+    <div class="flex h-screen overflow-hidden">
+        <div class="w-64 bg-white shadow-md hidden md:block">
+            <div class="p-6">
+                <h1 class="text-2xl font-bold text-indigo-600">事件记录</h1>
+                <p class="text-gray-500 text-sm">记录生活，追踪成长</p>
+            </div>
+            <nav class="mt-6">
+                <ul>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="index.html" class="flex items-center">
+                            <i class="fas fa-home mr-3"></i>
+                            <span>仪表盘</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="calendar.html" class="flex items-center">
+                            <i class="fas fa-calendar-alt mr-3"></i>
+                            <span>日历视图</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="events.html" class="flex items-center">
+                            <i class="fas fa-list mr-3"></i>
+                            <span>事件列表</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="statistics.html" class="flex items-center">
+                            <i class="fas fa-chart-pie mr-3"></i>
+                            <span>统计分析</span>
+                        </a>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="weekly_report.html" class="flex items-center">
+                            <i class="fas fa-file-alt mr-3"></i>
+                            <span>一周一悟</span>
+                        </a>
+                    </li>
+                    </li>
+                    <li class="px-6 py-3 bg-indigo-50 text-indigo-600 font-medium">
+                        <a href="tags.html" class="flex items-center">
+                            <i class="fas fa-tag mr-3"></i>
+                            <span>标签管理</span>
+                        </a>
+                    </li>
+                    <li class="px-6 py-3 text-gray-700 hover:bg-indigo-50 hover:text-indigo-600 transition-colors">
+                        <a href="settings.html" class="flex items-center">
+                            <i class="fas fa-cog mr-3"></i>
+                            <span>设置</span>
+                        </a>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+
+        <!-- 主内容区 -->
+        <div class="flex-1 overflow-auto">
+            <!-- 顶部导航栏 - 替换为组件容器 -->
+            <div id="header-container">
+                <!-- 备用头部组件，在加载失败时显示 -->
+                <header class="bg-white shadow-sm">
+                    <div class="flex items-center justify-between p-4">
+                        <div class="flex items-center">
+                            <button class="md:hidden text-gray-600 mr-3">
+                                <i class="fas fa-bars text-xl"></i>
+                            </button>
+                            <h1 class="text-xl font-bold text-gray-800">标签管理</h1>
+                        </div>
+                        <div class="flex items-center">
+                            <a href="settings.html#profile-section" class="h-8 w-8 rounded-full bg-indigo-200 flex items-center justify-center text-indigo-600 font-medium hover:bg-indigo-300 transition-colors cursor-pointer" title="个人设置">
+                                <i class="fas fa-user-circle"></i>
+                            </a>
+                        </div>
+                    </div>
+                </header>
+            </div>
+
+            <!-- 标签管理内容 -->
+            <main class="p-6">
+                <!-- 标签页切换 -->
+                <div class="flex border-b border-gray-200 mb-6">
+                    <button id="tab-tags" class="px-4 py-2 font-medium tab-active">标签管理</button>
+                    <button id="tab-categories" class="px-4 py-2 font-medium text-gray-500">分类管理</button>
+                </div>
+                
+                <!-- 标签管理模块 -->
+                <div id="tags-container" class="block">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">标签管理</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input type="text" id="tagSearchInput" placeholder="搜索标签..." class="pl-10 pr-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <div class="relative">
+                                <select class="appearance-none pl-3 pr-10 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300" id="sortTags">
+                                    <option value="name-asc">名称 (A→Z)</option>
+                                    <option value="name-desc">名称 (Z→A)</option>
+                                    <option value="count-desc">使用次数 (多→少)</option>
+                                    <option value="count-asc">使用次数 (少→多)</option>
+                                    <option value="date-desc">创建日期 (新→旧)</option>
+                                    <option value="date-asc">创建日期 (旧→新)</option>
+                                </select>
+                                <i class="fas fa-chevron-down absolute right-3 top-3 text-gray-400 pointer-events-none"></i>
+                            </div>
+                            <button id="addTagBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>新建标签
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 标签列表 -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">标签名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">使用次数</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">创建日期</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tags-table-body" class="bg-white divide-y divide-gray-200">
+                                    <!-- 标签项会通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                        <div class="bg-gray-50 px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                            <div class="text-sm text-gray-500" id="tags-count">
+                                显示 1-5 项, 共 12 项
+                            </div>
+                            <div class="flex-1 flex justify-center sm:justify-end">
+                                <nav class="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">上一页</span>
+                                        <i class="fas fa-chevron-left text-xs"></i>
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-indigo-600 text-sm font-medium text-white">
+                                        1
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        2
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-4 py-2 border border-gray-300 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                        3
+                                    </a>
+                                    <a href="#" class="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50">
+                                        <span class="sr-only">下一页</span>
+                                        <i class="fas fa-chevron-right text-xs"></i>
+                                    </a>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 分类管理模块 -->
+                <div id="categories-container" class="hidden">
+                    <div class="flex justify-between items-center mb-6">
+                        <h2 class="text-2xl font-bold text-gray-800">分类管理</h2>
+                        <div class="flex items-center space-x-3">
+                            <div class="relative">
+                                <input type="text" id="categorySearchInput" placeholder="搜索分类..." class="pl-10 pr-4 py-2 border rounded-lg bg-white focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                                <i class="fas fa-search absolute left-3 top-3 text-gray-400"></i>
+                            </div>
+                            <button id="addCategoryBtn" class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors">
+                                <i class="fas fa-plus mr-2"></i>新建分类
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- 分类列表 -->
+                    <div class="bg-white rounded-lg shadow overflow-hidden">
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-gray-200" id="categories-table">
+                                <thead class="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">分类名称</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">适用范围</th>
+                                        <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">颜色</th>
+                                        <th scope="col" class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">操作</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- 分类项会通过JavaScript动态生成 -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </main>
+            
+            <!-- 标签模态框 -->
+            <div id="tagModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800" id="tagModalTitle">新建标签</h3>
+                        <button class="text-gray-400 hover:text-gray-600 close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="tagForm" class="p-4">
+                        <div class="mb-4">
+                            <label for="tagNameInput" class="block text-sm font-medium text-gray-700 mb-1">标签名称</label>
+                            <input type="text" id="tagNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">适用范围</label>
+                            <div class="flex space-x-4">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="tagApplyToPlan" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="tagApplyToPlan" class="ml-2 block text-sm text-gray-700">计划</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="tagApplyToEvent" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="tagApplyToEvent" class="ml-2 block text-sm text-gray-700">事件</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 分类模态框 -->
+            <div id="categoryModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800" id="categoryModalTitle">新建分类</h3>
+                        <button class="text-gray-400 hover:text-gray-600 close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <form id="categoryForm" class="p-4">
+                        <div class="mb-4">
+                            <label for="categoryNameInput" class="block text-sm font-medium text-gray-700 mb-1">分类名称</label>
+                            <input type="text" id="categoryNameInput" class="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" required>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">适用范围</label>
+                            <div class="flex space-x-4">
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="categoryApplyToPlan" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="categoryApplyToPlan" class="ml-2 block text-sm text-gray-700">计划</label>
+                                </div>
+                                <div class="flex items-center">
+                                    <input type="checkbox" id="categoryApplyToEvent" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded" checked>
+                                    <label for="categoryApplyToEvent" class="ml-2 block text-sm text-gray-700">事件</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <label class="block text-sm font-medium text-gray-700 mb-1">分类颜色</label>
+                            <div class="flex items-center mb-2">
+                                <div id="categoryColorPreview" class="h-6 w-6 rounded-full mr-2" style="background-color: #3B82F6"></div>
+                                <input type="text" id="categoryColorInput" class="w-32 px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-300" value="#3B82F6">
+                            </div>
+                            <div class="grid grid-cols-6 gap-2">
+                                <div class="color-option h-8 w-8 rounded-full bg-red-500 cursor-pointer" data-color="#EF4444"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-orange-500 cursor-pointer" data-color="#F97316"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-yellow-500 cursor-pointer" data-color="#F59E0B"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-green-500 cursor-pointer" data-color="#10B981"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-blue-500 cursor-pointer ring-2 ring-offset-2 ring-indigo-500" data-color="#3B82F6"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-indigo-500 cursor-pointer" data-color="#6366F1"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-purple-500 cursor-pointer" data-color="#8B5CF6"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-pink-500 cursor-pointer" data-color="#EC4899"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-gray-500 cursor-pointer" data-color="#6B7280"></div>
+                                <div class="color-option h-8 w-8 rounded-full bg-gray-800 cursor-pointer" data-color="#1F2937"></div>
+                            </div>
+                        </div>
+                        <div class="flex justify-end space-x-3 pt-4 border-t">
+                            <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
+                            <button type="submit" class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">保存</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- 删除确认模态框 -->
+            <div id="deleteModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 flex items-center justify-center z-50 hidden">
+                <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+                    <div class="flex items-center justify-between p-4 border-b">
+                        <h3 class="text-lg font-semibold text-gray-800" id="deleteModalTitle">确认删除</h3>
+                        <button class="text-gray-400 hover:text-gray-600 close-modal">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                    <div class="p-4">
+                        <p class="text-gray-700" id="deleteModalMessage">您确定要删除这个项目吗？</p>
+                    </div>
+                    <div class="flex justify-end space-x-3 p-4 border-t">
+                        <button type="button" class="px-4 py-2 border rounded-lg text-gray-700 hover:bg-gray-50 cancel-btn">取消</button>
+                        <button type="button" id="confirmDeleteBtn" class="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">删除</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 通知组件 -->
+    <div id="notification" class="fixed top-4 right-4 bg-green-100 text-green-800 px-4 py-3 rounded-lg shadow-md flex items-center z-50 transform transition-all duration-300 ease-in-out translate-x-full">
+        <i class="fas fa-check-circle mr-2"></i>
+        <span id="notification-message">操作成功</span>
+    </div>
+
+    <!-- 引入脚本 -->
+    <script src="js/common.js"></script>
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/dynamic_categories.js"></script>
+    <script src="js/tags.js"></script>
+</body>
+</html>

@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>标签调试工具</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .debug-section {
+            background: white;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .debug-section h2 {
+            color: #333;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .status.success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        .status.error {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+        .status.info {
+            background-color: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin: 5px;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            border: 1px solid #e9ecef;
+        }
+        .tag-preview {
+            display: inline-block;
+            padding: 4px 8px;
+            margin: 2px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: white;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔧 标签系统调试工具</h1>
+    
+    <div class="debug-section">
+        <h2>1. 系统状态检查</h2>
+        <div id="system-status"></div>
+        <button onclick="checkSystemStatus()">检查系统状态</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>2. localStorage 数据检查</h2>
+        <div id="storage-status"></div>
+        <button onclick="checkStorageData()">检查存储数据</button>
+        <button onclick="clearStorageData()">清空存储数据</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>3. 创建测试标签</h2>
+        <div id="create-tags-status"></div>
+        <button onclick="createTestTags()">创建测试标签</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>4. 标签选择器测试</h2>
+        <div id="tag-selector-test"></div>
+        <button onclick="testTagSelector()">测试标签选择器</button>
+    </div>
+
+    <div class="debug-section">
+        <h2>5. 修复建议</h2>
+        <div id="fix-suggestions"></div>
+        <button onclick="autoFix()">自动修复</button>
+    </div>
+
+    <!-- 引入必要的JavaScript文件 -->
+    <script src="js/components.js"></script>
+    <script src="js/common.js"></script>
+    <script src="js/categories-manager.js"></script>
+    <script src="js/tags-manager.js"></script>
+    <script src="js/tag-selector.js"></script>
+
+    <script>
+        let debugLog = [];
+
+        function log(message, type = 'info') {
+            debugLog.push({message, type, timestamp: new Date().toLocaleTimeString()});
+            console.log(`[${type.toUpperCase()}] ${message}`);
+        }
+
+        function displayStatus(elementId, content) {
+            document.getElementById(elementId).innerHTML = content;
+        }
+
+        function checkSystemStatus() {
+            log('开始检查系统状态...');
+            let statusHtml = '';
+            
+            // 检查必要的类是否存在
+            const requiredClasses = [
+                { name: 'CategoriesManager', check: () => typeof CategoriesManager !== 'undefined' },
+                { name: 'TagsManager', check: () => typeof TagsManager !== 'undefined' },
+                { name: 'TagSelector', check: () => typeof TagSelector !== 'undefined' }
+            ];
+            
+            requiredClasses.forEach(classInfo => {
+                if (classInfo.check()) {
+                    statusHtml += `<div class="status success">✅ ${classInfo.name} 类已加载</div>`;
+                    log(`${classInfo.name} 类已加载`, 'success');
+                } else {
+                    statusHtml += `<div class="status error">❌ ${classInfo.name} 类未找到</div>`;
+                    log(`${classInfo.name} 类未找到`, 'error');
+                }
+            });
+
+            // 检查管理器实例
+            if (window.categoriesManager) {
+                statusHtml += `<div class="status success">✅ 分类管理器实例已创建</div>`;
+            } else {
+                statusHtml += `<div class="status error">❌ 分类管理器实例未创建</div>`;
+            }
+
+            if (window.tagsManager) {
+                statusHtml += `<div class="status success">✅ 标签管理器实例已创建</div>`;
+            } else {
+                statusHtml += `<div class="status error">❌ 标签管理器实例未创建</div>`;
+            }
+
+            displayStatus('system-status', statusHtml);
+        }
+
+        function checkStorageData() {
+            log('检查localStorage数据...');
+            let statusHtml = '';
+
+            try {
+                const categories = localStorage.getItem('eventRecorderCategories');
+                const tags = localStorage.getItem('eventRecorderTags');
+
+                if (categories) {
+                    const categoriesData = JSON.parse(categories);
+                    statusHtml += `<div class="status success">✅ 分类数据存在 (${categoriesData.length} 个分类)</div>`;
+                    statusHtml += `<pre>${JSON.stringify(categoriesData, null, 2)}</pre>`;
+                } else {
+                    statusHtml += `<div class="status error">❌ 分类数据不存在</div>`;
+                }
+
+                if (tags) {
+                    const tagsData = JSON.parse(tags);
+                    statusHtml += `<div class="status success">✅ 标签数据存在 (${tagsData.length} 个标签)</div>`;
+                    statusHtml += `<div>`;
+                    tagsData.forEach(tag => {
+                        statusHtml += `<span class="tag-preview" style="background-color: ${tag.color}">${tag.name}</span>`;
+                    });
+                    statusHtml += `</div>`;
+                    statusHtml += `<pre>${JSON.stringify(tagsData, null, 2)}</pre>`;
+                } else {
+                    statusHtml += `<div class="status error">❌ 标签数据不存在</div>`;
+                }
+            } catch (error) {
+                statusHtml += `<div class="status error">❌ 数据解析错误: ${error.message}</div>`;
+                log(`数据解析错误: ${error.message}`, 'error');
+            }
+
+            displayStatus('storage-status', statusHtml);
+        }
+
+        function clearStorageData() {
+            if (confirm('确定要清空所有存储数据吗？这将删除所有分类和标签数据。')) {
+                localStorage.removeItem('eventRecorderCategories');
+                localStorage.removeItem('eventRecorderTags');
+                displayStatus('storage-status', '<div class="status info">✅ 存储数据已清空</div>');
+                log('存储数据已清空', 'info');
+            }
+        }
+
+        function createTestTags() {
+            log('开始创建测试标签...');
+            let statusHtml = '';
+
+            try {
+                // 确保管理器存在
+                if (!window.categoriesManager) {
+                    window.categoriesManager = new CategoriesManager();
+                    log('创建分类管理器实例', 'info');
+                }
+                if (!window.tagsManager) {
+                    window.tagsManager = new TagsManager();
+                    log('创建标签管理器实例', 'info');
+                }
+
+                // 创建测试标签
+                const testTags = [
+                    { name: '重要', description: '重要事项标签', color: '#ef4444', applyTo: ['plan', 'event'] },
+                    { name: '紧急', description: '紧急事项标签', color: '#f97316', applyTo: ['plan', 'event'] },
+                    { name: '学习', description: '学习相关标签', color: '#3b82f6', applyTo: ['plan', 'event'] },
+                    { name: '工作', description: '工作相关标签', color: '#6366f1', applyTo: ['plan', 'event'] },
+                    { name: '健康', description: '健康相关标签', color: '#10b981', applyTo: ['plan', 'event'] },
+                    { name: '娱乐', description: '娱乐休闲标签', color: '#8b5cf6', applyTo: ['plan', 'event'] }
+                ];
+
+                let successCount = 0;
+                let errorCount = 0;
+
+                testTags.forEach(tagData => {
+                    try {
+                        const result = window.tagsManager.createTag(tagData);
+                        if (result.success) {
+                            statusHtml += `<div class="status success">✅ 创建标签 "${tagData.name}" 成功</div>`;
+                            log(`创建标签 "${tagData.name}" 成功`, 'success');
+                            successCount++;
+                        } else {
+                            statusHtml += `<div class="status error">❌ 创建标签 "${tagData.name}" 失败: ${result.error}</div>`;
+                            log(`创建标签 "${tagData.name}" 失败: ${result.error}`, 'error');
+                            errorCount++;
+                        }
+                    } catch (error) {
+                        statusHtml += `<div class="status error">❌ 创建标签 "${tagData.name}" 异常: ${error.message}</div>`;
+                        log(`创建标签 "${tagData.name}" 异常: ${error.message}`, 'error');
+                        errorCount++;
+                    }
+                });
+
+                statusHtml += `<div class="status info">📊 创建完成: ${successCount} 成功, ${errorCount} 失败</div>`;
+
+            } catch (error) {
+                statusHtml += `<div class="status error">❌ 创建测试标签时发生错误: ${error.message}</div>`;
+                log(`创建测试标签时发生错误: ${error.message}`, 'error');
+            }
+
+            displayStatus('create-tags-status', statusHtml);
+        }
+
+        function testTagSelector() {
+            log('测试标签选择器...');
+            let statusHtml = '';
+
+            try {
+                // 创建测试容器
+                const testContainer = document.createElement('div');
+                testContainer.id = 'test-tag-selector';
+                testContainer.style.border = '1px solid #ccc';
+                testContainer.style.padding = '10px';
+                testContainer.style.marginTop = '10px';
+
+                // 清除之前的测试
+                const existingTest = document.getElementById('test-tag-selector');
+                if (existingTest) {
+                    existingTest.remove();
+                }
+
+                document.getElementById('tag-selector-test').appendChild(testContainer);
+
+                // 创建标签选择器实例
+                const testTagSelector = new TagSelector('test-tag-selector', {
+                    scope: 'event',
+                    showSearch: true,
+                    showCategories: true,
+                    maxSelection: 5
+                });
+
+                statusHtml += `<div class="status success">✅ 标签选择器创建成功</div>`;
+                statusHtml += `<div class="status info">📝 请查看下方的标签选择器测试界面</div>`;
+
+                log('标签选择器创建成功', 'success');
+
+            } catch (error) {
+                statusHtml += `<div class="status error">❌ 标签选择器测试失败: ${error.message}</div>`;
+                log(`标签选择器测试失败: ${error.message}`, 'error');
+            }
+
+            displayStatus('tag-selector-test', statusHtml);
+        }
+
+        function autoFix() {
+            log('开始自动修复...');
+            let statusHtml = '';
+
+            try {
+                // 步骤1: 创建管理器实例
+                if (!window.categoriesManager) {
+                    window.categoriesManager = new CategoriesManager();
+                    statusHtml += `<div class="status success">✅ 创建分类管理器实例</div>`;
+                }
+                if (!window.tagsManager) {
+                    window.tagsManager = new TagsManager();
+                    statusHtml += `<div class="status success">✅ 创建标签管理器实例</div>`;
+                }
+
+                // 步骤2: 检查并创建标签数据
+                const existingTags = window.tagsManager.getTags();
+                if (existingTags.length === 0) {
+                    statusHtml += `<div class="status info">📝 检测到无标签数据，开始创建...</div>`;
+                    createTestTags();
+                } else {
+                    statusHtml += `<div class="status success">✅ 已存在 ${existingTags.length} 个标签</div>`;
+                }
+
+                // 步骤3: 提供修复建议
+                statusHtml += `<div class="status info">
+                    <h3>🔧 修复建议:</h3>
+                    <ol>
+                        <li>如果标签选择器仍然不显示，请刷新 events.html 页面</li>
+                        <li>打开浏览器开发者工具(F12)检查控制台错误</li>
+                        <li>确保在 http://localhost:8001/events.html 访问页面</li>
+                        <li>如果问题持续，请检查网络请求是否正常加载所有JS文件</li>
+                    </ol>
+                </div>`;
+
+                log('自动修复完成', 'success');
+
+            } catch (error) {
+                statusHtml += `<div class="status error">❌ 自动修复失败: ${error.message}</div>`;
+                log(`自动修复失败: ${error.message}`, 'error');
+            }
+
+            displayStatus('fix-suggestions', statusHtml);
+        }
+
+        // 页面加载完成后自动检查
+        window.addEventListener('DOMContentLoaded', function() {
+            log('调试工具加载完成');
+            setTimeout(() => {
+                checkSystemStatus();
+                checkStorageData();
+            }, 1000);
+        });
+    </script>
+</body>
+</html> 
