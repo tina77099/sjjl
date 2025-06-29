@@ -1,16 +1,1 @@
-{
-    "07a33e811ecc098e22f23a208ef0f18c407e2fbb06eebf23e908c6bd2f4f810c": {
-        "user_id": "user_1751181846_3854617e",
-        "email": "ziyunweier@gmail.com",
-        "created_at": 1751181846,
-        "expires_at": 1753773846,
-        "ip": "::1"
-    },
-    "41f5900d9a0e25bfc5819271399d79b3b2c9f1010e5156052eebf8352a1b7164": {
-        "user_id": "user_1751186978_a1a39ac9",
-        "email": "6667268@qq.com",
-        "created_at": 1751186978,
-        "expires_at": 1753778978,
-        "ip": "::1"
-    }
-}
+{}

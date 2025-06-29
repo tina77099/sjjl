@@ -261,34 +261,6 @@ class AuthSystem {
 
         if (hasError) return;
 
-        // 🆕 新增：检查重复注册
-        try {
-            this.showStatus('正在检查邮箱和手机号...');
-            const duplicateCheck = await this.checkDuplicateRegistration(email, phone);
-            
-            if (!duplicateCheck.canRegister) {
-                this.showStatus(duplicateCheck.message, true);
-                
-                // 如果邮箱或手机号已注册，提供登录链接
-                if (duplicateCheck.email_exists || duplicateCheck.phone_exists) {
-                    setTimeout(() => {
-                        const statusElement = document.querySelector('#error-message');
-                        if (statusElement) {
-                            const errorText = statusElement.querySelector('#error-text');
-                            if (errorText) {
-                                errorText.innerHTML += '<br><a href="login.html" class="text-indigo-600 hover:text-indigo-800 underline">点击此处登录</a>';
-                            }
-                        }
-                    }, 100);
-                }
-                return;
-            }
-        } catch (error) {
-            console.error('❌ 重复检查失败:', error);
-            // 如果重复检查失败，继续注册流程但记录错误
-            this.showStatus('检查注册信息时遇到问题，继续注册流程...', false);
-        }
-
         // 显示加载状态
         this.setButtonLoading('register-btn', true);
 
@@ -1420,47 +1392,6 @@ class AuthSystem {
         
         // 返回5分钟内的尝试次数
         return attempts.filter(time => time > fiveMinutesAgo).length;
-    }
-
-    // 检查重复注册
-    async checkDuplicateRegistration(email, phone) {
-        try {
-            const response = await fetch('../api/check-duplicate.php', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    email: email,
-                    phone: phone
-                })
-            });
-            
-            if (!response.ok) {
-                throw new Error(`服务器响应错误: ${response.status}`);
-            }
-            
-            const result = await response.json();
-            
-            if (!result.success) {
-                throw new Error(result.error || '检查重复注册时发生错误');
-            }
-            
-            return result;
-            
-        } catch (error) {
-            console.error('❌ 检查重复注册失败:', error);
-            
-            // 如果API调用失败，为了用户体验，允许继续注册
-            // 但会在控制台记录错误
-            return {
-                success: true,
-                canRegister: true,
-                email_exists: false,
-                phone_exists: false,
-                message: '继续注册流程'
-            };
-        }
     }
 }
 

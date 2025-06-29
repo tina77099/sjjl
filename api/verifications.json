@@ -1,22 +1,21 @@
 {
-    "6667268@qq.com_register": {
-        "email": "6667268@qq.com",
-        "token": "007cfc2422bb40a740fd924cea39e3d1",
-        "type": "register",
-        "created_at": 1751188079,
-        "expires_at": 1751188379,
-        "used": true,
-        "verify_url": "http:\/\/localhost:8000\/auth\/verify-link.html?token=007cfc2422bb40a740fd924cea39e3d1&email=6667268%40qq.com&type=register",
-        "used_at": 1751188095
-    },
     "ziyunweier@gmail.com_register": {
         "email": "ziyunweier@gmail.com",
-        "token": "cc8b58ba4814afc1cf99d7ce2369ad94",
+        "token": "9f26de2a39c4f8b710a124c66202a310",
         "type": "register",
-        "created_at": 1751188169,
-        "expires_at": 1751188469,
+        "created_at": 1751209954,
+        "expires_at": 1751210254,
+        "used": false,
+        "verify_url": "http:\/\/localhost:8000\/auth\/verify-link.html?token=9f26de2a39c4f8b710a124c66202a310&email=ziyunweier%40gmail.com&type=register"
+    },
+    "6667268@qq.com_register": {
+        "email": "6667268@qq.com",
+        "token": "49cdfc6c9af48e3ee29ac1282313e7ef",
+        "type": "register",
+        "created_at": 1751210222,
+        "expires_at": 1751210522,
         "used": true,
-        "verify_url": "http:\/\/localhost:8000\/auth\/verify-link.html?token=cc8b58ba4814afc1cf99d7ce2369ad94&email=ziyunweier%40gmail.com&type=register",
-        "used_at": 1751188188
+        "verify_url": "http:\/\/localhost:8000\/auth\/verify-link.html?token=49cdfc6c9af48e3ee29ac1282313e7ef&email=6667268%40qq.com&type=register",
+        "used_at": 1751210239
     }
 }

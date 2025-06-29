@@ -30,19 +30,8 @@
                 <p class="text-gray-600 mt-2">欢迎回到事件记录</p>
             </div>
 
-            <!-- 系统状态提示 -->
-            <div id="system-status" class="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                <div class="flex items-center">
-                    <i id="status-icon" class="fas fa-spinner fa-spin text-blue-600 mr-3"></i>
-                    <div class="text-sm text-blue-800">
-                        <div id="status-message">正在初始化登录系统...</div>
-                        <div id="status-detail" class="text-xs text-blue-600 mt-1"></div>
-                    </div>
-                </div>
-            </div>
-
             <!-- 登录表单 -->
-            <form id="login-form" class="space-y-6" style="display: none;">
+            <form id="login-form" class="space-y-6">
                 <!-- 用户名输入（手机号或邮箱） -->
                 <div>
                     <label for="username" class="block text-sm font-medium text-gray-700 mb-2">手机号或邮箱</label>
@@ -99,26 +88,8 @@
                 </button>
             </div>
 
-            <!-- 分割线和游客模式（仅在系统初始化成功后显示） -->
-            <div id="additional-options" style="display: none;">
-                <!-- 分割线 -->
-                <div class="mt-6 mb-6">
-                    <div class="relative">
-                        <div class="absolute inset-0 flex items-center">
-                            <div class="w-full border-t border-gray-300"></div>
-                        </div>
-                        <div class="relative flex justify-center text-sm">
-                            <span class="px-2 bg-white text-gray-500">或</span>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- 游客模式 -->
-                <button id="guest-login-btn" 
-                        class="w-full bg-gray-100 text-gray-700 py-3 px-4 rounded-lg hover:bg-gray-200 focus:ring-2 focus:ring-gray-500 focus:ring-offset-2 transition-colors border border-gray-300">
-                    <i class="fas fa-user-secret mr-2"></i>游客模式（使用本地存储）
-                </button>
-
+            <!-- 附加选项 -->
+            <div id="additional-options">
                 <!-- 注册链接 -->
                 <div class="mt-6 text-center">
                     <span class="text-gray-600">还没有账户？</span>
@@ -167,154 +138,44 @@
     <script src="../js/auth-system.js?v=20241223-2"></script>
     <script>
         // 版本标识
-        console.log('🔧 登录页面版本: 2.0 - 已修复初始化问题');
-        
-        // 全局变量
-        let initRetryCount = 0;
-        const maxRetries = 10;
-        const retryDelay = 500; // 初始延迟500ms
+        console.log('🔧 登录页面版本: 3.0 - 简化初始化流程');
 
-        // 页面加载完成后初始化登录功能
+        // 页面加载完成后直接初始化登录功能
         document.addEventListener('DOMContentLoaded', function() {
             console.log('🔄 页面加载完成，开始初始化登录系统...');
-            updateSystemStatus('正在加载认证系统...', 'loading');
             
-            // 开始初始化
-            initializeLogin();
-            
-            // 绑定重试按钮
-            document.getElementById('retry-btn').addEventListener('click', () => {
-                initRetryCount = 0;
-                initializeLogin();
-            });
+            // 直接初始化登录功能
+            try {
+                if (typeof window.AuthSystem !== 'undefined' && window.AuthSystem) {
+                    console.log('✅ AuthSystem 可用，开始初始化登录...');
+                    window.AuthSystem.initLogin();
+                    console.log('✅ 登录功能初始化成功');
+                } else {
+                    console.error('❌ AuthSystem 不可用');
+                    showError('认证系统加载失败，请刷新页面重试');
+                }
+            } catch (error) {
+                console.error('❌ 登录初始化失败:', error);
+                showError('登录系统初始化失败：' + error.message);
+            }
             
             // 绑定调试工具按钮
-            document.getElementById('debug-tool-btn').addEventListener('click', () => {
-                openDebugTool();
-            });
+            const debugBtn = document.getElementById('debug-tool-btn');
+            if (debugBtn) {
+                debugBtn.addEventListener('click', () => {
+                    openDebugTool();
+                });
+            }
         });
 
-        function updateSystemStatus(message, type = 'loading', detail = '') {
-            const statusMessage = document.getElementById('status-message');
-            const statusDetail = document.getElementById('status-detail');
-            const statusIcon = document.getElementById('status-icon');
+        function showError(message) {
+            const errorElement = document.getElementById('error-message');
+            const errorText = document.getElementById('error-text');
             
-            statusMessage.textContent = message;
-            statusDetail.textContent = detail;
-            
-            // 更新图标和样式
-            switch (type) {
-                case 'loading':
-                    statusIcon.className = 'fas fa-spinner fa-spin text-blue-600 mr-3';
-                    break;
-                case 'success':
-                    statusIcon.className = 'fas fa-check-circle text-green-600 mr-3';
-                    break;
-                case 'error':
-                    statusIcon.className = 'fas fa-exclamation-triangle text-red-600 mr-3';
-                    break;
+            if (errorElement && errorText) {
+                errorText.textContent = message;
+                errorElement.classList.remove('hidden');
             }
-        }
-
-        function initializeLogin() {
-            updateSystemStatus('正在检查认证系统...', 'loading', `尝试 ${initRetryCount + 1}/${maxRetries + 1}`);
-            
-            // 隐藏表单和其他按钮
-            document.getElementById('login-form').style.display = 'none';
-            document.getElementById('retry-section').style.display = 'none';
-            document.getElementById('additional-options').style.display = 'none';
-            document.getElementById('system-status').style.display = 'block';
-            
-            // 检查AuthSystem是否可用
-            checkAuthSystemAvailability();
-        }
-
-        function checkAuthSystemAvailability() {
-            console.log(`🔍 检查AuthSystem可用性... (尝试 ${initRetryCount + 1})`);
-            
-            // 检查AuthSystem是否已定义且可用
-            if (typeof window.AuthSystem !== 'undefined' && window.AuthSystem) {
-                console.log('✅ window.AuthSystem 已找到');
-                
-                // 检查initLogin方法是否存在
-                if (typeof window.AuthSystem.initLogin === 'function') {
-                    console.log('✅ initLogin 方法存在');
-                    
-                    try {
-                        updateSystemStatus('正在初始化登录功能...', 'loading');
-                        console.log('🔄 开始调用 initLogin...');
-                        
-                        window.AuthSystem.initLogin();
-                        
-                        console.log('✅ 登录功能初始化成功');
-                        updateSystemStatus('系统初始化完成', 'success');
-                        
-                        // 显示登录表单和其他选项
-                        setTimeout(() => {
-                            document.getElementById('system-status').style.display = 'none';
-                            document.getElementById('login-form').style.display = 'block';
-                            document.getElementById('additional-options').style.display = 'block';
-                        }, 1000);
-                        
-                        return;
-                        
-                    } catch (error) {
-                        console.error('❌ 调用initLogin时出错:', error);
-                        handleInitializationError(`初始化登录功能时出错: ${error.message}`);
-                        return;
-                    }
-                } else {
-                    console.error('❌ initLogin 方法不存在');
-                    console.log('AuthSystem 可用方法:', Object.getOwnPropertyNames(Object.getPrototypeOf(window.AuthSystem)));
-                    handleInitializationError('initLogin方法不可用');
-                    return;
-                }
-            }
-            
-            // AuthSystem不可用，检查是否需要重试
-            console.log(`⏳ AuthSystem暂不可用，检查重试... (${initRetryCount}/${maxRetries})`);
-            
-            if (initRetryCount < maxRetries) {
-                initRetryCount++;
-                const delay = retryDelay * Math.pow(1.5, initRetryCount - 1); // 指数退避
-                
-                updateSystemStatus('系统正在加载中...', 'loading', `将在 ${Math.round(delay/1000)}s 后重试 (${initRetryCount}/${maxRetries})`);
-                
-                setTimeout(() => {
-                    checkAuthSystemAvailability();
-                }, delay);
-            } else {
-                console.error('❌ 超过最大重试次数，初始化失败');
-                handleInitializationError('认证系统加载超时，请检查网络连接后重试');
-            }
-        }
-
-        function handleInitializationError(errorMessage) {
-            console.error('❌ 初始化错误:', errorMessage);
-            
-            updateSystemStatus('系统初始化失败', 'error', errorMessage);
-            
-            // 显示重试按钮
-            document.getElementById('retry-section').style.display = 'block';
-            
-            // 显示详细错误信息
-            setTimeout(() => {
-                const errorElement = document.getElementById('error-message');
-                const errorText = document.getElementById('error-text');
-                
-                if (errorElement && errorText) {
-                    errorText.innerHTML = `
-                        <strong>初始化失败</strong><br>
-                        ${errorMessage}<br><br>
-                        <strong>可能的解决方案：</strong><br>
-                        • 刷新页面重试<br>
-                        • 检查网络连接<br>
-                        • 清除浏览器缓存<br>
-                        • 如问题持续，请联系管理员
-                    `;
-                    errorElement.classList.remove('hidden');
-                }
-            }, 500);
         }
 
         // ==================== 调试工具 ====================
