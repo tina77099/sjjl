@@ -28,7 +28,10 @@
                 </div>
                 <h2 class="text-2xl font-bold text-gray-900">验证邮箱</h2>
                 <p class="text-gray-600 mt-2">我们已向您的邮箱发送了验证码</p>
-                <p class="text-sm text-gray-500 mt-2">邮箱地址：<span id="email-display" class="font-medium"></span></p>
+                <p class="text-sm text-gray-500 mt-2">
+                    邮箱地址：<span id="email-display" class="font-medium"></span>
+                    <span class="text-blue-600">（<span id="provider-display"></span>）</span>
+                </p>
             </div>
 
             <!-- 系统状态提示 -->
@@ -42,63 +45,43 @@
                 </div>
             </div>
 
-            <!-- 验证表单 -->
-            <form id="verify-form" class="space-y-6" style="display: none;">
-                <!-- 验证码输入 -->
-                <div>
-                    <label for="verification-code" class="block text-sm font-medium text-gray-700 mb-2">验证码</label>
-                    <div class="relative">
-                        <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <i class="fas fa-key text-gray-400"></i>
-                        </div>
-                        <input type="text" id="verification-code" name="verification-code" required
-                               class="block w-full pl-10 pr-3 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 text-center text-lg tracking-widest"
-                               placeholder="请输入6位验证码" maxlength="6" autocomplete="off">
-                    </div>
-                    <p id="code-error" class="text-red-500 text-sm mt-1 hidden"></p>
-                </div>
-
-                <!-- 验证码有效期提示 -->
-                <div class="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                    <div class="flex items-start">
-                        <i class="fas fa-info-circle text-blue-400 mr-2 mt-0.5"></i>
-                        <div class="text-sm text-blue-700">
-                            <p>验证码有效期为 <span class="font-medium">5分钟</span></p>
-                            <p id="countdown-text" class="mt-1"></p>
+            <!-- 验证说明 -->
+            <div id="verify-instructions" class="space-y-6">
+                <!-- 邮件发送状态 -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <div class="text-sm text-green-800">
+                            <p class="font-medium">验证邮件已发送成功！</p>
+                            <p class="mt-1">请查收您的邮箱并点击验证链接完成验证</p>
                         </div>
                     </div>
                 </div>
 
-                <!-- 验证按钮 -->
-                <button type="submit" id="verify-btn"
-                        class="w-full bg-indigo-600 text-white py-3 px-4 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
-                    <span id="verify-btn-text">验证邮箱</span>
-                    <i id="verify-btn-loading" class="fas fa-spinner fa-spin ml-2 hidden"></i>
-                </button>
-            </form>
-
-            <!-- 系统错误时的重试按钮 -->
-            <div id="retry-section" class="text-center" style="display: none;">
-                <button id="retry-btn" class="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 focus:ring-2 focus:ring-indigo-500">
-                    <i class="fas fa-redo mr-2"></i>重新初始化
-                </button>
+                <!-- 操作指引 -->
+                <div class="space-y-4">
+                    <!-- 打开邮箱按钮 -->
+                    <div class="text-center">
+                        <button type="button" id="open-email-btn"
+                                class="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors mb-4">
+                            <i class="fas fa-external-link-alt mr-2"></i>
+                            <span id="open-email-btn-text">打开邮箱</span>
+                        </button>
+                    </div>
+                </div>
             </div>
 
-            <!-- 重新发送验证码 -->
-            <div id="resend-section" class="mt-6 text-center" style="display: none;">
-                <p class="text-gray-600 text-sm mb-2">没有收到验证码？</p>
-                <button id="resend-btn" 
-                        class="text-indigo-600 hover:text-indigo-800 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed">
-                    <span id="resend-text">重新发送验证码</span>
-                    <span id="resend-countdown" class="hidden"></span>
-                </button>
-            </div>
-
-            <!-- 更换邮箱 -->
-            <div id="change-email-section" class="mt-4 text-center" style="display: none;">
-                <button id="change-email-btn" class="text-gray-500 hover:text-gray-700 text-sm">
-                    <i class="fas fa-edit mr-1"></i>更换邮箱地址
-                </button>
+            <!-- 验证成功后显示的内容（初始隐藏） -->
+            <div id="verification-success" class="space-y-6" style="display: none;">
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="flex items-center">
+                        <i class="fas fa-check-circle text-green-600 mr-3"></i>
+                        <div class="text-sm text-green-800">
+                            <p class="font-medium">邮箱验证成功！</p>
+                            <p class="mt-1">您的账户已创建完成，即将自动登录...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -121,17 +104,26 @@
             </div>
         </div>
 
-        <!-- 验证成功提示 -->
-        <div id="success-message" class="mt-4 hidden">
-            <div class="bg-green-50 border border-green-200 rounded-lg p-4">
-                <div class="flex">
-                    <i class="fas fa-check-circle text-green-400 mr-3 mt-0.5"></i>
-                    <div class="text-sm text-green-800">
-                        <p class="font-medium">邮箱验证成功！</p>
-                        <p class="mt-1">您的账户已创建完成，即将跳转到登录页面...</p>
-                    </div>
+        <!-- 重新发送验证码 -->
+        <div id="resend-section" class="mt-6 text-center" style="display: none;">
+            <p class="text-gray-600 text-sm mb-2">没有收到验证码？</p>
+            <div class="space-y-2">
+                <button id="resend-btn" 
+                        class="text-indigo-600 hover:text-indigo-800 font-medium text-sm disabled:text-gray-400 disabled:cursor-not-allowed block mx-auto">
+                    <span id="resend-text">重新发送验证码</span>
+                    <span id="resend-countdown" class="hidden"></span>
+                </button>
+                <div class="text-gray-500 text-xs">
+                    验证码将重新发送到您的邮箱
                 </div>
             </div>
+        </div>
+
+        <!-- 更换邮箱 -->
+        <div id="change-email-section" class="mt-4 text-center" style="display: none;">
+            <button id="change-email-btn" class="text-gray-500 hover:text-gray-700 text-sm">
+                <i class="fas fa-edit mr-1"></i>更换邮箱地址
+            </button>
         </div>
     </div>
 
@@ -186,8 +178,8 @@
             updateSystemStatus('正在检查认证系统...', 'loading', `尝试 ${initRetryCount + 1}/${maxRetries + 1}`);
             
             // 隐藏表单和其他按钮
-            document.getElementById('verify-form').style.display = 'none';
-            document.getElementById('retry-section').style.display = 'none';
+            document.getElementById('verify-instructions').style.display = 'none';
+            document.getElementById('verification-success').style.display = 'none';
             document.getElementById('resend-section').style.display = 'none';
             document.getElementById('change-email-section').style.display = 'none';
             document.getElementById('system-status').style.display = 'block';
@@ -216,12 +208,10 @@
                         console.log('✅ 邮箱验证功能初始化成功');
                         updateSystemStatus('系统初始化完成', 'success');
                         
-                        // 显示验证表单和相关按钮
+                        // 显示验证说明
                         setTimeout(() => {
                             document.getElementById('system-status').style.display = 'none';
-                            document.getElementById('verify-form').style.display = 'block';
-                            document.getElementById('resend-section').style.display = 'block';
-                            document.getElementById('change-email-section').style.display = 'block';
+                            document.getElementById('verify-instructions').style.display = 'block';
                         }, 1000);
                         
                         return;

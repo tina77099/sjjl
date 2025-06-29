@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>认证系统测试</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body class="bg-gray-50 min-h-screen p-6">
+    <div class="max-w-4xl mx-auto">
+        <h1 class="text-3xl font-bold text-gray-800 mb-8">认证系统测试页面</h1>
+        
+        <!-- 当前用户状态 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">当前用户状态</h2>
+            <div id="user-status" class="space-y-2">
+                <div><strong>登录状态:</strong> <span id="login-status">检查中...</span></div>
+                <div><strong>用户信息:</strong> <span id="user-info">-</span></div>
+                <div><strong>用户类型:</strong> <span id="user-type">-</span></div>
+                <div><strong>登录时间:</strong> <span id="login-time">-</span></div>
+            </div>
+        </div>
+
+        <!-- 认证操作 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">认证操作</h2>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <a href="auth/register.html" class="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 text-center block">
+                    <i class="fas fa-user-plus mr-2"></i>注册
+                </a>
+                <a href="auth/login.html" class="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700 text-center block">
+                    <i class="fas fa-sign-in-alt mr-2"></i>登录
+                </a>
+                <button id="logout-btn" class="bg-red-600 text-white px-6 py-3 rounded-lg hover:bg-red-700">
+                    <i class="fas fa-sign-out-alt mr-2"></i>退出登录
+                </button>
+            </div>
+        </div>
+
+        <!-- 权限测试 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">权限测试</h2>
+            <div class="space-y-3">
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <span>读取权限</span>
+                    <span id="perm-read" class="px-3 py-1 rounded text-sm">检查中...</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <span>创建权限</span>
+                    <span id="perm-create" class="px-3 py-1 rounded text-sm">检查中...</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <span>编辑权限</span>
+                    <span id="perm-edit" class="px-3 py-1 rounded text-sm">检查中...</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <span>删除权限</span>
+                    <span id="perm-delete" class="px-3 py-1 rounded text-sm">检查中...</span>
+                </div>
+                <div class="flex items-center justify-between p-3 bg-gray-50 rounded">
+                    <span>导出权限</span>
+                    <span id="perm-export" class="px-3 py-1 rounded text-sm">检查中...</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 功能测试 -->
+        <div class="bg-white rounded-lg shadow p-6 mb-6">
+            <h2 class="text-xl font-semibold mb-4">功能测试</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <button id="test-guest-login" class="bg-yellow-600 text-white px-4 py-2 rounded hover:bg-yellow-700">
+                    测试游客登录
+                </button>
+                <button id="test-send-code" class="bg-purple-600 text-white px-4 py-2 rounded hover:bg-purple-700">
+                    测试发送验证码
+                </button>
+                <button id="test-validate-token" class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700">
+                    测试令牌验证
+                </button>
+                <button id="clear-data" class="bg-gray-600 text-white px-4 py-2 rounded hover:bg-gray-700">
+                    清除所有数据
+                </button>
+            </div>
+        </div>
+
+        <!-- 数据查看 -->
+        <div class="bg-white rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold mb-4">本地存储数据</h2>
+            <div class="space-y-4">
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">注册用户列表</h3>
+                    <pre id="users-data" class="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40">加载中...</pre>
+                </div>
+                <div>
+                    <h3 class="font-medium text-gray-700 mb-2">认证相关存储</h3>
+                    <pre id="auth-data" class="bg-gray-100 p-3 rounded text-xs overflow-auto max-h-40">加载中...</pre>
+                </div>
+            </div>
+        </div>
+
+        <!-- 返回主页 -->
+        <div class="mt-8 text-center">
+            <a href="index.html" class="text-indigo-600 hover:text-indigo-800 inline-flex items-center">
+                <i class="fas fa-home mr-2"></i>返回主页
+            </a>
+        </div>
+    </div>
+
+    <script src="js/auth-system.js"></script>
+    <script src="js/auth-guard.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // 初始化状态显示
+            updateUserStatus();
+            updatePermissions();
+            updateStorageData();
+
+            // 退出登录按钮
+            document.getElementById('logout-btn').addEventListener('click', function() {
+                if (window.authGuard) {
+                    window.authGuard.handleLogout();
+                }
+            });
+
+            // 测试游客登录
+            document.getElementById('test-guest-login').addEventListener('click', function() {
+                if (window.AuthSystem) {
+                    window.AuthSystem.loginAsGuest();
+                }
+            });
+
+            // 测试发送验证码
+            document.getElementById('test-send-code').addEventListener('click', async function() {
+                if (window.AuthSystem) {
+                    const email = prompt('请输入邮箱地址:');
+                    if (email) {
+                        try {
+                            await window.AuthSystem.sendVerificationCode(email, 'test');
+                            alert('验证码发送成功，请查看浏览器控制台');
+                        } catch (error) {
+                            alert('发送失败: ' + error.message);
+                        }
+                    }
+                }
+            });
+
+            // 测试令牌验证
+            document.getElementById('test-validate-token').addEventListener('click', async function() {
+                if (window.AuthSystem) {
+                    const token = localStorage.getItem('auth_token');
+                    if (token) {
+                        const isValid = await window.AuthSystem.validateToken(token);
+                        alert('令牌验证结果: ' + (isValid ? '有效' : '无效'));
+                    } else {
+                        alert('未找到令牌');
+                    }
+                }
+            });
+
+            // 清除所有数据
+            document.getElementById('clear-data').addEventListener('click', function() {
+                if (confirm('确定要清除所有数据吗？此操作不可恢复！')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    alert('数据已清除');
+                    location.reload();
+                }
+            });
+
+            // 定期更新状态
+            setInterval(() => {
+                updateUserStatus();
+                updatePermissions();
+                updateStorageData();
+            }, 2000);
+        });
+
+        function updateUserStatus() {
+            const user = localStorage.getItem('auth_user');
+            const token = localStorage.getItem('auth_token');
+            const guestMode = localStorage.getItem('auth_mode') === 'guest';
+
+            document.getElementById('login-status').textContent = user || guestMode ? '已登录' : '未登录';
+            
+            if (user) {
+                const userObj = JSON.parse(user);
+                document.getElementById('user-info').textContent = userObj.email || userObj.phone || '未知';
+                document.getElementById('user-type').textContent = userObj.is_guest ? '游客' : '注册用户';
+                document.getElementById('login-time').textContent = userObj.created_at || '未知';
+            } else if (guestMode) {
+                document.getElementById('user-info').textContent = '游客用户';
+                document.getElementById('user-type').textContent = '游客';
+                document.getElementById('login-time').textContent = '当前会话';
+            } else {
+                document.getElementById('user-info').textContent = '-';
+                document.getElementById('user-type').textContent = '-';
+                document.getElementById('login-time').textContent = '-';
+            }
+        }
+
+        function updatePermissions() {
+            const permissions = ['read', 'create', 'edit_own', 'delete_own', 'export'];
+            permissions.forEach(perm => {
+                const element = document.getElementById('perm-' + perm.replace('_own', ''));
+                if (element && window.authGuard && window.authGuard.hasPermission) {
+                    const hasPermission = window.authGuard.hasPermission(perm);
+                    element.textContent = hasPermission ? '✓ 允许' : '✗ 禁止';
+                    element.className = hasPermission 
+                        ? 'px-3 py-1 rounded text-sm bg-green-100 text-green-800'
+                        : 'px-3 py-1 rounded text-sm bg-red-100 text-red-800';
+                }
+            });
+        }
+
+        function updateStorageData() {
+            // 显示注册用户数据
+            const users = localStorage.getItem('registered_users');
+            document.getElementById('users-data').textContent = users || '无数据';
+
+            // 显示认证相关数据
+            const authData = {};
+            for (const key in localStorage) {
+                if (key.startsWith('auth_') || key.startsWith('verification_') || key.startsWith('login_attempts_')) {
+                    authData[key] = localStorage.getItem(key);
+                }
+            }
+            document.getElementById('auth-data').textContent = Object.keys(authData).length 
+                ? JSON.stringify(authData, null, 2) 
+                : '无数据';
+        }
+    </script>
+</body>
+</html> 

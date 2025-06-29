@@ -8,6 +8,70 @@ class AuthSystem {
         this.apiBase = 'http://localhost:3001/api'; // 认证服务器地址
         this.currentUser = null;
         this.initUserState();
+        
+        // 邮箱服务商映射规则
+        this.emailProviders = [
+            {
+                match: /@(qq|foxmail)\.com$/,
+                name: 'QQ邮箱',
+                url: 'https://mail.qq.com/'
+            },
+            {
+                match: /@gmail\.com$/,
+                name: 'Gmail',
+                url: 'https://mail.google.com/'
+            },
+            {
+                match: /@163\.com$/,
+                name: '163邮箱',
+                url: 'https://mail.163.com/'
+            },
+            {
+                match: /@126\.com$/,
+                name: '126邮箱',
+                url: 'https://mail.126.com/'
+            },
+            {
+                match: /@yeah\.net$/,
+                name: 'Yeah邮箱',
+                url: 'https://mail.yeah.net/'
+            },
+            {
+                match: /@sina\.(com|cn)$/,
+                name: '新浪邮箱',
+                url: 'https://mail.sina.com.cn/'
+            },
+            {
+                match: /@sohu\.com$/,
+                name: '搜狐邮箱',
+                url: 'https://mail.sohu.com/'
+            },
+            {
+                match: /@(outlook|hotmail)\.com$/,
+                name: 'Outlook邮箱',
+                url: 'https://outlook.live.com/'
+            },
+            {
+                match: /@yahoo\.com$/,
+                name: 'Yahoo邮箱',
+                url: 'https://mail.yahoo.com/'
+            },
+            {
+                match: /@139\.com$/,
+                name: '139邮箱',
+                url: 'https://mail.10086.cn/'
+            },
+            {
+                match: /@aliyun\.com$/,
+                name: '阿里云邮箱',
+                url: 'https://mail.aliyun.com/'
+            },
+            {
+                match: /@tom\.com$/,
+                name: 'Tom邮箱',
+                url: 'https://mail.tom.com/'
+            }
+        ];
     }
 
     // 初始化用户状态
@@ -201,14 +265,17 @@ class AuthSystem {
         this.setButtonLoading('register-btn', true);
 
         try {
-            // 模拟发送验证码（实际应该调用后端API）
-            await this.sendVerificationCode(email, 'register');
+            // 发送验证码，包含注册数据
+            await this.sendVerificationCode(email, 'register', {
+                phone: phone,
+                password: password
+            });
             
-            // 保存注册数据到临时存储
+            // 保存注册数据到临时存储（作为备用）
             const registerData = { phone, email, password };
             sessionStorage.setItem('register_data', JSON.stringify(registerData));
             
-            // 跳转到验证页面
+            // 跳转到验证页面（使用链接验证模式）
             window.location.href = 'verify-email.html?type=register&email=' + encodeURIComponent(email);
             
         } catch (error) {
@@ -258,12 +325,13 @@ class AuthSystem {
         const rememberMe = document.getElementById('remember-me').checked;
 
         // 清除错误信息
-        this.hideError('username-error');
-        this.hideError('password-error');
+        ['username-error', 'password-error'].forEach(id => {
+            this.hideError(id);
+        });
 
         let hasError = false;
 
-        // 验证用户名（手机号或邮箱）
+        // 验证用户名
         if (!username) {
             this.showError('username-error', '请输入手机号或邮箱');
             hasError = true;
@@ -280,17 +348,10 @@ class AuthSystem {
 
         if (hasError) return;
 
-        // 检查登录限制
-        if (this.isLoginLocked(username)) {
-            const lockoutTime = this.getLockoutTime(username);
-            this.showLockoutMessage(lockoutTime);
-            return;
-        }
-
         this.setButtonLoading('login-btn', true);
 
         try {
-            // 模拟登录API调用
+            // 用户认证
             const result = await this.authenticateUser(username, password);
             
             if (result.success) {
@@ -314,14 +375,27 @@ class AuthSystem {
                 }, 1500);
                 
             } else {
-                // 记录登录失败
+                this.showStatus(result.error || '用户名或密码错误', true);
+                // 记录登录失败尝试
                 this.recordLoginAttempt(username);
-                this.showStatus('用户名或密码错误', true);
             }
             
         } catch (error) {
-            this.recordLoginAttempt(username);
-            this.showStatus('登录失败：' + error.message, true);
+            console.error('❌ 登录过程中发生错误:', error);
+            
+            // 处理需要邮箱验证的情况
+            if (error.needVerification && error.email) {
+                this.showStatus('账户未验证，即将跳转到验证页面...', true);
+                
+                // 3秒后跳转到邮箱验证页面
+                setTimeout(() => {
+                    window.location.href = `verify-email.html?email=${encodeURIComponent(error.email)}&type=register`;
+                }, 3000);
+            } else {
+                this.showStatus('登录失败：' + error.message, true);
+                // 记录登录失败尝试
+                this.recordLoginAttempt(username);
+            }
         } finally {
             this.setButtonLoading('login-btn', false);
         }
@@ -352,6 +426,8 @@ class AuthSystem {
     
     initEmailVerification() {
         const form = document.getElementById('verify-form');
+        const openEmailBtn = document.getElementById('open-email-btn');
+        const verifyBtn = document.getElementById('verify-btn');
         const resendBtn = document.getElementById('resend-btn');
         const changeEmailBtn = document.getElementById('change-email-btn');
 
@@ -362,12 +438,39 @@ class AuthSystem {
 
         if (email) {
             document.getElementById('email-display').textContent = email;
+            
+            // 显示邮箱服务商信息
+            const provider = this.getEmailProvider(email);
+            const providerDisplay = document.getElementById('provider-display');
+            if (providerDisplay && provider) {
+                providerDisplay.textContent = provider.name;
+            }
+            
+            // 更新打开邮箱按钮文本
+            if (openEmailBtn && provider) {
+                const btnText = openEmailBtn.querySelector('#open-email-btn-text');
+                if (btnText) {
+                    btnText.textContent = `打开 ${provider.name}`;
+                }
+            }
         }
 
         // 启动倒计时
         this.startVerificationCountdown();
 
-        // 验证表单提交
+        // 打开邮箱按钮事件
+        if (openEmailBtn) {
+            openEmailBtn.addEventListener('click', () => {
+                if (email) {
+                    const success = this.openEmailProvider(email);
+                    if (success) {
+                        this.showStatus(`已为您打开${this.getEmailProvider(email).name}，请查看验证码`);
+                    }
+                }
+            });
+        }
+
+        // 验证表单提交（仅验证验证码）
         if (form) {
             form.addEventListener('submit', async (e) => {
                 e.preventDefault();
@@ -571,7 +674,68 @@ class AuthSystem {
 
     // ==================== API 调用模拟 ====================
     
-    async sendVerificationCode(email, type) {
+    async sendVerificationCode(email, type, additionalData = null) {
+        console.log(`📧 开始发送验证码到 ${email}，类型: ${type}`);
+        
+        try {
+            // 构建请求数据
+            const requestData = {
+                email: email,
+                type: type
+            };
+            
+            // 如果是注册类型且有额外数据，包含注册信息
+            if (type === 'register' && additionalData) {
+                requestData.phone = additionalData.phone || '';
+                requestData.password = additionalData.password || '';
+            }
+            
+            // 调用PHP后端API发送验证码
+            const response = await fetch('../api/send-verification.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                throw new Error(result.error || '发送失败');
+            }
+            
+            if (result.success) {
+                console.log(`✅ 验证码发送成功: ${email}`);
+                console.log(`📧 邮件服务商: ${result.data.provider}`);
+                console.log(`⏰ 有效期: ${result.data.expires_in} 秒`);
+                
+                // 获取邮箱服务商信息用于前端显示
+                const provider = this.getEmailProvider(email);
+                console.log(`🔗 邮箱服务商: ${provider.name}`);
+                
+                return true;
+            } else {
+                throw new Error(result.error || '发送失败');
+            }
+            
+        } catch (error) {
+            console.error('❌ 发送验证码失败:', error);
+            
+            // 如果是网络错误或服务器不可用，回退到模拟模式
+            if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+                console.warn('⚠️ 后端服务不可用，回退到模拟模式');
+                return this.sendVerificationCodeFallback(email, type);
+            }
+            
+            throw error;
+        }
+    }
+    
+    // 备用的模拟发送方法（当后端不可用时使用）
+    async sendVerificationCodeFallback(email, type) {
+        console.log('🔄 使用模拟模式发送验证码');
+        
         // 模拟API调用延迟
         await new Promise(resolve => setTimeout(resolve, 1000));
         
@@ -589,15 +753,76 @@ class AuthSystem {
         };
         localStorage.setItem(`verification_${email}_${type}`, JSON.stringify(verificationData));
         
-        console.log(`验证码已发送到 ${email}: ${code}`); // 开发调试用
+        // 获取邮箱服务商信息
+        const provider = this.getEmailProvider(email);
+        
+        // 开发调试信息
+        console.log(`📧 验证码发送详情 (模拟模式):`);
+        console.log(`   邮箱: ${email}`);
+        console.log(`   服务商: ${provider.name}`);
+        console.log(`   验证码: ${code}`);
+        console.log(`   类型: ${type}`);
+        console.log(`   有效期: ${expiry.toLocaleString()}`);
+        
         return true;
     }
 
     async verifyCode(email, code, type) {
+        console.log(`🔍 开始验证验证码: ${email}, 类型: ${type}`);
+        
+        try {
+            // 调用PHP后端API验证验证码
+            const response = await fetch('../api/verify-code.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    email: email,
+                    code: code,
+                    type: type
+                })
+            });
+            
+            const result = await response.json();
+            
+            if (!response.ok) {
+                console.warn(`⚠️ 验证失败: ${result.error}`);
+                return false;
+            }
+            
+            if (result.success) {
+                console.log(`✅ 验证码验证成功: ${email}`);
+                return true;
+            } else {
+                console.warn(`❌ 验证码验证失败: ${result.error}`);
+                return false;
+            }
+            
+        } catch (error) {
+            console.error('❌ 验证码验证出错:', error);
+            
+            // 如果是网络错误或服务器不可用，回退到模拟模式
+            if (error.message.includes('fetch') || error.message.includes('Failed to fetch')) {
+                console.warn('⚠️ 后端服务不可用，回退到模拟模式');
+                return this.verifyCodeFallback(email, code, type);
+            }
+            
+            return false;
+        }
+    }
+    
+    // 备用的模拟验证方法（当后端不可用时使用）
+    async verifyCodeFallback(email, code, type) {
+        console.log('🔄 使用模拟模式验证验证码');
+        
         await new Promise(resolve => setTimeout(resolve, 500));
         
         const storedData = localStorage.getItem(`verification_${email}_${type}`);
-        if (!storedData) return false;
+        if (!storedData) {
+            console.warn('❌ 验证码不存在');
+            return false;
+        }
         
         const verificationData = JSON.parse(storedData);
         const now = new Date();
@@ -605,12 +830,14 @@ class AuthSystem {
         
         // 检查过期
         if (now > expiry) {
+            console.warn('❌ 验证码已过期');
             localStorage.removeItem(`verification_${email}_${type}`);
             return false;
         }
         
         // 检查验证码
         if (verificationData.code === code) {
+            console.log('✅ 验证码验证成功 (模拟模式)');
             localStorage.removeItem(`verification_${email}_${type}`);
             return true;
         }
@@ -618,24 +845,115 @@ class AuthSystem {
         // 增加尝试次数
         verificationData.attempts++;
         if (verificationData.attempts >= 5) {
+            console.warn('❌ 验证码尝试次数过多');
             localStorage.removeItem(`verification_${email}_${type}`);
             return false;
         }
         
         localStorage.setItem(`verification_${email}_${type}`, JSON.stringify(verificationData));
+        console.warn(`❌ 验证码错误，剩余尝试次数: ${5 - verificationData.attempts}`);
         return false;
     }
 
     async authenticateUser(username, password) {
+        console.log('🔄 开始用户认证（通过API）...');
+        console.log('👤 用户名:', username);
+        console.log('🔐 密码长度:', password.length);
+        
+        try {
+            // 调用PHP登录API
+            const response = await fetch('../api/login.php', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+            
+            console.log('📡 API响应状态:', response.status);
+            
+            const result = await response.json();
+            console.log('📦 API响应数据:', result);
+            
+            if (result.success) {
+                console.log('✅ 用户认证成功');
+                return {
+                    success: true,
+                    user: result.user,
+                    token: result.token
+                };
+            } else {
+                console.error('❌ 用户认证失败:', result.error);
+                
+                // 如果需要邮箱验证，抛出特殊错误
+                if (result.need_verification) {
+                    const error = new Error(result.error);
+                    error.needVerification = true;
+                    error.email = result.email;
+                    throw error;
+                }
+                
+                return { success: false, error: result.error };
+            }
+            
+        } catch (error) {
+            console.error('❌ API调用失败:', error);
+            
+            // 如果是需要验证的错误，重新抛出
+            if (error.needVerification) {
+                throw error;
+            }
+            
+            // 网络错误或其他错误，降级到本地验证
+            console.log('🔄 API调用失败，尝试本地验证...');
+            return await this.authenticateUserLocal(username, password);
+        }
+    }
+    
+    // 保留原有的本地认证逻辑作为备用
+    async authenticateUserLocal(username, password) {
+        console.log('🔄 开始本地用户认证...');
+        console.log('👤 用户名:', username);
+        console.log('🔐 密码长度:', password.length);
+        
         await new Promise(resolve => setTimeout(resolve, 1000));
         
         // 模拟用户数据库查询
         const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        console.log('👥 本地数据库中的用户总数:', users.length);
+        console.log('📋 本地用户列表:', users.map(u => ({ email: u.email, phone: u.phone, user_id: u.user_id, is_verified: u.is_verified })));
+        
+        // 计算输入密码的哈希值
+        const inputPasswordHash = this.hashPassword(password);
+        console.log('🔐 输入密码的哈希值:', inputPasswordHash);
+        
+        // 查找匹配的用户
+        const matchingUsers = users.filter(u => u.phone === username || u.email === username);
+        console.log('🔍 匹配用户名的用户数量:', matchingUsers.length);
+        console.log('🔍 匹配的用户:', matchingUsers.map(u => ({ 
+            email: u.email, 
+            phone: u.phone, 
+            password_hash: u.password_hash,
+            is_verified: u.is_verified 
+        })));
+        
         const user = users.find(u => 
-            (u.phone === username || u.email === username) && u.password_hash === this.hashPassword(password)
+            (u.phone === username || u.email === username) && u.password_hash === inputPasswordHash
         );
         
+        console.log('🔍 最终找到的用户:', user ? { 
+            user_id: user.user_id, 
+            email: user.email, 
+            phone: user.phone,
+            is_verified: user.is_verified,
+            password_matches: user.password_hash === inputPasswordHash
+        } : 'null');
+        
         if (user && user.is_verified) {
+            console.log('✅ 本地用户认证成功');
             // 生成JWT令牌（模拟）
             const token = 'jwt_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
             
@@ -650,6 +968,13 @@ class AuthSystem {
                 },
                 token
             };
+        }
+        
+        console.error('❌ 本地用户认证失败');
+        if (!user) {
+            console.error('❌ 失败原因: 用户名或密码错误');
+        } else if (!user.is_verified) {
+            console.error('❌ 失败原因: 用户未验证');
         }
         
         return { success: false };
@@ -680,15 +1005,38 @@ class AuthSystem {
     }
 
     async updateUserPassword(email, newPassword) {
+        console.log('🔄 开始更新用户密码...');
+        console.log('📧 邮箱:', email);
+        console.log('🔐 新密码长度:', newPassword.length);
+        
         const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        console.log('👥 数据库中的用户总数:', users.length);
+        console.log('📋 用户列表:', users.map(u => ({ email: u.email, phone: u.phone, user_id: u.user_id })));
+        
         const userIndex = users.findIndex(u => u.email === email);
+        console.log('🔍 查找用户索引:', userIndex);
         
         if (userIndex !== -1) {
-            users[userIndex].password_hash = this.hashPassword(newPassword);
+            const oldPasswordHash = users[userIndex].password_hash;
+            const newPasswordHash = this.hashPassword(newPassword);
+            
+            console.log('🔐 旧密码哈希:', oldPasswordHash);
+            console.log('🔐 新密码哈希:', newPasswordHash);
+            
+            users[userIndex].password_hash = newPasswordHash;
             localStorage.setItem('registered_users', JSON.stringify(users));
+            
+            console.log('✅ 密码更新成功');
+            
+            // 验证更新后的数据
+            const updatedUsers = JSON.parse(localStorage.getItem('registered_users') || '[]');
+            const updatedUser = updatedUsers.find(u => u.email === email);
+            console.log('✅ 验证更新后的用户密码哈希:', updatedUser?.password_hash);
+            
             return true;
         }
         
+        console.error('❌ 未找到对应邮箱的用户');
         return false;
     }
 
@@ -710,50 +1058,6 @@ class AuthSystem {
         // 令牌无效，清除登录状态
         this.logout();
         return false;
-    }
-
-    // 登录限制检查
-    isLoginLocked(username) {
-        const attempts = JSON.parse(localStorage.getItem(`login_attempts_${username}`) || '{}');
-        const now = new Date();
-        
-        if (attempts.count >= 5 && attempts.lockUntil && new Date(attempts.lockUntil) > now) {
-            return true;
-        }
-        
-        return false;
-    }
-
-    getLockoutTime(username) {
-        const attempts = JSON.parse(localStorage.getItem(`login_attempts_${username}`) || '{}');
-        return attempts.lockUntil;
-    }
-
-    recordLoginAttempt(username) {
-        const attempts = JSON.parse(localStorage.getItem(`login_attempts_${username}`) || '{ "count": 0 }');
-        attempts.count++;
-        attempts.lastAttempt = new Date().toISOString();
-        
-        if (attempts.count >= 5) {
-            attempts.lockUntil = new Date(Date.now() + 30 * 60 * 1000).toISOString(); // 锁定30分钟
-        }
-        
-        localStorage.setItem(`login_attempts_${username}`, JSON.stringify(attempts));
-    }
-
-    clearLoginAttempts(username) {
-        localStorage.removeItem(`login_attempts_${username}`);
-    }
-
-    showLockoutMessage(lockUntil) {
-        const lockoutElement = document.getElementById('lockout-message');
-        const lockoutText = document.getElementById('lockout-text');
-        
-        if (lockoutElement && lockoutText) {
-            const remainingTime = Math.ceil((new Date(lockUntil) - new Date()) / 60000);
-            lockoutText.textContent = `账户已被锁定，请在 ${remainingTime} 分钟后重试`;
-            lockoutElement.classList.remove('hidden');
-        }
     }
 
     // 按钮加载状态
@@ -867,6 +1171,235 @@ class AuthSystem {
     // 检查是否是游客模式
     isGuestMode() {
         return this.currentUser && this.currentUser.is_guest === true;
+    }
+
+    // ==================== 调试和修复工具 ====================
+    
+    // 数据验证和诊断工具
+    validateUserData() {
+        console.log('🔍 开始验证用户数据...');
+        
+        const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        console.log('👥 数据库中的用户总数:', users.length);
+        
+        if (users.length === 0) {
+            console.warn('⚠️ 用户数据库为空');
+            return { valid: false, issue: 'empty_database' };
+        }
+        
+        // 检查每个用户的数据完整性
+        const issues = [];
+        users.forEach((user, index) => {
+            console.log(`🔍 检查用户 ${index + 1}:`, {
+                user_id: user.user_id,
+                email: user.email,
+                phone: user.phone,
+                has_password_hash: !!user.password_hash,
+                is_verified: user.is_verified
+            });
+            
+            if (!user.password_hash) {
+                issues.push(`用户 ${user.email || user.phone} 缺少密码哈希`);
+            }
+            if (!user.is_verified) {
+                issues.push(`用户 ${user.email || user.phone} 未验证`);
+            }
+            if (!user.email && !user.phone) {
+                issues.push(`用户 ${user.user_id} 缺少联系方式`);
+            }
+        });
+        
+        if (issues.length > 0) {
+            console.warn('⚠️ 发现数据问题:', issues);
+            return { valid: false, issues, users };
+        }
+        
+        console.log('✅ 用户数据验证通过');
+        return { valid: true, users };
+    }
+    
+    // 密码测试工具
+    testPassword(email, password) {
+        console.log('🧪 测试密码功能...');
+        console.log('📧 邮箱:', email);
+        console.log('🔐 密码:', password);
+        
+        const users = JSON.parse(localStorage.getItem('registered_users') || '[]');
+        const user = users.find(u => u.email === email);
+        
+        if (!user) {
+            console.error('❌ 未找到用户');
+            return { success: false, reason: 'user_not_found' };
+        }
+        
+        const inputHash = this.hashPassword(password);
+        const storedHash = user.password_hash;
+        
+        console.log('🔐 输入密码哈希:', inputHash);
+        console.log('🔐 存储密码哈希:', storedHash);
+        console.log('🔐 密码匹配:', inputHash === storedHash);
+        
+        return {
+            success: inputHash === storedHash,
+            user_found: true,
+            password_matches: inputHash === storedHash,
+            user_verified: user.is_verified
+        };
+    }
+    
+    // 清理和重置用户数据（开发用）
+    resetUserData() {
+        console.warn('🗑️ 清理用户数据...');
+        localStorage.removeItem('registered_users');
+        localStorage.removeItem('auth_user');
+        localStorage.removeItem('auth_token');
+        localStorage.removeItem('auth_mode');
+        console.log('✅ 用户数据已清理');
+    }
+
+    // 根据邮箱地址获取邮箱服务商信息
+    getEmailProvider(email) {
+        if (!email) return null;
+        
+        for (const provider of this.emailProviders) {
+            if (provider.match.test(email)) {
+                return provider;
+            }
+        }
+        
+        // 默认返回通用邮箱信息
+        return {
+            name: '邮箱',
+            url: 'mailto:' + email
+        };
+    }
+
+    // 打开邮箱服务商页面
+    openEmailProvider(email) {
+        const provider = this.getEmailProvider(email);
+        
+        if (provider) {
+            try {
+                // 在新标签页打开邮箱
+                const newWindow = window.open(provider.url, '_blank');
+                
+                // 检查是否被弹窗阻止
+                if (!newWindow || newWindow.closed || typeof newWindow.closed === 'undefined') {
+                    throw new Error('弹窗被阻止');
+                }
+                
+                console.log(`✅ 已打开 ${provider.name}: ${provider.url}`);
+                return true;
+            } catch (error) {
+                console.error('❌ 打开邮箱失败:', error);
+                
+                // 如果弹窗被阻止，提供备用方案
+                if (error.message.includes('弹窗被阻止')) {
+                    const userConfirm = confirm(`无法自动打开${provider.name}，是否手动访问？\n\n点击"确定"复制邮箱地址到剪贴板`);
+                    if (userConfirm) {
+                        // 尝试复制URL到剪贴板
+                        this.copyToClipboard(provider.url);
+                        alert(`${provider.name}地址已复制到剪贴板，请手动打开浏览器访问`);
+                    }
+                }
+                return false;
+            }
+        }
+        
+        return false;
+    }
+
+    // 复制文本到剪贴板
+    copyToClipboard(text) {
+        try {
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text);
+            } else {
+                // 降级方案
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                textArea.style.position = 'fixed';
+                textArea.style.opacity = '0';
+                document.body.appendChild(textArea);
+                textArea.focus();
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+            }
+            return true;
+        } catch (error) {
+            console.error('复制到剪贴板失败:', error);
+            return false;
+        }
+    }
+
+    // ==================== 登录尝试管理 ====================
+    
+    // 记录登录失败尝试
+    recordLoginAttempt(username) {
+        if (!username) return;
+        
+        const key = `login_attempts_${username}`;
+        const attempts = JSON.parse(localStorage.getItem(key) || '[]');
+        const now = Date.now();
+        
+        // 添加当前尝试时间
+        attempts.push(now);
+        
+        // 清理5分钟前的尝试记录
+        const fiveMinutesAgo = now - (5 * 60 * 1000);
+        const recentAttempts = attempts.filter(time => time > fiveMinutesAgo);
+        
+        localStorage.setItem(key, JSON.stringify(recentAttempts));
+        
+        // 检查是否需要显示锁定警告
+        this.checkLoginLockout(username, recentAttempts.length);
+    }
+    
+    // 清除登录失败记录
+    clearLoginAttempts(username) {
+        if (!username) return;
+        
+        const key = `login_attempts_${username}`;
+        localStorage.removeItem(key);
+        
+        // 隐藏锁定警告
+        const lockoutMessage = document.getElementById('lockout-message');
+        if (lockoutMessage) {
+            lockoutMessage.classList.add('hidden');
+        }
+    }
+    
+    // 检查登录锁定状态
+    checkLoginLockout(username, attemptCount) {
+        const maxAttempts = 5;
+        const lockoutMessage = document.getElementById('lockout-message');
+        const lockoutText = document.getElementById('lockout-text');
+        
+        if (attemptCount >= maxAttempts) {
+            if (lockoutMessage && lockoutText) {
+                lockoutText.textContent = `登录失败次数过多，请5分钟后再试。当前失败次数：${attemptCount}`;
+                lockoutMessage.classList.remove('hidden');
+            }
+        } else if (attemptCount >= 3) {
+            if (lockoutMessage && lockoutText) {
+                lockoutText.textContent = `连续登录失败 ${attemptCount} 次，再失败 ${maxAttempts - attemptCount} 次将被临时锁定`;
+                lockoutMessage.classList.remove('hidden');
+            }
+        }
+    }
+    
+    // 获取登录尝试次数
+    getLoginAttemptCount(username) {
+        if (!username) return 0;
+        
+        const key = `login_attempts_${username}`;
+        const attempts = JSON.parse(localStorage.getItem(key) || '[]');
+        const now = Date.now();
+        const fiveMinutesAgo = now - (5 * 60 * 1000);
+        
+        // 返回5分钟内的尝试次数
+        return attempts.filter(time => time > fiveMinutesAgo).length;
     }
 }
 

@@ -1,0 +1,31 @@
+{
+    "name": "event-recorder/email-system",
+    "description": "事件记录系统邮件发送模块",
+    "type": "project",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Event Recorder Team",
+            "email": "support@eventrecorder.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.4",
+        "phpmailer/phpmailer": "^6.8"
+    },
+    "autoload": {
+        "psr-4": {
+            "EventRecorder\\": "src/"
+        }
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "echo '邮件系统测试脚本'",
+        "install-deps": "composer install --no-dev --optimize-autoloader"
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
+} 

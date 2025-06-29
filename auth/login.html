@@ -124,6 +124,13 @@
                     <span class="text-gray-600">还没有账户？</span>
                     <a href="register.html" class="text-indigo-600 hover:text-indigo-800 font-medium">立即注册</a>
                 </div>
+
+                <!-- 调试工具链接（开发环境） -->
+                <div class="mt-4 text-center">
+                    <button id="debug-tool-btn" class="text-red-600 hover:text-red-800 text-xs font-medium underline" title="开发调试工具">
+                        🔧 调试密码问题
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -179,6 +186,11 @@
             document.getElementById('retry-btn').addEventListener('click', () => {
                 initRetryCount = 0;
                 initializeLogin();
+            });
+            
+            // 绑定调试工具按钮
+            document.getElementById('debug-tool-btn').addEventListener('click', () => {
+                openDebugTool();
             });
         });
 
@@ -303,6 +315,82 @@
                     errorElement.classList.remove('hidden');
                 }
             }, 500);
+        }
+
+        // ==================== 调试工具 ====================
+        
+        function openDebugTool() {
+            console.log('🔧 打开调试工具');
+            
+            if (typeof window.AuthSystem === 'undefined' || !window.AuthSystem) {
+                alert('认证系统未加载，无法使用调试工具');
+                return;
+            }
+            
+            const email = prompt('请输入要调试的邮箱地址:');
+            if (!email) return;
+            
+            const password = prompt('请输入要测试的密码:');
+            if (!password) return;
+            
+            console.log('🧪 开始调试...');
+            
+            // 验证用户数据
+            const validation = window.AuthSystem.validateUserData();
+            console.log('📊 数据验证结果:', validation);
+            
+            // 测试密码
+            const passwordTest = window.AuthSystem.testPassword(email, password);
+            console.log('🔐 密码测试结果:', passwordTest);
+            
+            // 显示调试结果
+            let debugResult = `🔧 调试结果：\n\n`;
+            debugResult += `📧 邮箱: ${email}\n`;
+            debugResult += `🔐 密码长度: ${password.length}\n\n`;
+            
+            debugResult += `📊 数据验证:\n`;
+            debugResult += `✅ 数据库有效: ${validation.valid}\n`;
+            if (validation.users) {
+                debugResult += `👥 用户总数: ${validation.users.length}\n`;
+            }
+            if (validation.issues) {
+                debugResult += `⚠️ 问题: ${validation.issues.join(', ')}\n`;
+            }
+            
+            debugResult += `\n🔐 密码测试:\n`;
+            debugResult += `✅ 用户存在: ${passwordTest.user_found || false}\n`;
+            debugResult += `✅ 密码匹配: ${passwordTest.password_matches || false}\n`;
+            debugResult += `✅ 用户已验证: ${passwordTest.user_verified || false}\n`;
+            
+            if (!passwordTest.success) {
+                debugResult += `\n❌ 登录失败原因:\n`;
+                if (!passwordTest.user_found) {
+                    debugResult += `• 用户不存在\n`;
+                } else if (!passwordTest.password_matches) {
+                    debugResult += `• 密码不匹配\n`;
+                } else if (!passwordTest.user_verified) {
+                    debugResult += `• 用户未验证\n`;
+                }
+            }
+            
+            debugResult += `\n🔧 建议解决方案:\n`;
+            if (!passwordTest.user_found) {
+                debugResult += `• 请检查邮箱是否正确\n`;
+                debugResult += `• 确认是否已完成注册\n`;
+            } else if (!passwordTest.password_matches) {
+                debugResult += `• 尝试重新重置密码\n`;
+                debugResult += `• 检查密码是否输入错误\n`;
+            } else if (!passwordTest.user_verified) {
+                debugResult += `• 完成邮箱验证\n`;
+            }
+            
+            alert(debugResult);
+            
+            // 询问是否要清理数据
+            if (confirm('是否要清理所有用户数据？（这将删除所有注册用户）')) {
+                window.AuthSystem.resetUserData();
+                alert('用户数据已清理，请重新注册');
+            }
         }
     </script>
 </body>
