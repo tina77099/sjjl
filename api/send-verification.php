@@ -140,7 +140,7 @@ try {
         $mail->addAddress($email);
         
         // 构建验证链接
-        $baseUrl = 'http://localhost:8000'; // 实际部署时应该从配置获取
+        $baseUrl = 'https://www.motiday.net'; // 使用实际域名地址
         $verifyUrl = $baseUrl . '/auth/verify-link.html?token=' . $verificationToken . '&email=' . urlencode($email) . '&type=' . $type;
         
         // 邮件内容
